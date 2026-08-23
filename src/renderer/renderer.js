@@ -1,3 +1,5 @@
+import { naHtml } from './podglad.js'
+
 const zakladki = document.getElementById('zakladki')
 const oknoKonta = document.getElementById('okno-konta')
 const bledyKonta = document.getElementById('bledy-konta')
@@ -130,3 +132,65 @@ window.mostHub.naLicznik((suma) => {
 // Komunikaty z procesu glownego (np. nieudane ladowanie konta) ladują w pasku,
 // nie w modalnym okienku — jedno chore konto nie blokuje pozostalych.
 window.mostHub.naKomunikat(pokazKomunikat)
+
+const oknoEdytora = document.getElementById('okno-edytora')
+const edytorNazwa = document.getElementById('edytor-nazwa')
+const edytorTekst = document.getElementById('edytor-tekst')
+const edytorPodglad = document.getElementById('edytor-podglad')
+
+function odswiezPodglad() {
+  edytorPodglad.innerHTML = naHtml(edytorTekst.value)
+}
+
+edytorTekst.addEventListener('input', odswiezPodglad)
+
+document.getElementById('pasek-formatowania').addEventListener('click', (zdarzenie) => {
+  const przycisk = zdarzenie.target.closest('button')
+  if (!przycisk) return
+  const poczatek = edytorTekst.selectionStart
+  const koniec = edytorTekst.selectionEnd
+  const tresc = edytorTekst.value
+
+  if (przycisk.dataset.znacznik) {
+    const znak = przycisk.dataset.znacznik
+    const zaznaczone = tresc.slice(poczatek, koniec) || 'tekst'
+    edytorTekst.value = tresc.slice(0, poczatek) + znak + zaznaczone + znak + tresc.slice(koniec)
+  } else if (przycisk.dataset.prefiks) {
+    const prefiks = przycisk.dataset.prefiks
+    const poczatekLinii = tresc.lastIndexOf('\n', poczatek - 1) + 1
+    edytorTekst.value = tresc.slice(0, poczatekLinii) + prefiks + tresc.slice(poczatekLinii)
+  }
+  edytorTekst.focus()
+  odswiezPodglad()
+})
+
+document.getElementById('nowe-makro').addEventListener('click', (zdarzenie) => {
+  zdarzenie.preventDefault()
+  oknoMakr.close()
+  edytorNazwa.value = ''
+  edytorTekst.value = ''
+  odswiezPodglad()
+  oknoEdytora.showModal()
+})
+
+document.getElementById('anuluj-makro').addEventListener('click', (zdarzenie) => {
+  zdarzenie.preventDefault()
+  oknoEdytora.close()
+})
+
+document.getElementById('zapisz-makro').addEventListener('click', async (zdarzenie) => {
+  zdarzenie.preventDefault()
+  const wynik = await window.mostHub.zapiszMakro({
+    nazwa: edytorNazwa.value,
+    tekst: edytorTekst.value,
+  })
+  if (!wynik.ok) {
+    pokazKomunikat(wynik.bledy.join('; '))
+    return
+  }
+  oknoEdytora.close()
+})
+
+// Jawny sygnal, ze wszystkie nasluchy (w tym Ctrl+;) sa juz podpiete.
+// Bez niego test nacisnalby skrot, zanim modul skonczy sie ladowac.
+document.body.dataset.gotowy = '1'

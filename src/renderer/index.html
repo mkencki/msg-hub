@@ -34,4 +34,23 @@
     <button id="nowe-makro" value="nowe">Nowe makro</button>
   </menu>
 </dialog>
+<dialog id="okno-edytora">
+  <h2>Makro</h2>
+  <label>Nazwa <input id="edytor-nazwa" /></label>
+  <div id="pasek-formatowania">
+    <button type="button" data-znacznik="*">Pogrubienie</button>
+    <button type="button" data-znacznik="_">Kursywa</button>
+    <button type="button" data-znacznik="~">Przekreslenie</button>
+    <button type="button" data-prefiks="- ">Lista</button>
+    <button type="button" data-prefiks="1. ">Numeracja</button>
+    <button type="button" data-prefiks="&gt; ">Cytat</button>
+  </div>
+  <label>Tresc <textarea id="edytor-tekst" rows="8"></textarea></label>
+  <p>Podglad:</p>
+  <div id="edytor-podglad"></div>
+  <menu>
+    <button id="anuluj-makro" value="anuluj">Anuluj</button>
+    <button id="zapisz-makro" value="zapisz">Zapisz</button>
+  </menu>
+</dialog>
 <script type="module" src="renderer.js"></script>

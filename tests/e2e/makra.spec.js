@@ -11,6 +11,7 @@ test.beforeEach(async () => {
   katalogDanych = await mkdtemp(path.join(tmpdir(), 'msghub-makra-e2e-'))
   aplikacja = await electron.launch({ args: ['.', `--user-data-dir=${katalogDanych}`] })
   okno = await aplikacja.firstWindow()
+  await okno.waitForSelector('body[data-gotowy="1"]')
 })
 
 test.afterEach(async () => {
@@ -69,4 +70,48 @@ test('wybor makra kladzie tekst w schowku i nie wysyla wiadomosci', async () => 
 
   // Regula 7.1 (brak sciezki wysylki) jest pilnowana testami jednostkowymi
   // w tests/wstawianie.test.js i tests/granice.test.js.
+})
+
+test('edytor formatuje tekst, pokazuje podglad i zapisuje makro', async () => {
+  await okno.keyboard.press('Control+Semicolon')
+  await okno.locator('#nowe-makro').click()
+  await expect(okno.locator('#okno-edytora')).toBeVisible()
+
+  await okno.locator('#edytor-nazwa').fill('Instrukcja Strefa Klienta')
+  await okno.locator('#edytor-tekst').fill('Jak dodac kierowce:\nZaloguj sie')
+
+  // Pasek formatowania dziala na linii, w ktorej stoi kursor.
+  await okno.locator('#edytor-tekst').click()
+  await okno.keyboard.press('Control+Home')
+  await okno.locator('#pasek-formatowania button[data-prefiks="- "]').click()
+
+  await expect(okno.locator('#edytor-tekst')).toHaveValue('- Jak dodac kierowce:\nZaloguj sie')
+
+  // Podglad ma pokazac punkt listy, a nie surowy myslnik.
+  await expect(okno.locator('#edytor-podglad li')).toHaveText('Jak dodac kierowce:')
+
+  await okno.locator('#zapisz-makro').click()
+  await expect(okno.locator('#okno-edytora')).toBeHidden()
+
+  await okno.keyboard.press('Control+Semicolon')
+  await expect(okno.locator('#lista-makr li')).toHaveText(/Instrukcja Strefa Klienta/)
+})
+
+test('podglad nie wykonuje kodu HTML wklejonego do tresci makra', async () => {
+  await okno.keyboard.press('Control+Semicolon')
+  await okno.locator('#nowe-makro').click()
+  await okno.locator('#edytor-tekst').fill('<img src=x onerror="window.zlamane=1">')
+
+  await expect(okno.locator('#edytor-podglad img')).toHaveCount(0)
+  expect(await okno.evaluate(() => window.zlamane)).toBeUndefined()
+})
+
+test('makro bez nazwy jest odrzucane z komunikatem', async () => {
+  await okno.keyboard.press('Control+Semicolon')
+  await okno.locator('#nowe-makro').click()
+  await okno.locator('#edytor-tekst').fill('tresc bez nazwy')
+  await okno.locator('#zapisz-makro').click()
+
+  await expect(okno.locator('#komunikat')).toBeVisible()
+  await expect(okno.locator('#komunikat')).toHaveText(/nazwa jest wymagana/)
 })

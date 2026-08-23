@@ -14,3 +14,10 @@ dialog input, dialog select, dialog textarea { width: 100%; padding: 6px; border
 #lista-makr li { padding: 8px; border-radius: 6px; cursor: pointer; }
 #lista-makr li:hover { background: #2a3942; }
 #lista-makr .puste { color: #8696a0; cursor: default; }
+#pasek-formatowania { display: flex; gap: 4px; flex-wrap: wrap; margin: 8px 0; }
+#pasek-formatowania button { padding: 4px 10px; font-size: 12px; }
+#edytor-podglad { background: #0b141a; border-radius: 6px; padding: 10px; min-height: 60px; max-height: 30vh; overflow: auto; }
+#edytor-podglad p { margin: 0 0 6px; }
+#edytor-podglad li { margin-left: 18px; }
+#edytor-podglad blockquote { margin: 0 0 6px; padding-left: 10px; border-left: 3px solid var(--akcent); color: #8696a0; }
+#edytor-podglad code { background: #202c33; padding: 1px 4px; border-radius: 4px; font-family: Consolas, monospace; }
