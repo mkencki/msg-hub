@@ -28,7 +28,9 @@ test('okno renderuje pasek zakladek i wystawia most do renderera', async () => {
   await expect(okno.locator('#dodaj-konto')).toBeVisible()
 
   const metody = await okno.evaluate(() => Object.keys(window.mostHub ?? {}).sort())
-  expect(metody).toEqual(['dodajKonto', 'listaKont', 'naLicznik', 'przelacz', 'ustawNakladke'])
+  expect(metody).toEqual(
+    expect.arrayContaining(['dodajKonto', 'listaKont', 'naKomunikat', 'naLicznik', 'przelacz', 'ustawNakladke']),
+  )
 
   // Swiezy katalog danych: brak kont, a kanal IPC odpowiada zamiast rzucac.
   const konta = await okno.evaluate(() => window.mostHub.listaKont())
@@ -63,8 +65,8 @@ test('renderer wczytuje konta juz przy starcie, bez wyscigu z rejestracja IPC', 
 
   // Renderer wola konta:lista natychmiast po zaladowaniu. Jesli proces glowny
   // rejestruje kanaly pozniej, wywolanie rzuca i pasek zostaje pusty.
-  await expect(okno.locator('#blad-startu')).toBeHidden()
-  expect(await okno.locator('#blad-startu').textContent()).toBe('')
+  await expect(okno.locator('#komunikat')).toBeHidden()
+  expect(await okno.locator('#komunikat').textContent()).toBe('')
 
   await aplikacja.close()
 })

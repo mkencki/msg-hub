@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage, dialog, ipcMain } from 'electron'
+import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain } from 'electron'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { czystyUserAgent, ZarzadcaWidokow } from './widoki.js'
@@ -49,11 +49,17 @@ async function utworzOkno() {
     }
   })
 
+  // Komunikaty ida do paska w oknie, nie do modalnego okienka systemowego.
+  // Modal zatrzymuje calą aplikacje i wymaga klikniecia, a blad ladowania jednego
+  // konta nie powinien blokowac pozostalych.
+  const pokazKomunikat = (tekst) => {
+    if (!okno.webContents.isDestroyed()) okno.webContents.send('komunikat:pokaz', tekst)
+  }
+
   zarzadca = new ZarzadcaWidokow(okno, app.userAgentFallback, ({ konto, kod, opis }) => {
-    dialog.showErrorBox(
-      `Nie udalo sie zaladowac konta ${konto.nazwa}`,
-      `Blad ${kod}: ${opis}\n\n` +
-        'Jesli siec dziala, a strona odmawia obslugi klienta, zaktualizuj aplikacje ' +
+    pokazKomunikat(
+      `Nie udalo sie zaladowac konta ${konto.nazwa} — blad ${kod}: ${opis}. ` +
+        'Jesli siec dziala, a strona odmawia obslugi klienta, zaktualizuj Electrona ' +
         '(npm install electron@latest) — WhatsApp Web wymaga swiezej wersji Chromium.',
     )
   })

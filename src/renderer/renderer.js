@@ -43,7 +43,7 @@ async function start() {
   try {
     await odswiezZakladki()
   } catch (blad) {
-    const pole = document.getElementById('blad-startu')
+    const pole = document.getElementById('komunikat')
     pole.textContent = `Nie udalo sie wczytac kont: ${blad.message}`
     pole.hidden = false
   }
@@ -74,4 +74,12 @@ export function narysujLicznik(suma) {
 
 window.mostHub.naLicznik((suma) => {
   window.mostHub.ustawNakladke(narysujLicznik(suma))
+})
+
+// Komunikaty z procesu glownego (np. nieudane ladowanie konta) ladują w pasku,
+// nie w modalnym okienku — jedno chore konto nie blokuje pozostalych.
+window.mostHub.naKomunikat((tekst) => {
+  const pole = document.getElementById('komunikat')
+  pole.textContent = tekst
+  pole.hidden = false
 })
