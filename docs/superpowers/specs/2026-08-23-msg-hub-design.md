@@ -84,6 +84,21 @@ jak makro trafia do czatu.
 Kładzie tekst lub plik do schowka i wywołuje wklejenie w aktywnym widoku. Jedyny
 komponent dotykający schowka. Nie wysyła wiadomości — nigdy (sekcja 7).
 
+Tekst idzie przez `clipboard.writeText` Electrona. Plik wymaga formatu `CF_HDROP` —
+tego, który Windows ustawia przy `Ctrl+C` w Eksploratorze i który Chromium podaje
+stronie jako `DataTransfer.files`. Electronowy `clipboard.writeBuffer('FileNameW', …)`
+obsługuje tylko pojedynczy plik i nie daje pewności, że Chromium go tak zinterpretuje,
+dlatego przyjmujemy metodę **zweryfikowaną empirycznie w etapie 0**: wywołanie
+`powershell.exe -NoProfile -STA -Command "Set-Clipboard -LiteralPath …"`.
+
+Uwaga wykryta w etapie 0: `Set-Clipboard -LiteralPath` oraz `Get-Clipboard -Format`
+istnieją **wyłącznie w Windows PowerShell 5.1**. PowerShell 7 tych parametrów nie ma,
+więc wywołanie musi jawnie wskazywać `powershell.exe`, nie `pwsh`.
+
+Koszt: uruchomienie procesu, rzędu setek milisekund. Jeśli okaże się odczuwalny,
+alternatywą jest moduł natywny ustawiający strukturę `DROPFILES` — decyzja wyłącznie
+wydajnościowa, nie funkcjonalna, i podejmowana dopiero po pomiarze.
+
 ### 4.5 `shell` — powłoka okna
 
 Okno, zasobnik, autostart, tryb ciemny, zapamiętany układ, powiadomienia, badge.
@@ -184,8 +199,9 @@ automatyzacją, przed którą audyt ostrzegał. Granica jest tu, nie dalej.
 dostępu do wewnętrznych funkcji WhatsApp Web. Strony ładowane są takie, jakie serwuje Meta.
 
 **7.3 Wstawianie treści odbywa się przez schowek.** Schowek i wklejenie są nie do
-odróżnienia od działania ręcznego. Jedyne dopuszczalne odstępstwo opisuje sekcja 9, etap 0,
-i wymaga osobnej decyzji operatora.
+odróżnienia od działania ręcznego. Etap 0 rozstrzygnął tę regułę pozytywnie i **bez
+odstępstw** — patrz sekcja 9. Aplikacja nie manipuluje elementami strony WhatsAppa
+w żadnym celu, także przy załącznikach.
 
 Poza tymi regułami aplikacja jest zwykłą przeglądarką z zakładkami.
 
@@ -202,17 +218,28 @@ Poza tymi regułami aplikacja jest zwykłą przeglądarką z zakładkami.
 
 ## 9. Etapy
 
-**Etap 0 — rozstrzygnięcie schowka (bramka, około kwadransa).**
-Sprawdzenie, czy WhatsApp Web przyjmuje wklejenie pliku PDF i mp4 ze schowka Windows
-(format `CF_HDROP`). Test wykonuje operator na czacie z samym sobą.
+**Etap 0 — rozstrzygnięcie schowka. WYKONANY 2026-08-23, wynik POZYTYWNY.**
 
-- wynik pozytywny → załączniki idą przez schowek, reguła 7.3 bez odstępstw
-- wynik negatywny → dla plików stosujemy podstawienie w standardowym polu wyboru pliku
-  na stronie (mechanizm równoważny kliknięciu „załącz" i wybraniu pliku; nie dotyka
-  wewnętrznych funkcji WhatsAppa, ale jest wrażliwy na przebudowę strony przez Metę).
-  Decyzję o tym odstępstwie podejmuje operator po teście.
+Pytanie: czy WhatsApp Web przyjmuje wklejenie pliku ze schowka Windows (`CF_HDROP`).
 
-Obrazy i tekst działają przez schowek niezależnie od wyniku.
+Przebieg. Warstwa pierwsza sprawdzona przez odczyt artefaktu, nie przez brak błędu:
+`Set-Clipboard -LiteralPath` w Windows PowerShell 5.1, następnie `Get-Clipboard -Format
+FileDropList` potwierdził jeden plik w schowku, przy pustej warstwie tekstowej. Warstwa
+druga sprawdzona ręcznie przez operatora w Edge na `web.whatsapp.com`, na czacie z samym
+sobą, poza audytowaną aplikacją (tamta ładuje `wa-js` i dałaby fałszywy pozytyw).
+
+Materiał: `PASSango - przewodnik wideo.mp4` (10,23 MB, sygnatura `ftypmp42`) oraz
+`PASSango - instalacja.pdf` (0,74 MB) — realne pliki instruktażowe, tej samej klasy co
+przyszła zawartość makr. Rozmiary dobrane poniżej limitów WhatsAppa, żeby ewentualna
+odmowa nie wynikła z wielkości pliku.
+
+Wynik: **oba typy wkleiły się poprawnie.** Wideo pokazało odtwarzacz z polem podpisu,
+dokument — kartę pliku. Widoczny pasek miniatur z przyciskiem dodania kolejnego
+załącznika potwierdza, że wiele plików można wstawiać po kolei.
+
+Konsekwencje: droga podstawiania pliku w polu formularza strony **nie jest potrzebna
+i nie wchodzi do projektu**. Reguła 7.3 obowiązuje bez wyjątków. Etap 3 buduje wyłącznie
+ścieżkę schowkową.
 
 **Etap 1 — rdzeń.** `accounts`, `views`, `shell`. Trzy konta, izolacja, zakładki,
 `User-Agent`, tryb ciemny, układ okna, zasobnik, autostart, powiadomienia.
@@ -242,9 +269,12 @@ Testowane jest zachowanie, nie szczegóły implementacji.
 |---|---|---|
 | WhatsApp odrzuca klienta po `User-Agent` | wysoka | nadpisanie UA od pierwszego uruchomienia; etap 1 |
 | Chromium w Electronie zbyt stary dla WhatsAppa | średnia | utrzymywanie świeżej wersji; naprawa = podbicie wersji |
-| Schowek nie przyjmuje plików | średnia | rozstrzyga etap 0 przed budową etapu 3 |
-| Przebudowa WhatsApp Web psuje podstawianie pliku | niska | dotyczy tylko wariantu negatywnego etapu 0 |
+| Opóźnienie przy wstawianiu pliku (start `powershell.exe`) | niska | pomiar w etapie 3; próg odczuwalności ~500 ms, powyżej — moduł natywny |
 | Rozrost magazynu załączników | niska | limit pliku, licznik zajętości, kasowanie kopii z makrem |
+
+Ryzyko „schowek nie przyjmuje plików" zostało **zamknięte** w etapie 0 (2026-08-23).
+Wraz z nim odpadło ryzyko wrażliwości na przebudowę strony przez Metę — mechanizm
+podstawiania pliku w formularzu nie wchodzi do projektu.
 
 ## 12. Odrzucone warianty
 
