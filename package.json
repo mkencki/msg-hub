@@ -8,11 +8,32 @@
   "scripts": {
     "start": "electron .",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "dist": "electron-builder --win portable"
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",
     "electron": "43.4.1",
+    "electron-builder": "^26.15.3",
     "vitest": "4.1.11"
+  },
+  "build": {
+    "appId": "pl.kencki.msghub",
+    "productName": "msg-hub",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "portable",
+      "icon": "build/ikona.ico"
+    },
+    "portable": {
+      "artifactName": "msg-hub-${version}-portable.exe"
+    }
   }
 }

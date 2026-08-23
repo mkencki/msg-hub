@@ -2,13 +2,14 @@ import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain } from 'electron'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { czystyUserAgent, ZarzadcaWidokow } from './widoki.js'
-import { wczytajUklad, zapiszUklad } from './powloka.js'
+import { wczytajUklad, zapiszUklad, ustawAutostart } from './powloka.js'
 import { wczytajKonta } from './konta.js'
 import { zarejestrujKanalyKont, zarejestrujKanalyMakr } from './most.js'
 import { utworzSesjeSchowka } from './schowek-pliku.js'
 
 const KATALOG = path.dirname(fileURLToPath(import.meta.url))
 const WYSOKOSC_PASKA = 44
+const SCIEZKA_IKONY = path.join(KATALOG, '..', 'renderer', 'ikona.png')
 
 app.userAgentFallback = czystyUserAgent(app.userAgentFallback)
 
@@ -34,6 +35,7 @@ async function utworzOkno() {
     minWidth: 800,
     minHeight: 600,
     title: 'msg-hub',
+    icon: SCIEZKA_IKONY,
     backgroundColor: '#111b21',
     webPreferences: { preload: path.join(KATALOG, '..', 'preload', 'preload.cjs') },
   })
@@ -134,11 +136,18 @@ async function utworzOkno() {
 }
 
 function utworzZasobnik() {
-  zasobnik = new Tray(nativeImage.createEmpty())
+  // Pusta ikona zasobnika jest na Windowsie NIEWIDOCZNA — musi byc realny obrazek.
+  zasobnik = new Tray(nativeImage.createFromPath(SCIEZKA_IKONY).resize({ width: 16, height: 16 }))
   zasobnik.setToolTip('msg-hub')
   zasobnik.setContextMenu(
     Menu.buildFromTemplate([
       { label: 'Pokaz', click: () => okno?.show() },
+      {
+        label: 'Uruchamiaj z Windows',
+        type: 'checkbox',
+        checked: app.getLoginItemSettings().openAtLogin,
+        click: (pozycja) => ustawAutostart(pozycja.checked, app),
+      },
       { type: 'separator' },
       { label: 'Zakoncz', click: () => app.quit() },
     ]),
