@@ -1,0 +1,27 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>msg-hub</title>
+<link rel="stylesheet" href="styl.css" />
+<header id="pasek">
+  <nav id="zakladki"></nav>
+  <button id="dodaj-konto" title="Dodaj konto">+</button>
+</header>
+<dialog id="okno-konta">
+  <form method="dialog">
+    <h2>Dodaj konto</h2>
+    <label>Nazwa <input name="nazwa" required /></label>
+    <label>Platforma
+      <select name="platforma">
+        <option value="whatsapp">WhatsApp</option>
+        <option value="messenger">Messenger</option>
+      </select>
+    </label>
+    <label>Kolor zakladki <input name="kolor" type="color" value="#2f7d5b" /></label>
+    <p id="bledy-konta" class="bledy"></p>
+    <menu>
+      <button value="anuluj">Anuluj</button>
+      <button id="zapisz-konto" value="zapisz">Zapisz</button>
+    </menu>
+  </form>
+</dialog>
+<script type="module" src="renderer.js"></script>

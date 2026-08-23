@@ -1,0 +1,12 @@
+:root { color-scheme: dark; --tlo: #111b21; --panel: #202c33; --tekst: #e9edef; --akcent: #2f7d5b; }
+* { box-sizing: border-box; }
+body { margin: 0; font: 14px/1.4 "Segoe UI", system-ui, sans-serif; background: var(--tlo); color: var(--tekst); }
+#pasek { display: flex; align-items: center; gap: 4px; height: 44px; padding: 0 8px; background: var(--panel); }
+#zakladki { display: flex; gap: 4px; flex: 1; }
+.zakladka { padding: 6px 14px; border: 0; border-radius: 6px; background: transparent; color: var(--tekst); cursor: pointer; border-bottom: 3px solid transparent; }
+.zakladka[aria-selected="true"] { background: #2a3942; border-bottom-color: var(--kolor-konta, var(--akcent)); }
+button { border: 0; border-radius: 6px; padding: 6px 12px; background: #2a3942; color: var(--tekst); cursor: pointer; }
+dialog { border: 0; border-radius: 10px; background: var(--panel); color: var(--tekst); min-width: 420px; }
+dialog label { display: block; margin: 10px 0; }
+dialog input, dialog select, dialog textarea { width: 100%; padding: 6px; border-radius: 6px; border: 1px solid #3b4a54; background: var(--tlo); color: var(--tekst); font: inherit; }
+.bledy { color: #f15c6d; min-height: 1em; }
