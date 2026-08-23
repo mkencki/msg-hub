@@ -1,5 +1,12 @@
 import { describe, test, expect } from 'vitest'
-import { cytujPS, zbudujPolecenie, ustawPlikWSchowku } from '../src/glowny/schowek-pliku.js'
+import { PassThrough } from 'node:stream'
+import {
+  cytujPS,
+  zbudujPolecenie,
+  ustawPlikWSchowku,
+  utworzSesjeSchowka,
+  ZNACZNIK_GOTOWE,
+} from '../src/glowny/schowek-pliku.js'
 
 describe('cytujPS', () => {
   test('otacza apostrofami', () => {
@@ -45,5 +52,61 @@ describe('ustawPlikWSchowku', () => {
     const wywolania = []
     await ustawPlikWSchowku('', async () => wywolania.push(1))
     expect(wywolania).toHaveLength(0)
+  })
+})
+
+describe('utworzSesjeSchowka', () => {
+  function atrapaProcesu() {
+    const stdin = new PassThrough()
+    const stdout = new PassThrough()
+    stdout.setEncoding('utf8')
+    const wyslane = []
+    stdin.on('data', (kawalek) => {
+      const tekst = String(kawalek)
+      wyslane.push(tekst)
+      if (tekst.includes('AWARIA')) stdout.write(`BLAD sciezka nie istnieje\n${ZNACZNIK_GOTOWE}\n`)
+      else stdout.write(`${ZNACZNIK_GOTOWE}\n`)
+    })
+    return { stdin, stdout, stderr: new PassThrough(), exitCode: null, killed: false, on() {}, wyslane }
+  }
+
+  test('wysyla Set-Clipboard z zacytowana sciezka', async () => {
+    const atrapa = atrapaProcesu()
+    const sesja = utworzSesjeSchowka(() => atrapa)
+
+    await sesja.ustawPlik('C:\pliki\podrecznik [PL].pdf')
+
+    expect(atrapa.wyslane.join('')).toContain("Set-Clipboard -LiteralPath 'C:\pliki\podrecznik [PL].pdf'")
+  })
+
+  test('drugie wstawienie uzywa tego samego procesu', async () => {
+    const atrapa = atrapaProcesu()
+    let starty = 0
+    const sesja = utworzSesjeSchowka(() => {
+      starty += 1
+      return atrapa
+    })
+
+    await sesja.ustawPlik('C:\a.pdf')
+    await sesja.ustawPlik('C:\b.pdf')
+
+    expect(starty).toBe(1)
+  })
+
+  test('blad PowerShella konczy sie odrzuceniem, nie cisza', async () => {
+    const sesja = utworzSesjeSchowka(() => atrapaProcesu())
+    await expect(sesja.ustawPlik('C:\AWARIA.pdf')).rejects.toThrow(/sciezka nie istnieje/)
+  })
+
+  test('pusta sciezka nie startuje procesu', async () => {
+    let starty = 0
+    const sesja = utworzSesjeSchowka(() => {
+      starty += 1
+      return atrapaProcesu()
+    })
+
+    await sesja.ustawPlik('')
+
+    expect(starty).toBe(0)
   })
 })
