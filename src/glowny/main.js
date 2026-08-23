@@ -11,6 +11,10 @@ const WYSOKOSC_PASKA = 44
 
 app.userAgentFallback = czystyUserAgent(app.userAgentFallback)
 
+// Domyslne menu Electrona (File/Edit/View/Window) nie nalezy do tej aplikacji
+// i na Windowsie zjada pasek wewnatrz obszaru klienta.
+Menu.setApplicationMenu(null)
+
 let okno
 let zasobnik
 let zarzadca
@@ -33,7 +37,17 @@ async function utworzOkno() {
   })
   okno.setTitle('msg-hub')
   if (uklad.zmaksymalizowane) okno.maximize()
-  await okno.loadFile(path.join(KATALOG, '..', 'renderer', 'index.html'))
+
+  // Bez menu nie ma pozycji "Toggle Developer Tools" — skrot zostaje, bo przy
+  // diagnostyce strony komunikatora jest jedynym wgladem w konsole.
+  okno.webContents.on('before-input-event', (_zdarzenie, wejscie) => {
+    const devtools =
+      wejscie.key === 'F12' || (wejscie.control && wejscie.shift && wejscie.key.toLowerCase() === 'i')
+    if (wejscie.type === 'keyDown' && devtools) {
+      const cel = zarzadca?.aktywny()?.webContents ?? okno.webContents
+      cel.toggleDevTools()
+    }
+  })
 
   zarzadca = new ZarzadcaWidokow(okno, app.userAgentFallback, ({ konto, kod, opis }) => {
     dialog.showErrorBox(
@@ -75,13 +89,18 @@ async function utworzOkno() {
     widok.webContents.on('page-title-updated', odswiezBadge)
   }
 
+  // KOLEJNOSC JEST ISTOTNA: renderer wola konta:lista natychmiast po zaladowaniu,
+  // wiec widoki i kanaly IPC musza stac PRZED loadFile. Odwrotna kolejnosc daje
+  // "No handler registered for 'konta:lista'" i pusty pasek zakladek.
   const { konta } = await wczytajKonta(path.join(katalogDanych, 'accounts.json'))
   for (const konto of konta) przygotujWidok(zarzadca.dodaj(konto))
   dopasuj()
   if (konta.length) zarzadca.pokaz(konta[0].id)
-  odswiezBadge()
 
   zarejestrujKanalyKont({ katalogDanych, zarzadca, poDodaniuKonta: dopasuj, przygotujWidok })
+
+  await okno.loadFile(path.join(KATALOG, '..', 'renderer', 'index.html'))
+  odswiezBadge()
 
   // Zapis ukladu musi sie ZAKONCZYC przed zamknieciem okna — inaczej app.quit()
   // ucina asynchroniczny zapis i pozycja okna nie przezywa restartu.

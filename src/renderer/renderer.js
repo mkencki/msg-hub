@@ -38,7 +38,18 @@ document.getElementById('zapisz-konto').addEventListener('click', async (zdarzen
   await odswiezZakladki()
 })
 
-odswiezZakladki()
+// Spec sekcja 8: nieudany start ma dac jawny komunikat, nie pusty pasek.
+async function start() {
+  try {
+    await odswiezZakladki()
+  } catch (blad) {
+    const pole = document.getElementById('blad-startu')
+    pole.textContent = `Nie udalo sie wczytac kont: ${blad.message}`
+    pole.hidden = false
+  }
+}
+
+start()
 
 // Nakladka licznika na ikonie paska zadan. Electron przyjmuje tylko gotowy obrazek,
 // wiec 16x16 rysuje renderer i odsyla jako data URL. Zero = brak nakladki.

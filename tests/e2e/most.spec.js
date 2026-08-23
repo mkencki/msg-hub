@@ -56,3 +56,15 @@ test('licznik rysuje nakladke 16x16 i znika przy zerze', async () => {
 
   await aplikacja.close()
 })
+
+test('renderer wczytuje konta juz przy starcie, bez wyscigu z rejestracja IPC', async () => {
+  const aplikacja = await electron.launch({ args: ['.', `--user-data-dir=${katalogDanych}`] })
+  const okno = await aplikacja.firstWindow()
+
+  // Renderer wola konta:lista natychmiast po zaladowaniu. Jesli proces glowny
+  // rejestruje kanaly pozniej, wywolanie rzuca i pasek zostaje pusty.
+  await expect(okno.locator('#blad-startu')).toBeHidden()
+  expect(await okno.locator('#blad-startu').textContent()).toBe('')
+
+  await aplikacja.close()
+})
