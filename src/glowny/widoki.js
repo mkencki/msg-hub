@@ -57,6 +57,20 @@ export class ZarzadcaWidokow {
     return widok
   }
 
+  usun(idKonta) {
+    const widok = this.widoki.get(idKonta)
+    if (!widok) return false
+    this.okno.contentView.removeChildView(widok)
+    widok.webContents.close()
+    this.widoki.delete(idKonta)
+    if (this.idAktywnego === idKonta) {
+      this.idAktywnego = null
+      const nastepny = this.widoki.keys().next()
+      if (!nastepny.done) this.pokaz(nastepny.value)
+    }
+    return true
+  }
+
   pokaz(idKonta) {
     if (!this.widoki.has(idKonta)) return
     this.idAktywnego = idKonta

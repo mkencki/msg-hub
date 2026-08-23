@@ -1,4 +1,4 @@
-import { ipcMain, clipboard, dialog } from 'electron'
+import { ipcMain, clipboard, dialog, session } from 'electron'
 import path from 'node:path'
 import { access } from 'node:fs/promises'
 import { wczytajKonta, zapiszKonta, waliduj, utworzIdKonta, PLATFORMY } from './konta.js'
@@ -31,6 +31,22 @@ export function zarejestrujKanalyKont({
     // Konto dodane w trakcie dzialania dostaje te sama obsluge co konta ze startu:
     // zgode na powiadomienia i sledzenie licznika nieprzeczytanych.
     przygotujWidok(zarzadca.dodaj(konto))
+    poDodaniuKonta()
+    return { ok: true }
+  })
+
+  ipcMain.handle('konta:usun', async (_zdarzenie, idKonta) => {
+    const { konta } = await wczytajKonta(plikKont)
+    const pozostale = konta.filter((k) => k.id !== idKonta)
+    if (pozostale.length === konta.length) return { ok: false, bledy: ['nie ma takiego konta'] }
+
+    await zapiszKonta(plikKont, pozostale)
+    zarzadca.usun(idKonta)
+
+    // Bez wyczyszczenia partycji zalogowanie zostaje na dysku i wrocilo by,
+    // gdyby konto o tym samym id powstalo ponownie.
+    await session.fromPartition(`persist:${idKonta}`).clearStorageData()
+
     poDodaniuKonta()
     return { ok: true }
   })

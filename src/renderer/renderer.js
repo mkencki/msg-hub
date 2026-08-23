@@ -13,9 +13,24 @@ async function odswiezZakladki() {
   konta.forEach((konto, indeks) => {
     const przycisk = document.createElement('button')
     przycisk.className = 'zakladka'
-    przycisk.textContent = konto.nazwa
     przycisk.style.setProperty('--kolor-konta', konto.kolor)
     przycisk.setAttribute('aria-selected', String(indeks === 0))
+
+    const nazwa = document.createElement('span')
+    nazwa.textContent = konto.nazwa
+    przycisk.append(nazwa)
+
+    // Krzyzyk zamiast osobnego ekranu ustawien — ten sam gest, co w przegladarce.
+    const krzyzyk = document.createElement('span')
+    krzyzyk.className = 'usun-konto'
+    krzyzyk.textContent = '×'
+    krzyzyk.title = `Usun konto ${konto.nazwa}`
+    krzyzyk.addEventListener('click', (zdarzenie) => {
+      zdarzenie.stopPropagation()
+      zapytajOUsuniecie(konto)
+    })
+    przycisk.append(krzyzyk)
+
     przycisk.addEventListener('click', async () => {
       await window.mostHub.przelacz(konto.id)
       for (const inny of zakladki.children) inny.setAttribute('aria-selected', 'false')
@@ -237,3 +252,32 @@ function pokazDialog(dialog) {
 for (const dialog of document.querySelectorAll('dialog')) {
   dialog.addEventListener('close', odswiezWidocznoscKont)
 }
+
+const oknoUsuwania = document.getElementById('okno-usuwania')
+let kontoDoUsuniecia = null
+
+// Usuniecie kasuje sesje, czyli wylogowuje — dlatego potwierdzenie, a nie samo klikniecie.
+function zapytajOUsuniecie(konto) {
+  kontoDoUsuniecia = konto
+  document.getElementById('tresc-usuwania').textContent = `Konto "${konto.nazwa}" zniknie z paska zakladek.`
+  pokazDialog(oknoUsuwania)
+}
+
+document.getElementById('anuluj-usuniecie').addEventListener('click', (zdarzenie) => {
+  zdarzenie.preventDefault()
+  kontoDoUsuniecia = null
+  oknoUsuwania.close()
+})
+
+document.getElementById('potwierdz-usuniecie').addEventListener('click', async (zdarzenie) => {
+  zdarzenie.preventDefault()
+  if (!kontoDoUsuniecia) return
+  const wynik = await window.mostHub.usunKonto(kontoDoUsuniecia.id)
+  kontoDoUsuniecia = null
+  oknoUsuwania.close()
+  if (!wynik.ok) {
+    pokazKomunikat(wynik.bledy.join('; '))
+    return
+  }
+  await odswiezZakladki()
+})

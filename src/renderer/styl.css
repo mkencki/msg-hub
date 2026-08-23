@@ -21,3 +21,11 @@ dialog input, dialog select, dialog textarea { width: 100%; padding: 6px; border
 #edytor-podglad li { margin-left: 18px; }
 #edytor-podglad blockquote { margin: 0 0 6px; padding-left: 10px; border-left: 3px solid var(--akcent); color: #8696a0; }
 #edytor-podglad code { background: #202c33; padding: 1px 4px; border-radius: 4px; font-family: Consolas, monospace; }
+.zakladka { display: inline-flex; align-items: center; gap: 8px; }
+/* Krzyzyk jest widoczny zawsze, tylko przygaszony — ukryty do najechania nie
+   powiedzialby operatorowi, ze konto w ogole da sie usunac. */
+.usun-konto { padding: 0 5px; border-radius: 4px; background: transparent; color: #8696a0; font-size: 15px; line-height: 1; opacity: 0.5; }
+.zakladka:hover .usun-konto, .zakladka[aria-selected="true"] .usun-konto { opacity: 1; }
+.usun-konto:hover { background: #f15c6d; color: #fff; }
+.ostrzezenie { color: #8696a0; }
+button.grozny { background: #f15c6d; color: #fff; }
