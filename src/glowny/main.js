@@ -5,6 +5,7 @@ import { czystyUserAgent, ZarzadcaWidokow } from './widoki.js'
 import { wczytajUklad, zapiszUklad } from './powloka.js'
 import { wczytajKonta } from './konta.js'
 import { zarejestrujKanalyKont, zarejestrujKanalyMakr } from './most.js'
+import { utworzSesjeSchowka } from './schowek-pliku.js'
 
 const KATALOG = path.dirname(fileURLToPath(import.meta.url))
 const WYSOKOSC_PASKA = 44
@@ -18,6 +19,7 @@ Menu.setApplicationMenu(null)
 let okno
 let zasobnik
 let zarzadca
+let sesjaSchowka
 
 async function utworzOkno() {
   const katalogDanych = app.getPath('userData')
@@ -104,7 +106,9 @@ async function utworzOkno() {
   if (konta.length) zarzadca.pokaz(konta[0].id)
 
   zarejestrujKanalyKont({ katalogDanych, zarzadca, poDodaniuKonta: dopasuj, przygotujWidok })
-  zarejestrujKanalyMakr({ katalogDanych, zarzadca })
+  sesjaSchowka = utworzSesjeSchowka()
+  sesjaSchowka.rozgrzej()
+  zarejestrujKanalyMakr({ katalogDanych, zarzadca, sesjaSchowka })
 
   await okno.loadFile(path.join(KATALOG, '..', 'renderer', 'index.html'))
   odswiezBadge()
@@ -146,5 +150,7 @@ app.whenReady().then(async () => {
   await utworzOkno()
   utworzZasobnik()
 })
+
+app.on('before-quit', () => sesjaSchowka?.zamknij())
 
 app.on('window-all-closed', () => app.quit())

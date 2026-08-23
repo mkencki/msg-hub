@@ -57,6 +57,12 @@ export function utworzSesjeSchowka(uruchomProces = spawn) {
   }
 
   return {
+    // Start procesu kosztuje ~860 ms. Rozgrzanie przy starcie aplikacji sprawia,
+    // ze operator nie placi tego przy pierwszym wstawieniu zalacznika.
+    rozgrzej() {
+      zapewnijProces()
+    },
+
     async ustawPlik(sciezka) {
       if (!sciezka) return
       const biezacy = zapewnijProces()

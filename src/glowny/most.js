@@ -1,7 +1,8 @@
-import { ipcMain, clipboard } from 'electron'
+import { ipcMain, clipboard, dialog } from 'electron'
 import path from 'node:path'
+import { access } from 'node:fs/promises'
 import { wczytajKonta, zapiszKonta, waliduj, utworzIdKonta, PLATFORMY } from './konta.js'
-import { wczytajMakra, zapiszMakra, szukaj, utworzIdMakra } from './makra.js'
+import { wczytajMakra, zapiszMakra, szukaj, utworzIdMakra, dodajZalacznik } from './makra.js'
 import { wstawTekst } from './wstawianie.js'
 
 export function zarejestrujKanalyKont({
@@ -39,8 +40,9 @@ export function zarejestrujKanalyKont({
   })
 }
 
-export function zarejestrujKanalyMakr({ katalogDanych, zarzadca }) {
+export function zarejestrujKanalyMakr({ katalogDanych, zarzadca, sesjaSchowka }) {
   const plikMakr = path.join(katalogDanych, 'macros.json')
+  const katalogAtt = path.join(katalogDanych, 'att')
 
   ipcMain.handle('makra:lista', async (_zdarzenie, fraza) => {
     const { makra } = await wczytajMakra(plikMakr)
@@ -61,7 +63,33 @@ export function zarejestrujKanalyMakr({ katalogDanych, zarzadca }) {
     const makro = makra.find((m) => m.id === idMakra)
     const widok = zarzadca.aktywny()
     if (!makro || !widok) return { ok: false, brakujace: [] }
+
     if (makro.tekst) wstawTekst(widok.webContents, makro.tekst, clipboard)
-    return { ok: true, brakujace: [] }
+
+    // Spec sekcja 8: brak pliku w magazynie nie moze wywrocic makra —
+    // tekst ma zadzialac, a interfejs ma pokazac, ktorych zalacznikow brakuje.
+    const brakujace = []
+    for (const wzgledna of makro.zalaczniki ?? []) {
+      const pelna = path.join(katalogDanych, wzgledna)
+      try {
+        await access(pelna)
+      } catch {
+        brakujace.push(wzgledna)
+        continue
+      }
+      await sesjaSchowka.ustawPlik(pelna)
+      widok.webContents.paste()
+    }
+    return { ok: brakujace.length === 0, brakujace }
+  })
+
+  ipcMain.handle('pliki:wybierz', async () => {
+    const wynik = await dialog.showOpenDialog({ properties: ['openFile'] })
+    if (wynik.canceled || !wynik.filePaths.length) return null
+    try {
+      return await dodajZalacznik(katalogAtt, wynik.filePaths[0])
+    } catch (blad) {
+      return { blad: blad.message }
+    }
   })
 }

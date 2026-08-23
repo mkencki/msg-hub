@@ -169,6 +169,8 @@ document.getElementById('nowe-makro').addEventListener('click', (zdarzenie) => {
   oknoMakr.close()
   edytorNazwa.value = ''
   edytorTekst.value = ''
+  zalacznikiMakra = []
+  odswiezZalaczniki()
   odswiezPodglad()
   oknoEdytora.showModal()
 })
@@ -183,6 +185,7 @@ document.getElementById('zapisz-makro').addEventListener('click', async (zdarzen
   const wynik = await window.mostHub.zapiszMakro({
     nazwa: edytorNazwa.value,
     tekst: edytorTekst.value,
+    zalaczniki: zalacznikiMakra,
   })
   if (!wynik.ok) {
     pokazKomunikat(wynik.bledy.join('; '))
@@ -194,3 +197,24 @@ document.getElementById('zapisz-makro').addEventListener('click', async (zdarzen
 // Jawny sygnal, ze wszystkie nasluchy (w tym Ctrl+;) sa juz podpiete.
 // Bez niego test nacisnalby skrot, zanim modul skonczy sie ladowac.
 document.body.dataset.gotowy = '1'
+
+let zalacznikiMakra = []
+
+// Nazwa w magazynie ma prefiks UUID — operatorowi pokazujemy tylko oryginalna nazwe.
+function odswiezZalaczniki() {
+  const pole = document.getElementById('lista-zalacznikow')
+  pole.textContent = zalacznikiMakra.length
+    ? zalacznikiMakra.map((s) => s.replace(/^att\/[0-9a-f-]+-/, '')).join(', ')
+    : 'brak'
+}
+
+document.getElementById('dodaj-zalacznik').addEventListener('click', async () => {
+  const wynik = await window.mostHub.wybierzPlik()
+  if (!wynik) return
+  if (wynik.blad) {
+    pokazKomunikat(`Nie mozna dodac zalacznika: ${wynik.blad}`)
+    return
+  }
+  zalacznikiMakra.push(wynik)
+  odswiezZalaczniki()
+})
