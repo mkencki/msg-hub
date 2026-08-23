@@ -7,14 +7,20 @@ import path from 'node:path'
 
 const uruchom = promisify(execFile)
 
-const ZRODLO_PDF = path.join(
+const KATALOG_MATERIALOW = path.join(
   'C:/Users/marek/OneDrive - AS24',
   '03. AS24 DOCS',
   'DOKUMENTY AS24',
   '2. PASSANGO',
   'DODATKOWE PLIKI',
-  'PASSango - instalacja.pdf',
 )
+
+// Realne materialy instruktazowe — te same, na ktorych etap 0 specu potwierdzil,
+// ze WhatsApp Web przyjmuje wklejenie pliku ze schowka.
+const MATERIALY = [
+  { typ: 'PDF', nazwa: 'PASSango - instalacja.pdf' },
+  { typ: 'mp4', nazwa: 'PASSango - przewodnik wideo.mp4' },
+]
 
 let katalogDanych
 let aplikacja
@@ -50,39 +56,45 @@ test.beforeEach(async () => {
 })
 
 test.afterEach(async () => {
+  // Schowek trzyma uchwyt do wklejonego pliku — bez wyczyszczenia katalog
+  // tymczasowy zostaje zablokowany i nastepny test czeka na zwolnienie.
+  await aplikacja.evaluate(({ clipboard }) => clipboard.clear()).catch(() => {})
   await aplikacja.close()
   const sprzatanie = rm(katalogDanych, { recursive: true, force: true, maxRetries: 3 }).catch(() => {})
   await Promise.race([sprzatanie, new Promise((koniec) => setTimeout(koniec, 3000))])
 })
 
-test('makro z PDF kladzie plik w schowku Windows jako CF_HDROP', async () => {
-  const att = path.join(katalogDanych, 'att')
-  await mkdir(att, { recursive: true })
-  const nazwaWMagazynie = '11111111-2222-3333-4444-555555555555-PASSango - instalacja.pdf'
-  await copyFile(ZRODLO_PDF, path.join(att, nazwaWMagazynie))
+for (const material of MATERIALY) {
+  test(`makro z zalacznikiem ${material.typ} kladzie plik w schowku Windows jako CF_HDROP`, async () => {
+    const att = path.join(katalogDanych, 'att')
+    await mkdir(att, { recursive: true })
+    const nazwaWMagazynie = `11111111-2222-3333-4444-555555555555-${material.nazwa}`
+    await copyFile(path.join(KATALOG_MATERIALOW, material.nazwa), path.join(att, nazwaWMagazynie))
 
-  await okno.evaluate(
-    (wzgledna) =>
-      window.mostHub.zapiszMakro({
-        nazwa: 'Instalacja Passango',
-        tekst: '*Instrukcja instalacji:*',
-        zalaczniki: [wzgledna],
-      }),
-    `att/${nazwaWMagazynie}`,
-  )
+    await okno.evaluate(
+      (wzgledna) =>
+        window.mostHub.zapiszMakro({
+          nazwa: 'Instalacja Passango',
+          tekst: '*Instrukcja instalacji:*',
+          zalaczniki: [wzgledna],
+        }),
+      `att/${nazwaWMagazynie}`,
+    )
 
-  // Schowek celowo zaczyna od czegos innego, zeby wynik nie byl przypadkiem.
-  await aplikacja.evaluate(({ clipboard }) => clipboard.writeText('stan-poczatkowy'))
+    // Schowek celowo zaczyna od czegos innego, zeby wynik nie byl przypadkiem.
+    await aplikacja.evaluate(({ clipboard }) => clipboard.writeText('stan-poczatkowy'))
 
-  const wynik = await okno.evaluate(async () => {
-    const makra = await window.mostHub.listaMakr('')
-    return window.mostHub.wstawMakro(makra[0].id)
+    const wynik = await okno.evaluate(async () => {
+      const makra = await window.mostHub.listaMakr('')
+      return window.mostHub.wstawMakro(makra[0].id)
+    })
+
+    expect(wynik.ok).toBe(true)
+    expect(wynik.brakujace).toEqual([])
+    // Plik jest w schowku PO tekscie — makro wstawia najpierw tresc, potem zalacznik.
+    expect(await plikiWSchowku()).toEqual([nazwaWMagazynie])
   })
-
-  expect(wynik.ok).toBe(true)
-  expect(wynik.brakujace).toEqual([])
-  expect(await plikiWSchowku()).toEqual([nazwaWMagazynie])
-})
+}
 
 test('brak pliku w magazynie nie wywraca makra — tekst dziala, brak jest zgloszony', async () => {
   await okno.evaluate(() =>
