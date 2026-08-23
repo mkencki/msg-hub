@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { czystyUserAgent, ZarzadcaWidokow } from './widoki.js'
 import { wczytajUklad, zapiszUklad } from './powloka.js'
 import { wczytajKonta } from './konta.js'
-import { zarejestrujKanalyKont } from './most.js'
+import { zarejestrujKanalyKont, zarejestrujKanalyMakr } from './most.js'
 
 const KATALOG = path.dirname(fileURLToPath(import.meta.url))
 const WYSOKOSC_PASKA = 44
@@ -104,6 +104,7 @@ async function utworzOkno() {
   if (konta.length) zarzadca.pokaz(konta[0].id)
 
   zarejestrujKanalyKont({ katalogDanych, zarzadca, poDodaniuKonta: dopasuj, przygotujWidok })
+  zarejestrujKanalyMakr({ katalogDanych, zarzadca })
 
   await okno.loadFile(path.join(KATALOG, '..', 'renderer', 'index.html'))
   odswiezBadge()

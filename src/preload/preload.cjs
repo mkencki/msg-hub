@@ -8,4 +8,7 @@ contextBridge.exposeInMainWorld('mostHub', {
   naKomunikat: (sluchacz) => ipcRenderer.on('komunikat:pokaz', (_zdarzenie, tekst) => sluchacz(tekst)),
   naLicznik: (sluchacz) => ipcRenderer.on('licznik:zmiana', (_zdarzenie, suma) => sluchacz(suma)),
   ustawNakladke: (obrazek) => ipcRenderer.invoke('licznik:nakladka', obrazek),
+  listaMakr: (fraza) => ipcRenderer.invoke('makra:lista', fraza),
+  zapiszMakro: (makro) => ipcRenderer.invoke('makra:zapisz', makro),
+  wstawMakro: (idMakra) => ipcRenderer.invoke('makra:wstaw', idMakra),
 })

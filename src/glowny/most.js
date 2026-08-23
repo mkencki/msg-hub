@@ -1,6 +1,8 @@
-import { ipcMain } from 'electron'
+import { ipcMain, clipboard } from 'electron'
 import path from 'node:path'
 import { wczytajKonta, zapiszKonta, waliduj, utworzIdKonta, PLATFORMY } from './konta.js'
+import { wczytajMakra, zapiszMakra, szukaj, utworzIdMakra } from './makra.js'
+import { wstawTekst } from './wstawianie.js'
 
 export function zarejestrujKanalyKont({
   katalogDanych,
@@ -34,5 +36,32 @@ export function zarejestrujKanalyKont({
 
   ipcMain.handle('konta:przelacz', async (_zdarzenie, idKonta) => {
     zarzadca.pokaz(idKonta)
+  })
+}
+
+export function zarejestrujKanalyMakr({ katalogDanych, zarzadca }) {
+  const plikMakr = path.join(katalogDanych, 'macros.json')
+
+  ipcMain.handle('makra:lista', async (_zdarzenie, fraza) => {
+    const { makra } = await wczytajMakra(plikMakr)
+    return szukaj(makra, fraza)
+  })
+
+  ipcMain.handle('makra:zapisz', async (_zdarzenie, makro) => {
+    if (!String(makro?.nazwa || '').trim()) return { ok: false, bledy: ['nazwa jest wymagana'] }
+    const { makra } = await wczytajMakra(plikMakr)
+    const id = makro.id || utworzIdMakra(makro.nazwa)
+    const pozostale = makra.filter((m) => m.id !== id)
+    await zapiszMakra(plikMakr, [...pozostale, { zalaczniki: [], tagi: [], ...makro, id }])
+    return { ok: true, id }
+  })
+
+  ipcMain.handle('makra:wstaw', async (_zdarzenie, idMakra) => {
+    const { makra } = await wczytajMakra(plikMakr)
+    const makro = makra.find((m) => m.id === idMakra)
+    const widok = zarzadca.aktywny()
+    if (!makro || !widok) return { ok: false, brakujace: [] }
+    if (makro.tekst) wstawTekst(widok.webContents, makro.tekst, clipboard)
+    return { ok: true, brakujace: [] }
   })
 }

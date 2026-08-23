@@ -1,6 +1,9 @@
 const zakladki = document.getElementById('zakladki')
 const oknoKonta = document.getElementById('okno-konta')
 const bledyKonta = document.getElementById('bledy-konta')
+const oknoMakr = document.getElementById('okno-makr')
+const szukajka = document.getElementById('szukaj-makro')
+const listaMakr = document.getElementById('lista-makr')
 
 async function odswiezZakladki() {
   const konta = await window.mostHub.listaKont()
@@ -38,14 +41,62 @@ document.getElementById('zapisz-konto').addEventListener('click', async (zdarzen
   await odswiezZakladki()
 })
 
+export async function odswiezMakra() {
+  const makra = await window.mostHub.listaMakr(szukajka.value)
+  listaMakr.replaceChildren()
+  if (!makra.length) {
+    const puste = document.createElement('li')
+    puste.className = 'puste'
+    puste.textContent = 'Brak makr — kliknij "Nowe makro"'
+    listaMakr.append(puste)
+    return
+  }
+  for (const makro of makra) {
+    const pozycja = document.createElement('li')
+    const liczba = (makro.zalaczniki ?? []).length
+    pozycja.textContent = liczba ? `${makro.nazwa}  (${liczba} zal.)` : makro.nazwa
+    pozycja.dataset.idMakra = makro.id
+    pozycja.addEventListener('click', async () => {
+      oknoMakr.close()
+      const wynik = await window.mostHub.wstawMakro(makro.id)
+      if (wynik && !wynik.ok && wynik.brakujace.length) {
+        pokazKomunikat(
+          `Brakuje zalacznikow w magazynie: ${wynik.brakujace.join(', ')}. Tekst zostal wstawiony.`,
+        )
+      }
+    })
+    listaMakr.append(pozycja)
+  }
+}
+
+szukajka.addEventListener('input', odswiezMakra)
+
+document.getElementById('otworz-makra').addEventListener('click', async () => {
+  szukajka.value = ''
+  await odswiezMakra()
+  oknoMakr.showModal()
+  szukajka.focus()
+})
+
+window.addEventListener('keydown', (zdarzenie) => {
+  if (zdarzenie.ctrlKey && zdarzenie.key === ';') {
+    zdarzenie.preventDefault()
+    document.getElementById('otworz-makra').click()
+  }
+})
+
 // Spec sekcja 8: nieudany start ma dac jawny komunikat, nie pusty pasek.
+function pokazKomunikat(tekst) {
+  const pole = document.getElementById('komunikat')
+  pole.textContent = tekst
+  pole.hidden = false
+}
+
 async function start() {
   try {
     await odswiezZakladki()
   } catch (blad) {
-    const pole = document.getElementById('komunikat')
-    pole.textContent = `Nie udalo sie wczytac kont: ${blad.message}`
-    pole.hidden = false
+    pokazKomunikat(`Nie udalo sie wczytac kont: ${blad.message}`)
   }
 }
 
@@ -78,8 +129,4 @@ window.mostHub.naLicznik((suma) => {
 
 // Komunikaty z procesu glownego (np. nieudane ladowanie konta) ladują w pasku,
 // nie w modalnym okienku — jedno chore konto nie blokuje pozostalych.
-window.mostHub.naKomunikat((tekst) => {
-  const pole = document.getElementById('komunikat')
-  pole.textContent = tekst
-  pole.hidden = false
-})
+window.mostHub.naKomunikat(pokazKomunikat)

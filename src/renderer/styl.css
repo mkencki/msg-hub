@@ -10,3 +10,7 @@ dialog { border: 0; border-radius: 10px; background: var(--panel); color: var(--
 dialog label { display: block; margin: 10px 0; }
 dialog input, dialog select, dialog textarea { width: 100%; padding: 6px; border-radius: 6px; border: 1px solid #3b4a54; background: var(--tlo); color: var(--tekst); font: inherit; }
 .bledy { color: #f15c6d; min-height: 1em; }
+#lista-makr { list-style: none; margin: 8px 0; padding: 0; max-height: 50vh; overflow: auto; }
+#lista-makr li { padding: 8px; border-radius: 6px; cursor: pointer; }
+#lista-makr li:hover { background: #2a3942; }
+#lista-makr .puste { color: #8696a0; cursor: default; }
