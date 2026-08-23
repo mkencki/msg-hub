@@ -1,8 +1,17 @@
 import { describe, test, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, rm, mkdir, writeFile as zapiszPlik, readdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { wczytajMakra, zapiszMakra, szukaj, utworzIdMakra } from '../src/glowny/makra.js'
+import {
+  wczytajMakra,
+  zapiszMakra,
+  szukaj,
+  utworzIdMakra,
+  dodajZalacznik,
+  usunOsierociZalaczniki,
+  zajetoscMagazynu,
+  LIMIT_ZALACZNIKA_BAJTY,
+} from '../src/glowny/makra.js'
 
 let plik, katalog
 
@@ -66,5 +75,54 @@ describe('utworzIdMakra', () => {
 
   test('polskie znaki sa transliterowane', () => {
     expect(utworzIdMakra('Załączniki')).toBe('mac-zalaczniki')
+  })
+})
+
+async function plikTymczasowy(katalogBazowy, nazwa, tresc = 'x') {
+  const sciezka = path.join(katalogBazowy, nazwa)
+  await zapiszPlik(sciezka, tresc, 'utf8')
+  return sciezka
+}
+
+describe('zalaczniki', () => {
+  test('dodanie kopiuje plik do magazynu i zwraca sciezke wzgledna', async () => {
+    const att = path.join(katalog, 'att')
+    await mkdir(att, { recursive: true })
+    const zrodlo = await plikTymczasowy(katalog, 'instrukcja.pdf', 'udawany pdf')
+
+    const wzgledna = await dodajZalacznik(att, zrodlo)
+
+    expect(wzgledna).toMatch(/^att\/[0-9a-f-]+-instrukcja\.pdf$/)
+    expect(await readdir(att)).toHaveLength(1)
+  })
+
+  test('plik ponad limit jest odrzucany z podaniem rozmiaru', async () => {
+    const att = path.join(katalog, 'att')
+    await mkdir(att, { recursive: true })
+    const zrodlo = path.join(katalog, 'wielki.mp4')
+    await zapiszPlik(zrodlo, Buffer.alloc(LIMIT_ZALACZNIKA_BAJTY + 1))
+
+    await expect(dodajZalacznik(att, zrodlo)).rejects.toThrow(/przekracza limit/)
+    expect(await readdir(att)).toHaveLength(0)
+  })
+
+  test('osierocone kopie sa usuwane, powiazane zostaja', async () => {
+    const att = path.join(katalog, 'att')
+    await mkdir(att, { recursive: true })
+    const uzywany = await dodajZalacznik(att, await plikTymczasowy(katalog, 'uzywany.pdf'))
+    await dodajZalacznik(att, await plikTymczasowy(katalog, 'sierota.pdf'))
+
+    const usuniete = await usunOsierociZalaczniki(att, [makro({ zalaczniki: [uzywany] })])
+
+    expect(usuniete).toHaveLength(1)
+    expect(await readdir(att)).toHaveLength(1)
+  })
+
+  test('zajetosc magazynu liczy sume bajtow', async () => {
+    const att = path.join(katalog, 'att')
+    await mkdir(att, { recursive: true })
+    await dodajZalacznik(att, await plikTymczasowy(katalog, 'a.pdf', 'xxxxx'))
+
+    expect(await zajetoscMagazynu(att)).toBe(5)
   })
 })
