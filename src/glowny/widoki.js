@@ -61,6 +61,10 @@ export class ZarzadcaWidokow {
     const widok = this.widoki.get(idKonta)
     if (!widok) return false
     this.okno.contentView.removeChildView(widok)
+    // Nasluchy zdejmujemy PRZED zamknieciem — inaczej zamykany widok zdazy
+    // jeszcze wywolac zwrotke, ktora siegnie po juz nieistniejacy obiekt.
+    widok.webContents.removeAllListeners('page-title-updated')
+    widok.webContents.removeAllListeners('did-fail-load')
     widok.webContents.close()
     this.widoki.delete(idKonta)
     if (this.idAktywnego === idKonta) {
@@ -103,6 +107,7 @@ export class ZarzadcaWidokow {
   sumaNieprzeczytanych() {
     let suma = 0
     for (const widok of this.widoki.values()) {
+      if (widok.webContents.isDestroyed()) continue
       suma += licznikZTytulu(widok.webContents.getTitle())
     }
     return suma

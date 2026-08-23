@@ -6,6 +6,7 @@
   <nav id="zakladki"></nav>
   <p id="komunikat" class="bledy" hidden></p>
   <button id="otworz-makra" title="Makra (Ctrl+;)">Makra</button>
+  <button id="otworz-ustawienia" title="Ustawienia">Ustawienia</button>
   <button id="dodaj-konto" title="Dodaj konto">+</button>
 </header>
 <dialog id="okno-konta">
@@ -21,10 +22,22 @@
     <label>Kolor zakladki <input name="kolor" type="color" value="#2f7d5b" /></label>
     <p id="bledy-konta" class="bledy"></p>
     <menu>
-      <button value="anuluj">Anuluj</button>
+      <!-- formnovalidate: bez tego walidacja pustego pola "Nazwa" blokuje anulowanie -->
+      <button value="anuluj" formnovalidate>Anuluj</button>
       <button id="zapisz-konto" value="zapisz">Zapisz</button>
     </menu>
   </form>
+</dialog>
+<dialog id="okno-ustawien">
+  <h2>Ustawienia</h2>
+  <section>
+    <h3>Zarzadzanie kontami</h3>
+    <ul id="lista-kont"></ul>
+    <button type="button" id="dodaj-konto-ustawienia">Dodaj konto</button>
+  </section>
+  <menu>
+    <button id="zamknij-ustawienia" value="zamknij">Zamknij</button>
+  </menu>
 </dialog>
 <dialog id="okno-usuwania">
   <h2>Usunac konto?</h2>

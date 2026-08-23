@@ -79,6 +79,10 @@ async function utworzOkno() {
   // i odsyla kanalem licznik:nakladka. Tytul okna i podpowiedz zasobnika sa zapasem,
   // widocznym nawet gdy nakladka nie wejdzie.
   const odswiezBadge = () => {
+    // Widoki kont emituja page-title-updated takze w trakcie zamykania aplikacji,
+    // gdy okna juz nie ma. Bez tej straznicy leci "Object has been destroyed"
+    // w modalnym oknie bledu Electrona, ktore blokuje zamkniecie procesu.
+    if (!okno || okno.isDestroyed()) return
     const suma = zarzadca.sumaNieprzeczytanych()
     okno.setTitle(suma ? `msg-hub (${suma})` : 'msg-hub')
     zasobnik?.setToolTip(suma ? `msg-hub — ${suma} nieprzeczytanych` : 'msg-hub')

@@ -20,17 +20,6 @@ async function odswiezZakladki() {
     nazwa.textContent = konto.nazwa
     przycisk.append(nazwa)
 
-    // Krzyzyk zamiast osobnego ekranu ustawien — ten sam gest, co w przegladarce.
-    const krzyzyk = document.createElement('span')
-    krzyzyk.className = 'usun-konto'
-    krzyzyk.textContent = '×'
-    krzyzyk.title = `Usun konto ${konto.nazwa}`
-    krzyzyk.addEventListener('click', (zdarzenie) => {
-      zdarzenie.stopPropagation()
-      zapytajOUsuniecie(konto)
-    })
-    przycisk.append(krzyzyk)
-
     przycisk.addEventListener('click', async () => {
       await window.mostHub.przelacz(konto.id)
       for (const inny of zakladki.children) inny.setAttribute('aria-selected', 'false')
@@ -41,10 +30,13 @@ async function odswiezZakladki() {
   if (konta.length) await window.mostHub.przelacz(konta[0].id)
 }
 
-document.getElementById('dodaj-konto').addEventListener('click', () => {
+function otworzFormularzKonta() {
   bledyKonta.textContent = ''
+  oknoKonta.querySelector('form').reset()
   pokazDialog(oknoKonta)
-})
+}
+
+document.getElementById('dodaj-konto').addEventListener('click', otworzFormularzKonta)
 
 document.getElementById('zapisz-konto').addEventListener('click', async (zdarzenie) => {
   zdarzenie.preventDefault()
@@ -253,13 +245,72 @@ for (const dialog of document.querySelectorAll('dialog')) {
   dialog.addEventListener('close', odswiezWidocznoscKont)
 }
 
+const oknoUstawien = document.getElementById('okno-ustawien')
+const listaKont = document.getElementById('lista-kont')
 const oknoUsuwania = document.getElementById('okno-usuwania')
 let kontoDoUsuniecia = null
 
+async function odswiezListeKont() {
+  const konta = await window.mostHub.listaKont()
+  listaKont.replaceChildren()
+
+  if (!konta.length) {
+    const puste = document.createElement('li')
+    puste.className = 'puste'
+    puste.textContent = 'Brak kont — kliknij "Dodaj konto"'
+    listaKont.append(puste)
+    return
+  }
+
+  for (const konto of konta) {
+    const pozycja = document.createElement('li')
+
+    const znacznik = document.createElement('span')
+    znacznik.className = 'znacznik-konta'
+    znacznik.style.background = konto.kolor
+
+    const opis = document.createElement('span')
+    opis.className = 'opis-konta'
+    opis.textContent = konto.nazwa
+
+    const platforma = document.createElement('span')
+    platforma.className = 'platforma-konta'
+    platforma.textContent = konto.platforma
+
+    const usun = document.createElement('button')
+    usun.type = 'button'
+    usun.className = 'usun-konto grozny'
+    usun.textContent = 'Usun'
+    usun.title = `Usun konto ${konto.nazwa}`
+    usun.addEventListener('click', () => zapytajOUsuniecie(konto))
+
+    pozycja.append(znacznik, opis, platforma, usun)
+    listaKont.append(pozycja)
+  }
+}
+
+document.getElementById('otworz-ustawienia').addEventListener('click', async () => {
+  await odswiezListeKont()
+  pokazDialog(oknoUstawien)
+})
+
+document.getElementById('zamknij-ustawienia').addEventListener('click', (zdarzenie) => {
+  zdarzenie.preventDefault()
+  oknoUstawien.close()
+})
+
+document.getElementById('dodaj-konto-ustawienia').addEventListener('click', () => {
+  oknoUstawien.close()
+  otworzFormularzKonta()
+})
+
 // Usuniecie kasuje sesje, czyli wylogowuje — dlatego potwierdzenie, a nie samo klikniecie.
+// Okno potwierdzenia otwiera sie NAD ustawieniami, wiec po zamknieciu operator wraca
+// tam, skad przyszedl, z odswiezona lista.
 function zapytajOUsuniecie(konto) {
   kontoDoUsuniecia = konto
-  document.getElementById('tresc-usuwania').textContent = `Konto "${konto.nazwa}" zniknie z paska zakladek.`
+  document.getElementById('tresc-usuwania').textContent =
+    `Konto "${konto.nazwa}" zniknie z paska zakladek.`
   pokazDialog(oknoUsuwania)
 }
 
@@ -280,4 +331,5 @@ document.getElementById('potwierdz-usuniecie').addEventListener('click', async (
     return
   }
   await odswiezZakladki()
+  await odswiezListeKont()
 })
