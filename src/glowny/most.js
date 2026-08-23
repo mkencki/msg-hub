@@ -2,7 +2,12 @@ import { ipcMain } from 'electron'
 import path from 'node:path'
 import { wczytajKonta, zapiszKonta, waliduj, utworzIdKonta, PLATFORMY } from './konta.js'
 
-export function zarejestrujKanalyKont({ katalogDanych, zarzadca, poDodaniuKonta }) {
+export function zarejestrujKanalyKont({
+  katalogDanych,
+  zarzadca,
+  poDodaniuKonta,
+  przygotujWidok = () => {},
+}) {
   const plikKont = path.join(katalogDanych, 'accounts.json')
 
   ipcMain.handle('konta:lista', async () => (await wczytajKonta(plikKont)).konta)
@@ -20,7 +25,9 @@ export function zarejestrujKanalyKont({ katalogDanych, zarzadca, poDodaniuKonta 
     const bledy = waliduj(konto)
     if (bledy.length) return { ok: false, bledy }
     await zapiszKonta(plikKont, [...konta, konto])
-    zarzadca.dodaj(konto)
+    // Konto dodane w trakcie dzialania dostaje te sama obsluge co konta ze startu:
+    // zgode na powiadomienia i sledzenie licznika nieprzeczytanych.
+    przygotujWidok(zarzadca.dodaj(konto))
     poDodaniuKonta()
     return { ok: true }
   })

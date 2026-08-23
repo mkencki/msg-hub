@@ -39,3 +39,28 @@ document.getElementById('zapisz-konto').addEventListener('click', async (zdarzen
 })
 
 odswiezZakladki()
+
+// Nakladka licznika na ikonie paska zadan. Electron przyjmuje tylko gotowy obrazek,
+// wiec 16x16 rysuje renderer i odsyla jako data URL. Zero = brak nakladki.
+export function narysujLicznik(suma) {
+  if (!suma) return null
+  const napis = suma > 99 ? '99+' : String(suma)
+  const plotno = document.createElement('canvas')
+  plotno.width = 16
+  plotno.height = 16
+  const pedzel = plotno.getContext('2d')
+  pedzel.fillStyle = '#f15c6d'
+  pedzel.beginPath()
+  pedzel.arc(8, 8, 8, 0, Math.PI * 2)
+  pedzel.fill()
+  pedzel.fillStyle = '#ffffff'
+  pedzel.font = `bold ${napis.length > 2 ? 8 : 11}px "Segoe UI", sans-serif`
+  pedzel.textAlign = 'center'
+  pedzel.textBaseline = 'middle'
+  pedzel.fillText(napis, 8, 9)
+  return plotno.toDataURL('image/png')
+}
+
+window.mostHub.naLicznik((suma) => {
+  window.mostHub.ustawNakladke(narysujLicznik(suma))
+})

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage, dialog } from 'electron'
+import { app, BrowserWindow, Tray, Menu, nativeImage, dialog, ipcMain } from 'electron'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { czystyUserAgent, ZarzadcaWidokow } from './widoki.js'
@@ -50,12 +50,38 @@ async function utworzOkno() {
   }
   okno.on('resize', dopasuj)
 
+  // app.setBadgeCount dziala tylko na Linuksie i macOS. Na Windowsie licznik pokazuje
+  // nakladka na ikonie paska zadan, a ta wymaga obrazka 16x16 — rysuje go renderer
+  // i odsyla kanalem licznik:nakladka. Tytul okna i podpowiedz zasobnika sa zapasem,
+  // widocznym nawet gdy nakladka nie wejdzie.
+  const odswiezBadge = () => {
+    const suma = zarzadca.sumaNieprzeczytanych()
+    okno.setTitle(suma ? `msg-hub (${suma})` : 'msg-hub')
+    zasobnik?.setToolTip(suma ? `msg-hub — ${suma} nieprzeczytanych` : 'msg-hub')
+    if (!okno.webContents.isDestroyed()) okno.webContents.send('licznik:zmiana', suma)
+  }
+
+  ipcMain.handle('licznik:nakladka', (_zdarzenie, obrazek) => {
+    okno.setOverlayIcon(
+      obrazek ? nativeImage.createFromDataURL(obrazek) : null,
+      obrazek ? 'nieprzeczytane wiadomosci' : '',
+    )
+  })
+
+  const przygotujWidok = (widok) => {
+    widok.webContents.session.setPermissionRequestHandler((_wc, uprawnienie, przyznaj) => {
+      przyznaj(uprawnienie === 'notifications')
+    })
+    widok.webContents.on('page-title-updated', odswiezBadge)
+  }
+
   const { konta } = await wczytajKonta(path.join(katalogDanych, 'accounts.json'))
-  for (const konto of konta) zarzadca.dodaj(konto)
+  for (const konto of konta) przygotujWidok(zarzadca.dodaj(konto))
   dopasuj()
   if (konta.length) zarzadca.pokaz(konta[0].id)
+  odswiezBadge()
 
-  zarejestrujKanalyKont({ katalogDanych, zarzadca, poDodaniuKonta: dopasuj })
+  zarejestrujKanalyKont({ katalogDanych, zarzadca, poDodaniuKonta: dopasuj, przygotujWidok })
 
   // Zapis ukladu musi sie ZAKONCZYC przed zamknieciem okna — inaczej app.quit()
   // ucina asynchroniczny zapis i pozycja okna nie przezywa restartu.
