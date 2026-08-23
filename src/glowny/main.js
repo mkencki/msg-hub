@@ -1,4 +1,7 @@
 import { app, BrowserWindow } from 'electron'
+import { czystyUserAgent } from './widoki.js'
+
+app.userAgentFallback = czystyUserAgent(app.userAgentFallback)
 
 function utworzOkno() {
   const okno = new BrowserWindow({
