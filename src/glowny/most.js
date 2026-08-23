@@ -35,6 +35,10 @@ export function zarejestrujKanalyKont({
     return { ok: true }
   })
 
+  ipcMain.handle('okna:widocznosc-kont', (_zdarzenie, czyWidoczne) => {
+    zarzadca.ustawWidocznosc(czyWidoczne)
+  })
+
   ipcMain.handle('konta:przelacz', async (_zdarzenie, idKonta) => {
     zarzadca.pokaz(idKonta)
   })

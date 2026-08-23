@@ -43,12 +43,14 @@ export class ZarzadcaWidokow {
     this.przyBledzie = przyBledzie
     this.widoki = new Map()
     this.idAktywnego = null
+    this.widocznosc = true
     this.geometria = { x: 0, y: 0, width: 0, height: 0 }
   }
 
   dodaj(konto) {
     if (this.widoki.has(konto.id)) return this.widoki.get(konto.id)
     const widok = utworzWidok(konto, this.domyslnyUA, this.przyBledzie)
+    widok.setVisible(this.widocznosc)
     this.okno.contentView.addChildView(widok)
     widok.setBounds({ ...this.geometria, height: 0 })
     this.widoki.set(konto.id, widok)
@@ -67,6 +69,13 @@ export class ZarzadcaWidokow {
   dopasujGeometrie(prostokat) {
     this.geometria = prostokat
     if (this.idAktywnego) this.pokaz(this.idAktywnego)
+  }
+
+  // Widoki kont sa natywna warstwa NAD rendererem, wiec kazde okno dialogowe
+  // renderera zniknieloby pod nimi. Na czas dialogu cala warstwa schodzi.
+  ustawWidocznosc(czyWidoczne) {
+    this.widocznosc = Boolean(czyWidoczne)
+    for (const widok of this.widoki.values()) widok.setVisible(this.widocznosc)
   }
 
   aktywny() {

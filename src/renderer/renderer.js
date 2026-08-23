@@ -28,7 +28,7 @@ async function odswiezZakladki() {
 
 document.getElementById('dodaj-konto').addEventListener('click', () => {
   bledyKonta.textContent = ''
-  oknoKonta.showModal()
+  pokazDialog(oknoKonta)
 })
 
 document.getElementById('zapisz-konto').addEventListener('click', async (zdarzenie) => {
@@ -76,7 +76,7 @@ szukajka.addEventListener('input', odswiezMakra)
 document.getElementById('otworz-makra').addEventListener('click', async () => {
   szukajka.value = ''
   await odswiezMakra()
-  oknoMakr.showModal()
+  pokazDialog(oknoMakr)
   szukajka.focus()
 })
 
@@ -172,7 +172,7 @@ document.getElementById('nowe-makro').addEventListener('click', (zdarzenie) => {
   zalacznikiMakra = []
   odswiezZalaczniki()
   odswiezPodglad()
-  oknoEdytora.showModal()
+  pokazDialog(oknoEdytora)
 })
 
 document.getElementById('anuluj-makro').addEventListener('click', (zdarzenie) => {
@@ -218,3 +218,22 @@ document.getElementById('dodaj-zalacznik').addEventListener('click', async () =>
   zalacznikiMakra.push(wynik)
   odswiezZalaczniki()
 })
+
+// Widoki kont to natywna warstwa NAD trescia okna — otwarty <dialog> chowa sie
+// pod nia i tylko blokuje klikniecia. Warstwa schodzi, gdy otwarte jest JAKIEKOLWIEK
+// okno dialogowe. Stan liczymy z DOM, bo zdarzenie "close" dialogu jest kolejkowane,
+// nie synchroniczne: przy przejsciu panel -> edytor przyszloby PO otwarciu edytora
+// i przywrocilo warstwe na wierzch.
+function odswiezWidocznoscKont() {
+  const ktoregokolwiek = [...document.querySelectorAll('dialog')].some((d) => d.open)
+  window.mostHub.ustawWidocznoscKont(!ktoregokolwiek)
+}
+
+function pokazDialog(dialog) {
+  dialog.showModal()
+  odswiezWidocznoscKont()
+}
+
+for (const dialog of document.querySelectorAll('dialog')) {
+  dialog.addEventListener('close', odswiezWidocznoscKont)
+}
