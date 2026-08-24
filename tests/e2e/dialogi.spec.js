@@ -71,3 +71,16 @@ test('panel makr i edytor tez nie chowaja sie pod widokiem konta', async () => {
   await expect(okno.locator('#okno-edytora')).toBeHidden()
   await expect.poll(widoczneWidoki).toBe(1)
 })
+
+// Przycisk "Zamknij" panelu makr nie siedzi w <form method="dialog">, wiec samo
+// value="zamknij" go nie zamyka — bez jawnej obslugi zostaje wylacznie ESC.
+test('przycisk Zamknij zamyka panel makr i przywraca widok konta', async () => {
+  await okno.keyboard.press('Control+Semicolon')
+  await expect(okno.locator('#okno-makr')).toBeVisible()
+  await expect.poll(widoczneWidoki).toBe(0)
+
+  await okno.locator('#zamknij-makra').click()
+
+  await expect(okno.locator('#okno-makr')).toBeHidden()
+  await expect.poll(widoczneWidoki).toBe(1)
+})

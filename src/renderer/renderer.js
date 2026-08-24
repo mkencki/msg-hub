@@ -158,6 +158,13 @@ document.getElementById('otworz-makra').addEventListener('click', async () => {
   szukajka.focus()
 })
 
+// Panel makr nie ma <form method="dialog">, wiec samo value="zamknij" niczego
+// nie zamyka — przycisk potrzebuje jawnej obslugi, tak jak w ustawieniach.
+document.getElementById('zamknij-makra').addEventListener('click', (zdarzenie) => {
+  zdarzenie.preventDefault()
+  oknoMakr.close()
+})
+
 window.addEventListener('keydown', (zdarzenie) => {
   if (zdarzenie.ctrlKey && zdarzenie.key === ';') {
     zdarzenie.preventDefault()
