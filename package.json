@@ -2,6 +2,13 @@
   "name": "msg-hub",
   "version": "0.1.0",
   "description": "Hub komunikatorow z izolowanymi sesjami kont",
+  "author": "Marek Kencki",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mkencki/msg-hub.git"
+  },
+  "homepage": "https://github.com/mkencki/msg-hub",
   "main": "src/glowny/main.js",
   "type": "module",
   "private": true,
@@ -9,8 +16,8 @@
     "start": "electron .",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "dist": "electron-builder --win portable",
-    "dist:instalator": "electron-builder --win nsis"
+    "dist": "electron-builder --win portable --publish never",
+    "dist:instalator": "electron-builder --win nsis --publish never"
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",
