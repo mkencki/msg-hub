@@ -5,6 +5,9 @@ contextBridge.exposeInMainWorld('mostHub', {
   listaKont: () => ipcRenderer.invoke('konta:lista'),
   dodajKonto: (dane) => ipcRenderer.invoke('konta:dodaj', dane),
   usunKonto: (idKonta) => ipcRenderer.invoke('konta:usun', idKonta),
+  zmienKonto: (idKonta, zmiany) => ipcRenderer.invoke('konta:zmien', idKonta, zmiany),
+  przesunKonto: (idKonta, przesuniecie) =>
+    ipcRenderer.invoke('konta:przesun', idKonta, przesuniecie),
   przelacz: (idKonta) => ipcRenderer.invoke('konta:przelacz', idKonta),
   ustawWidocznoscKont: (czy) => ipcRenderer.invoke('okna:widocznosc-kont', czy),
   naKomunikat: (sluchacz) => ipcRenderer.on('komunikat:pokaz', (_zdarzenie, tekst) => sluchacz(tekst)),

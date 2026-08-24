@@ -7,47 +7,89 @@ const oknoMakr = document.getElementById('okno-makr')
 const szukajka = document.getElementById('szukaj-makro')
 const listaMakr = document.getElementById('lista-makr')
 
+let aktywneKontoId = null
+
+async function przelaczNa(idKonta) {
+  aktywneKontoId = idKonta
+  await window.mostHub.przelacz(idKonta)
+  for (const zakladka of zakladki.children) {
+    zakladka.setAttribute('aria-selected', String(zakladka.dataset.idKonta === idKonta))
+  }
+}
+
 async function odswiezZakladki() {
   const konta = await window.mostHub.listaKont()
+
+  // Pasek odbudowuje sie po kazdej zmianie nazwy i kolejnosci. Bez zapamietanego
+  // konta operator ladowalby wtedy za kazdym razem na pierwszej zakladce.
+  const wybrane = konta.some((k) => k.id === aktywneKontoId) ? aktywneKontoId : konta[0]?.id ?? null
+
   zakladki.replaceChildren()
-  konta.forEach((konto, indeks) => {
+  for (const konto of konta) {
     const przycisk = document.createElement('button')
     przycisk.className = 'zakladka'
+    przycisk.dataset.idKonta = konto.id
     przycisk.style.setProperty('--kolor-konta', konto.kolor)
-    przycisk.setAttribute('aria-selected', String(indeks === 0))
+    przycisk.setAttribute('aria-selected', String(konto.id === wybrane))
 
     const nazwa = document.createElement('span')
     nazwa.textContent = konto.nazwa
     przycisk.append(nazwa)
 
-    przycisk.addEventListener('click', async () => {
-      await window.mostHub.przelacz(konto.id)
-      for (const inny of zakladki.children) inny.setAttribute('aria-selected', 'false')
-      przycisk.setAttribute('aria-selected', 'true')
-    })
+    przycisk.addEventListener('click', () => przelaczNa(konto.id))
     zakladki.append(przycisk)
-  })
-  if (konta.length) await window.mostHub.przelacz(konta[0].id)
+  }
+
+  if (wybrane) await przelaczNa(wybrane)
 }
 
-function otworzFormularzKonta() {
+let edytowaneKontoId = null
+
+function otworzFormularzKonta(konto = null) {
+  edytowaneKontoId = konto?.id ?? null
   bledyKonta.textContent = ''
-  oknoKonta.querySelector('form').reset()
+
+  const formularz = oknoKonta.querySelector('form')
+  formularz.reset()
+  document.getElementById('tytul-konta').textContent = konto ? 'Edycja konta' : 'Dodaj konto'
+
+  // Platforma wyznacza adres i partycje sesji — jej podmiana bylaby innym kontem,
+  // nie poprawka tego samego, wiec przy edycji pole jest zablokowane.
+  const platforma = formularz.querySelector('select[name="platforma"]')
+  platforma.disabled = Boolean(konto)
+
+  if (konto) {
+    formularz.querySelector('input[name="nazwa"]').value = konto.nazwa
+    platforma.value = konto.platforma
+    formularz.querySelector('input[name="kolor"]').value = konto.kolor
+  }
+
   pokazDialog(oknoKonta)
 }
 
-document.getElementById('dodaj-konto').addEventListener('click', otworzFormularzKonta)
+document.getElementById('dodaj-konto').addEventListener('click', () => otworzFormularzKonta())
+
+oknoKonta.addEventListener('close', () => {
+  edytowaneKontoId = null
+})
 
 document.getElementById('zapisz-konto').addEventListener('click', async (zdarzenie) => {
   zdarzenie.preventDefault()
   const dane = Object.fromEntries(new FormData(oknoKonta.querySelector('form')))
-  const wynik = await window.mostHub.dodajKonto(dane)
+
+  const wynik = edytowaneKontoId
+    ? await window.mostHub.zmienKonto(edytowaneKontoId, { nazwa: dane.nazwa, kolor: dane.kolor })
+    : await window.mostHub.dodajKonto(dane)
+
   if (!wynik.ok) {
     bledyKonta.textContent = wynik.bledy.join('; ')
     return
   }
+
+  edytowaneKontoId = null
   oknoKonta.close()
   await odswiezZakladki()
+  if (oknoUstawien.open) await odswiezListeKont()
 })
 
 export async function odswiezMakra() {
@@ -339,7 +381,7 @@ async function odswiezListeKont() {
     return
   }
 
-  for (const konto of konta) {
+  konta.forEach((konto, indeks) => {
     const pozycja = document.createElement('li')
 
     const znacznik = document.createElement('span')
@@ -354,6 +396,31 @@ async function odswiezListeKont() {
     platforma.className = 'platforma-konta'
     platforma.textContent = konto.platforma
 
+    // Kolejnosc zmieniamy przyciskami, nie przeciaganiem: nad trescia okna leza
+    // natywne widoki kont i chwytanie elementu myszka bywa przez nie zjadane.
+    const wGore = document.createElement('button')
+    wGore.type = 'button'
+    wGore.className = 'w-gore'
+    wGore.textContent = 'W gore'
+    wGore.title = `Przesun ${konto.nazwa} w gore`
+    wGore.disabled = indeks === 0
+    wGore.addEventListener('click', () => przesunKonto(konto.id, -1))
+
+    const wDol = document.createElement('button')
+    wDol.type = 'button'
+    wDol.className = 'w-dol'
+    wDol.textContent = 'W dol'
+    wDol.title = `Przesun ${konto.nazwa} w dol`
+    wDol.disabled = indeks === konta.length - 1
+    wDol.addEventListener('click', () => przesunKonto(konto.id, 1))
+
+    const edytuj = document.createElement('button')
+    edytuj.type = 'button'
+    edytuj.className = 'edytuj-konto'
+    edytuj.textContent = 'Edytuj'
+    edytuj.title = `Edytuj konto ${konto.nazwa}`
+    edytuj.addEventListener('click', () => otworzFormularzKonta(konto))
+
     const usun = document.createElement('button')
     usun.type = 'button'
     usun.className = 'usun-konto grozny'
@@ -361,9 +428,15 @@ async function odswiezListeKont() {
     usun.title = `Usun konto ${konto.nazwa}`
     usun.addEventListener('click', () => zapytajOUsuniecie(konto))
 
-    pozycja.append(znacznik, opis, platforma, usun)
+    pozycja.append(znacznik, opis, platforma, wGore, wDol, edytuj, usun)
     listaKont.append(pozycja)
-  }
+  })
+}
+
+async function przesunKonto(idKonta, przesuniecie) {
+  await window.mostHub.przesunKonto(idKonta, przesuniecie)
+  await odswiezZakladki()
+  await odswiezListeKont()
 }
 
 document.getElementById('otworz-ustawienia').addEventListener('click', async () => {

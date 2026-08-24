@@ -34,6 +34,41 @@ export function waliduj(konto) {
   return bledy
 }
 
+// Zmienia sie tylko to, co operator widzi: nazwa i kolor zakladki. ID zostaje
+// nietkniete, bo partycja sesji nazywa sie persist:<id> — przeliczenie id z nowej
+// nazwy wylogowaloby konto przy samej poprawce literowki.
+export function zmienKonto(konta, id, zmiany) {
+  const pozycja = konta.findIndex((k) => k.id === id)
+  if (pozycja === -1) return { ok: false, bledy: ['nie ma takiego konta'] }
+
+  const zmienione = {
+    ...konta[pozycja],
+    nazwa: String(zmiany?.nazwa ?? '').trim(),
+    kolor: zmiany?.kolor ?? konta[pozycja].kolor,
+  }
+  const bledy = waliduj(zmienione)
+  if (bledy.length) return { ok: false, bledy }
+
+  const wynik = [...konta]
+  wynik[pozycja] = zmienione
+  return { ok: true, konta: wynik }
+}
+
+// Kolejnosc w pliku jest kolejnoscia zakladek. Krancowe przesuniecie poza liste
+// nie jest bledem — przycisk po prostu nic nie robi.
+export function przesun(konta, id, przesuniecie) {
+  const pozycja = konta.findIndex((k) => k.id === id)
+  if (pozycja === -1) return [...konta]
+
+  const cel = pozycja + przesuniecie
+  if (cel < 0 || cel >= konta.length) return [...konta]
+
+  const wynik = [...konta]
+  const [konto] = wynik.splice(pozycja, 1)
+  wynik.splice(cel, 0, konto)
+  return wynik
+}
+
 export async function wczytajKonta(sciezkaPliku) {
   let surowe
   try {

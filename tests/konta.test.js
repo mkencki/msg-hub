@@ -7,6 +7,8 @@ import {
   zapiszKonta,
   waliduj,
   utworzIdKonta,
+  zmienKonto,
+  przesun,
   WERSJA_SCHEMATU,
 } from '../src/glowny/konta.js'
 
@@ -99,5 +101,81 @@ describe('zapiszKonta', () => {
       { id: 'acc-a', nazwa: 'B', platforma: 'whatsapp', url: 'https://web.whatsapp.com/', kolor: '#2f7d5b' },
     ]
     await expect(zapiszKonta(plik, konta)).rejects.toThrow(/duplikat id/)
+  })
+})
+
+const trzyKonta = () => [
+  { id: 'acc-messenger', nazwa: 'Messenger', platforma: 'messenger', url: 'https://www.messenger.com/', kolor: '#6586ec' },
+  { id: 'acc-whatsapp-priv', nazwa: 'WhatsApp_PRIV', platforma: 'whatsapp', url: 'https://web.whatsapp.com/', kolor: '#2f7d5b' },
+  { id: 'acc-whatsapp-work', nazwa: 'WhatsApp_WORK', platforma: 'whatsapp', url: 'https://web.whatsapp.com/', kolor: '#2f7d5b' },
+]
+
+describe('zmienKonto', () => {
+  test('zmiana nazwy NIE rusza id — na id stoi partycja sesji', () => {
+    const wynik = zmienKonto(trzyKonta(), 'acc-whatsapp-priv', { nazwa: 'WhatsApp Dom', kolor: '#2f7d5b' })
+
+    expect(wynik.ok).toBe(true)
+    expect(wynik.konta[1].id).toBe('acc-whatsapp-priv')
+    expect(wynik.konta[1].nazwa).toBe('WhatsApp Dom')
+  })
+
+  test('zmiana zostawia konto na tej samej pozycji', () => {
+    const wynik = zmienKonto(trzyKonta(), 'acc-messenger', { nazwa: 'Messenger firmowy', kolor: '#6586ec' })
+
+    expect(wynik.konta.map((k) => k.id)).toEqual(['acc-messenger', 'acc-whatsapp-priv', 'acc-whatsapp-work'])
+  })
+
+  test('platforma i adres przezywaja zmiane nazwy', () => {
+    const wynik = zmienKonto(trzyKonta(), 'acc-whatsapp-work', { nazwa: 'Praca', kolor: '#123456' })
+
+    expect(wynik.konta[2].platforma).toBe('whatsapp')
+    expect(wynik.konta[2].url).toBe('https://web.whatsapp.com/')
+    expect(wynik.konta[2].kolor).toBe('#123456')
+  })
+
+  test('pusta nazwa jest odrzucana, lista zostaje nietknieta', () => {
+    const konta = trzyKonta()
+    const wynik = zmienKonto(konta, 'acc-messenger', { nazwa: '   ', kolor: '#6586ec' })
+
+    expect(wynik.ok).toBe(false)
+    expect(wynik.bledy).toContain('nazwa jest wymagana')
+    expect(konta[0].nazwa).toBe('Messenger')
+  })
+
+  test('nieznane id daje blad, nie wyjatek', () => {
+    expect(zmienKonto(trzyKonta(), 'acc-nie-ma', { nazwa: 'X', kolor: '#000000' }).ok).toBe(false)
+  })
+})
+
+describe('przesun', () => {
+  test('przesuniecie w gore zamienia konto z poprzednim', () => {
+    const wynik = przesun(trzyKonta(), 'acc-whatsapp-priv', -1)
+
+    expect(wynik.map((k) => k.id)).toEqual(['acc-whatsapp-priv', 'acc-messenger', 'acc-whatsapp-work'])
+  })
+
+  test('przesuniecie w dol zamienia konto z nastepnym', () => {
+    const wynik = przesun(trzyKonta(), 'acc-messenger', 1)
+
+    expect(wynik.map((k) => k.id)).toEqual(['acc-whatsapp-priv', 'acc-messenger', 'acc-whatsapp-work'])
+  })
+
+  test('pierwsze konto nie da sie przesunac wyzej', () => {
+    const wynik = przesun(trzyKonta(), 'acc-messenger', -1)
+
+    expect(wynik.map((k) => k.id)).toEqual(['acc-messenger', 'acc-whatsapp-priv', 'acc-whatsapp-work'])
+  })
+
+  test('ostatnie konto nie da sie przesunac nizej', () => {
+    const wynik = przesun(trzyKonta(), 'acc-whatsapp-work', 1)
+
+    expect(wynik.map((k) => k.id)).toEqual(['acc-messenger', 'acc-whatsapp-priv', 'acc-whatsapp-work'])
+  })
+
+  test('zrodlowa lista zostaje nietknieta', () => {
+    const konta = trzyKonta()
+    przesun(konta, 'acc-messenger', 1)
+
+    expect(konta.map((k) => k.id)).toEqual(['acc-messenger', 'acc-whatsapp-priv', 'acc-whatsapp-work'])
   })
 })

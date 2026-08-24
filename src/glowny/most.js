@@ -1,7 +1,15 @@
 import { ipcMain, clipboard, dialog, session } from 'electron'
 import path from 'node:path'
 import { access } from 'node:fs/promises'
-import { wczytajKonta, zapiszKonta, waliduj, utworzIdKonta, PLATFORMY } from './konta.js'
+import {
+  wczytajKonta,
+  zapiszKonta,
+  waliduj,
+  utworzIdKonta,
+  zmienKonto,
+  przesun,
+  PLATFORMY,
+} from './konta.js'
 import {
   wczytajMakra,
   zapiszMakra,
@@ -56,6 +64,23 @@ export function zarejestrujKanalyKont({
     await session.fromPartition(`persist:${idKonta}`).clearStorageData()
 
     poDodaniuKonta()
+    return { ok: true }
+  })
+
+  ipcMain.handle('konta:zmien', async (_zdarzenie, idKonta, zmiany) => {
+    const { konta } = await wczytajKonta(plikKont)
+    const wynik = zmienKonto(konta, idKonta, zmiany)
+    if (!wynik.ok) return wynik
+
+    // Widoku ani partycji nie ruszamy: id zostaje to samo, wiec zalogowanie zyje dalej.
+    await zapiszKonta(plikKont, wynik.konta)
+    return { ok: true }
+  })
+
+  ipcMain.handle('konta:przesun', async (_zdarzenie, idKonta, przesuniecie) => {
+    const { konta } = await wczytajKonta(plikKont)
+    // Kolejnosc w pliku jest kolejnoscia zakladek — pasek odbuduje sie z niej.
+    await zapiszKonta(plikKont, przesun(konta, idKonta, przesuniecie))
     return { ok: true }
   })
 
