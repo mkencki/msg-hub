@@ -1,5 +1,6 @@
 import { naHtml } from './podglad.js'
 
+const szyna = document.getElementById('szyna')
 const kanaly = document.getElementById('kanaly')
 const oknoKonta = document.getElementById('okno-konta')
 const bledyKonta = document.getElementById('bledy-konta')
@@ -54,13 +55,39 @@ async function przelaczNa(idKonta) {
 
 function odswiezLiczniki() {
   for (const kanal of kanaly.children) {
-    const dane = kanal.querySelector('.kanal-dane')
     const ile = licznikiKont[kanal.dataset.idKonta] ?? 0
+    const dane = kanal.querySelector('.kanal-dane')
     dane.textContent = opisLicznika(ile)
     dane.classList.toggle('sa-nowe', ile > 0)
+    // W zwinieciu nazwy nie ma, wiec nieprzeczytane musi niesc sam kolor kanalu.
+    kanal.classList.toggle('ma-nowe', ile > 0)
   }
   pomalujKanal(kontaWSzynie.find((k) => k.id === aktywneKontoId))
 }
+
+// Szyna zwija sie do samych kolorow kanalow i rozwija na najazd kursora — az do
+// przypiecia, ktore trzyma ja rozwinieta na stale. Stan liczy proces glowny, bo
+// to on ustawia geometrie widokow; renderer tylko zglasza najazd i maluje wynik.
+let szynaPrzypieta = false
+
+function zastosujStanSzyny({ przypieta, rozwinieta }) {
+  szynaPrzypieta = Boolean(przypieta)
+  document.documentElement.style.setProperty('--szyna', rozwinieta ? '162px' : '48px')
+  szyna.classList.toggle('rozwinieta', Boolean(rozwinieta))
+  szyna.classList.toggle('przypieta', szynaPrzypieta)
+  const przycisk = document.getElementById('przypnij-szyne')
+  przycisk.title = szynaPrzypieta ? 'Odepnij szyne' : 'Przypnij szyne'
+  przycisk.setAttribute('aria-pressed', String(szynaPrzypieta))
+}
+
+szyna.addEventListener('mouseenter', () => window.mostHub.najazdSzyny(true))
+szyna.addEventListener('mouseleave', () => window.mostHub.najazdSzyny(false))
+
+document.getElementById('przypnij-szyne').addEventListener('click', () => {
+  window.mostHub.przypnijSzyne(!szynaPrzypieta)
+})
+
+window.mostHub.naZmianeSzyny(zastosujStanSzyny)
 
 async function odswiezSzyne() {
   kontaWSzynie = await window.mostHub.listaKont()
@@ -328,6 +355,7 @@ function pokazBladMakra(tekst) {
 
 async function start() {
   try {
+    zastosujStanSzyny(await window.mostHub.stanSzyny())
     await odswiezSzyne()
   } catch (blad) {
     pokazKomunikat(`Nie udalo sie wczytac kont: ${blad.message}`)

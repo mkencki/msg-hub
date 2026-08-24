@@ -22,7 +22,7 @@
   --lampa: #d9822b;
   --kanal: #2f7d5b;
 
-  --szyna: 162px;
+  --szyna: 48px;   /* nadpisywane z JS: 48 zwinieta, 162 rozwinieta */
   --listwa: 30px;
   --gieciec: cubic-bezier(.2, .7, .3, 1);
 
@@ -62,15 +62,31 @@ body {
   min-height: 0;
 }
 
+.szyna-glowa { display: flex; align-items: center; gap: 6px; padding: 2px 8px 8px 14px; }
+
 .szyna-tytul {
+  flex: 1;
   margin: 0;
-  padding: 4px 14px 10px;
   font-family: var(--pismo-danych);
   font-size: 10px;
   letter-spacing: .18em;
   text-transform: uppercase;
   color: var(--cichy);
 }
+
+#przypnij-szyne {
+  flex: none;
+  padding: 4px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--cichy);
+  cursor: pointer;
+}
+#przypnij-szyne svg { display: block; width: 14px; height: 14px; }
+#przypnij-szyne:hover { background: #232b34; color: var(--napis); }
+#przypnij-szyne:focus-visible { outline: 2px solid var(--napis); outline-offset: 1px; }
+#szyna.przypieta #przypnij-szyne { background: #2b343e; color: var(--napis); }
 
 #kanaly { flex: 1; min-height: 0; overflow-y: auto; }
 
@@ -129,7 +145,9 @@ body {
 .szyna-stopka { padding-top: 8px; border-top: 1px solid var(--kresa); }
 
 .szyna-akcja {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   width: 100%;
   padding: 7px 12px 7px 17px;
   background: none;
@@ -141,8 +159,40 @@ body {
   font-stretch: 87.5%;
   font-size: 15px;
 }
+.szyna-akcja svg { flex: none; width: 14px; height: 14px; }
 .szyna-akcja:hover { background: #232b34; color: var(--napis); }
 .szyna-akcja:focus-visible { outline: 2px solid var(--napis); outline-offset: -2px; }
+
+/* ---------- szyna zwinieta ----------
+   Zwiniecie zostawia to, po co szyna istnieje: kolor kanalu. Nazwy schodza,
+   bo w 48 px i tak by sie nie zmiescily, a niesie je listwa na dole
+   i podpowiedz przy najezdzie. */
+#szyna:not(.rozwinieta) .szyna-tytul,
+#szyna:not(.rozwinieta) .kanal-nazwa,
+#szyna:not(.rozwinieta) .kanal-dane,
+#szyna:not(.rozwinieta) .etykieta-akcji { display: none; }
+
+#szyna:not(.rozwinieta) .szyna-glowa { justify-content: center; padding: 2px 0 8px; }
+#szyna:not(.rozwinieta) .kanal { grid-template-columns: 1fr; justify-items: center; padding: 7px 0; }
+#szyna:not(.rozwinieta) .szyna-akcja { justify-content: center; padding: 9px 0; }
+
+#szyna:not(.rozwinieta) .chip { position: relative; width: 26px; height: 26px; border-radius: 7px; }
+/* W zwinieciu nie ma nazwy ani tla wiersza do odczytania — aktywny kanal musi
+   dac sie rozpoznac po samym kaflu, wiec dostaje jasny pierscien. */
+#szyna:not(.rozwinieta) .kanal[aria-selected="true"] .chip {
+  box-shadow: 0 0 0 2px var(--panel), 0 0 0 3px var(--napis);
+}
+#szyna:not(.rozwinieta) .kanal.ma-nowe .chip::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--lampa);
+  border: 2px solid var(--panel);
+}
 
 /* ---------- studnia robocza i krawedz na antenie ---------- */
 #studnia { grid-area: studnia; padding: 8px; min-width: 0; }

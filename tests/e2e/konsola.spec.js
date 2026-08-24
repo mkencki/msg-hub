@@ -46,10 +46,12 @@ test('widok konta zaczyna sie na prawo od szyny, nie pod paskiem u gory', async 
 
   const { widok, okno: ramka } = await prostokatWidoku()
 
+  // Szyna jest zwijana, wiec jej szerokosc sie zmienia — stale jest to, ze widok
+  // zaczyna sie ZA nia po lewej i NIE pod paskiem u gory.
   expect(widok).not.toBeNull()
-  expect(widok.x).toBeGreaterThan(120)
+  expect(widok.x).toBeGreaterThanOrEqual(48)
   expect(widok.y).toBeLessThan(24)
-  expect(widok.width).toBeLessThan(ramka.width - 120)
+  expect(widok.width).toBeLessThan(ramka.width - 40)
 })
 
 test('przelaczenie kanalu przemalowuje krawedz na antenie', async () => {

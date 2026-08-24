@@ -39,3 +39,21 @@ describe('uklad okna', () => {
     expect(wynik.wysokosc).toBeGreaterThanOrEqual(600)
   })
 })
+
+describe('przypiecie szyny w ukladzie', () => {
+  test('brak pliku daje szyne nieprzypieta — czyli zwijana', async () => {
+    expect((await wczytajUklad(plik)).szynaPrzypieta).toBe(false)
+  })
+
+  test('zapisane przypiecie wraca po odczycie', async () => {
+    await zapiszUklad(plik, { ...UKLAD_DOMYSLNY, szynaPrzypieta: true })
+
+    expect((await wczytajUklad(plik)).szynaPrzypieta).toBe(true)
+  })
+
+  test('smiec w polu nie przenika do stanu — zawsze wychodzi boolean', async () => {
+    await zapiszUklad(plik, { ...UKLAD_DOMYSLNY, szynaPrzypieta: 'tak' })
+
+    expect((await wczytajUklad(plik)).szynaPrzypieta).toBe(true)
+  })
+})

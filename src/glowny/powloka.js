@@ -1,6 +1,12 @@
 import { readFile, writeFile, rename } from 'node:fs/promises'
 
-export const UKLAD_DOMYSLNY = { szerokosc: 1280, wysokosc: 800, zmaksymalizowane: false }
+export const UKLAD_DOMYSLNY = {
+  szerokosc: 1280,
+  wysokosc: 800,
+  zmaksymalizowane: false,
+  // Nieprzypieta szyna zwija sie do ikon i rozwija na najazd kursora.
+  szynaPrzypieta: false,
+}
 
 const MIN_SZEROKOSC = 800
 const MIN_WYSOKOSC = 600
@@ -13,6 +19,7 @@ export async function wczytajUklad(sciezkaPliku) {
       szerokosc: Math.max(MIN_SZEROKOSC, Number(dane.szerokosc) || UKLAD_DOMYSLNY.szerokosc),
       wysokosc: Math.max(MIN_WYSOKOSC, Number(dane.wysokosc) || UKLAD_DOMYSLNY.wysokosc),
       zmaksymalizowane: Boolean(dane.zmaksymalizowane),
+      szynaPrzypieta: Boolean(dane.szynaPrzypieta),
     }
   } catch {
     return { ...UKLAD_DOMYSLNY }

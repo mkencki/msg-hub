@@ -25,7 +25,7 @@ projektu. **Nie używaj `npm run dist`** jako drogi codziennej: Smart App Contro
 | | |
 |---|---|
 | **Konta** | dowolnie wiele, każde w partycji `persist:<id>` — pełna izolacja ciasteczek, `localStorage` i `IndexedDB` |
-| **Szyna kanałów** | przełączanie bez przeładowania strony, licznik nowych przy każdym koncie, kolor kanału obrysowuje całe okno robocze |
+| **Szyna kanałów** | zwijana do samych kolorów kanałów, rozwija się na najazd kursora, przypinana na stałe; licznik nowych przy każdym koncie |
 | **Ustawienia** | zarządzanie kontami: dodanie, zmiana nazwy i koloru, kolejność zakładek, usunięcie wraz z czyszczeniem sesji |
 | **Makra** | `Ctrl+;` — paleta z wyszukiwarką, wyborem strzałkami i Enterem; edycja i usuwanie za potwierdzeniem |
 | **Edytor makra** | pasek formatowania WhatsApp, podgląd na żywo, dodawanie i zdejmowanie załączników |
@@ -47,7 +47,11 @@ treści z prywatnego WhatsAppa do kontaktu służbowego albo odwrotnie. Formular
 konta podpowiada kolor jeszcze nieużywany, żeby dwa konta nie wyglądały tak samo.
 
 Kanały stoją w szynie po lewej, nie w zakładkach u góry: WhatsApp Web i Messenger mają
-własny nagłówek, więc pasek nad paskiem tworzył wizualną papkę. Paleta makr nazywa konto
+własny nagłówek, więc pasek nad paskiem tworzył wizualną papkę. Szyna zwija się do 48 px
+i rozwija na najazd kursora — przycisk pinezki u góry trzyma ją rozwiniętą na stałe,
+a wybór przeżywa restart. Rozwinięcie **odsuwa** widok konta zamiast go zakrywać:
+widoki są natywną warstwą nad rendererem, więc nakładka narysowana w HTML schowałaby się
+pod stroną komunikatora. Prawdziwa nakładka wymagałaby osobnego natywnego widoku dla szyny. Paleta makr nazywa konto
 docelowe, a po wstawieniu listwa melduje, co i dokąd poszło — i przypomina, że Enter
 należy do operatora.
 

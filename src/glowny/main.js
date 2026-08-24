@@ -11,7 +11,12 @@ const KATALOG = path.dirname(fileURLToPath(import.meta.url))
 // Geometria konsoli. Szyna kanalow stoi po lewej, listwa stanu na dole, a widok
 // konta siedzi WEWNATRZ ramki rysowanej przez renderer — margines zostawia miejsce
 // na krawedz w kolorze aktywnego konta.
-const SZEROKOSC_SZYNY = 162
+// Nieprzypieta szyna zwija sie do samych kolorow kanalow i rozwija na najazd
+// kursora. Rozwiniecie ODSUWA widok konta zamiast go zakrywac: widoki kont sa
+// natywna warstwa NAD rendererem, wiec nakladka narysowana w HTML schowalaby sie
+// pod strona komunikatora. Nakladka wymagalaby osobnego natywnego widoku dla szyny.
+const SZYNA_ZWINIETA = 48
+const SZYNA_ROZWINIETA = 162
 const WYSOKOSC_LISTWY = 30
 const MARGINES_STUDNI = 10
 const SCIEZKA_IKONY = path.join(KATALOG, '..', 'renderer', 'ikona.png')
@@ -91,15 +96,42 @@ async function utworzOkno() {
     )
   })
 
+  let szynaPrzypieta = Boolean(uklad.szynaPrzypieta)
+  let szynaNajazd = false
+  const szynaRozwinieta = () => szynaPrzypieta || szynaNajazd
+
   const dopasuj = () => {
     const { width, height } = okno.getContentBounds()
+    const szyna = szynaRozwinieta() ? SZYNA_ROZWINIETA : SZYNA_ZWINIETA
     zarzadca.dopasujGeometrie({
-      x: SZEROKOSC_SZYNY + MARGINES_STUDNI,
+      x: szyna + MARGINES_STUDNI,
       y: MARGINES_STUDNI,
-      width: Math.max(0, width - SZEROKOSC_SZYNY - MARGINES_STUDNI * 2),
+      width: Math.max(0, width - szyna - MARGINES_STUDNI * 2),
       height: Math.max(0, height - WYSOKOSC_LISTWY - MARGINES_STUDNI * 2),
     })
   }
+
+  const stanSzyny = () => ({ przypieta: szynaPrzypieta, rozwinieta: szynaRozwinieta() })
+
+  const rozeslijStanSzyny = () => {
+    if (!okno.webContents.isDestroyed()) okno.webContents.send('szyna:zmiana', stanSzyny())
+  }
+
+  // Proces glowny jest jedynym wlascicielem stanu szyny: to on liczy geometrie
+  // widokow, wiec renderer tylko zglasza zdarzenia i odbiera gotowa decyzje.
+  ipcMain.handle('szyna:stan', () => stanSzyny())
+
+  ipcMain.handle('szyna:najazd', (_zdarzenie, czyNajazd) => {
+    szynaNajazd = Boolean(czyNajazd)
+    dopasuj()
+    rozeslijStanSzyny()
+  })
+
+  ipcMain.handle('szyna:przypnij', (_zdarzenie, czyPrzypieta) => {
+    szynaPrzypieta = Boolean(czyPrzypieta)
+    dopasuj()
+    rozeslijStanSzyny()
+  })
   okno.on('resize', dopasuj)
 
   // app.setBadgeCount dziala tylko na Linuksie i macOS. Na Windowsie licznik pokazuje
@@ -163,6 +195,7 @@ async function utworzOkno() {
       szerokosc: prostokat.width,
       wysokosc: prostokat.height,
       zmaksymalizowane: okno.isMaximized(),
+      szynaPrzypieta,
     }).finally(() => {
       ukladZapisany = true
       okno.destroy()
