@@ -56,8 +56,16 @@
     <button id="nowe-makro" value="nowe">Nowe makro</button>
   </menu>
 </dialog>
+<dialog id="okno-usuwania-makra">
+  <h2>Usunac makro?</h2>
+  <p id="tresc-usuwania-makra"></p>
+  <menu>
+    <button id="anuluj-usuniecie-makra" value="anuluj">Anuluj</button>
+    <button id="potwierdz-usuniecie-makra" value="usun" class="grozny">Usun makro</button>
+  </menu>
+</dialog>
 <dialog id="okno-edytora">
-  <h2>Makro</h2>
+  <h2 id="tytul-edytora">Makro</h2>
   <label>Nazwa <input id="edytor-nazwa" /></label>
   <div id="pasek-formatowania">
     <button type="button" data-znacznik="*">Pogrubienie</button>
@@ -70,7 +78,8 @@
   <label>Tresc <textarea id="edytor-tekst" rows="8"></textarea></label>
   <p>Podglad:</p>
   <div id="edytor-podglad"></div>
-  <p>Zalaczniki: <span id="lista-zalacznikow">brak</span></p>
+  <p>Zalaczniki:</p>
+  <ul id="lista-zalacznikow"></ul>
   <button type="button" id="dodaj-zalacznik">Dodaj zalacznik</button>
   <menu>
     <button id="anuluj-makro" value="anuluj">Anuluj</button>

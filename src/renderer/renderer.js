@@ -63,8 +63,15 @@ export async function odswiezMakra() {
   for (const makro of makra) {
     const pozycja = document.createElement('li')
     const liczba = (makro.zalaczniki ?? []).length
-    pozycja.textContent = liczba ? `${makro.nazwa}  (${liczba} zal.)` : makro.nazwa
     pozycja.dataset.idMakra = makro.id
+
+    const etykieta = document.createElement('span')
+    etykieta.className = 'etykieta-makra'
+    etykieta.textContent = liczba ? `${makro.nazwa}  (${liczba} zal.)` : makro.nazwa
+
+    // Klikniecie wiersza wstawia makro — to najczestsza czynnosc, wiec zostaje
+    // najtansza. Przyciski zatrzymuja propagacje, zeby edycja i usuwanie nie
+    // wstawialy makra przy okazji.
     pozycja.addEventListener('click', async () => {
       oknoMakr.close()
       const wynik = await window.mostHub.wstawMakro(makro.id)
@@ -74,6 +81,28 @@ export async function odswiezMakra() {
         )
       }
     })
+
+    const edytuj = document.createElement('button')
+    edytuj.type = 'button'
+    edytuj.className = 'edytuj-makro'
+    edytuj.textContent = 'Edytuj'
+    edytuj.title = `Edytuj makro ${makro.nazwa}`
+    edytuj.addEventListener('click', (zdarzenie) => {
+      zdarzenie.stopPropagation()
+      otworzEdytor(makro)
+    })
+
+    const usun = document.createElement('button')
+    usun.type = 'button'
+    usun.className = 'usun-makro grozny'
+    usun.textContent = 'Usun'
+    usun.title = `Usun makro ${makro.nazwa}`
+    usun.addEventListener('click', (zdarzenie) => {
+      zdarzenie.stopPropagation()
+      zapytajOUsuniecieMakra(makro)
+    })
+
+    pozycja.append(etykieta, edytuj, usun)
     listaMakr.append(pozycja)
   }
 }
@@ -175,15 +204,25 @@ document.getElementById('pasek-formatowania').addEventListener('click', (zdarzen
   odswiezPodglad()
 })
 
-document.getElementById('nowe-makro').addEventListener('click', (zdarzenie) => {
-  zdarzenie.preventDefault()
-  oknoMakr.close()
-  edytorNazwa.value = ''
-  edytorTekst.value = ''
-  zalacznikiMakra = []
+// Edycja zachowuje id makra, nawet gdy zmieni sie nazwa — inaczej poprawka
+// nazwy tworzylaby drugie makro obok starego.
+let edytowaneMakroId = null
+
+function otworzEdytor(makro = null) {
+  edytowaneMakroId = makro?.id ?? null
+  document.getElementById('tytul-edytora').textContent = makro ? 'Edycja makra' : 'Nowe makro'
+  edytorNazwa.value = makro?.nazwa ?? ''
+  edytorTekst.value = makro?.tekst ?? ''
+  zalacznikiMakra = [...(makro?.zalaczniki ?? [])]
   odswiezZalaczniki()
   odswiezPodglad()
+  oknoMakr.close()
   pokazDialog(oknoEdytora)
+}
+
+document.getElementById('nowe-makro').addEventListener('click', (zdarzenie) => {
+  zdarzenie.preventDefault()
+  otworzEdytor()
 })
 
 document.getElementById('anuluj-makro').addEventListener('click', (zdarzenie) => {
@@ -194,6 +233,7 @@ document.getElementById('anuluj-makro').addEventListener('click', (zdarzenie) =>
 document.getElementById('zapisz-makro').addEventListener('click', async (zdarzenie) => {
   zdarzenie.preventDefault()
   const wynik = await window.mostHub.zapiszMakro({
+    ...(edytowaneMakroId ? { id: edytowaneMakroId } : {}),
     nazwa: edytorNazwa.value,
     tekst: edytorTekst.value,
     zalaczniki: zalacznikiMakra,
@@ -202,6 +242,7 @@ document.getElementById('zapisz-makro').addEventListener('click', async (zdarzen
     pokazKomunikat(wynik.bledy.join('; '))
     return
   }
+  edytowaneMakroId = null
   oknoEdytora.close()
 })
 
@@ -214,9 +255,38 @@ let zalacznikiMakra = []
 // Nazwa w magazynie ma prefiks UUID — operatorowi pokazujemy tylko oryginalna nazwe.
 function odswiezZalaczniki() {
   const pole = document.getElementById('lista-zalacznikow')
-  pole.textContent = zalacznikiMakra.length
-    ? zalacznikiMakra.map((s) => s.replace(/^att\/[0-9a-f-]+-/, '')).join(', ')
-    : 'brak'
+  pole.replaceChildren()
+
+  if (!zalacznikiMakra.length) {
+    const puste = document.createElement('li')
+    puste.className = 'puste'
+    puste.textContent = 'brak'
+    pole.append(puste)
+    return
+  }
+
+  for (const wzgledna of zalacznikiMakra) {
+    const pozycja = document.createElement('li')
+
+    const nazwa = document.createElement('span')
+    nazwa.className = 'nazwa-zalacznika'
+    nazwa.textContent = wzgledna.replace(/^att\/[0-9a-f-]+-/, '')
+
+    // Zdjecie tylko odpina zalacznik od makra; plik znika z magazynu dopiero
+    // przy zapisie, wiec anulowanie edytora niczego nie kasuje.
+    const zdejmij = document.createElement('button')
+    zdejmij.type = 'button'
+    zdejmij.className = 'zdejmij-zalacznik'
+    zdejmij.textContent = 'Zdejmij'
+    zdejmij.title = `Zdejmij ${nazwa.textContent}`
+    zdejmij.addEventListener('click', () => {
+      zalacznikiMakra = zalacznikiMakra.filter((s) => s !== wzgledna)
+      odswiezZalaczniki()
+    })
+
+    pozycja.append(nazwa, zdejmij)
+    pole.append(pozycja)
+  }
 }
 
 document.getElementById('dodaj-zalacznik').addEventListener('click', async () => {
@@ -339,4 +409,37 @@ document.getElementById('potwierdz-usuniecie').addEventListener('click', async (
   }
   await odswiezZakladki()
   await odswiezListeKont()
+})
+
+// Usuniecie kasuje takze zalaczniki z magazynu, wiec wymaga potwierdzenia —
+// dokladnie jak przy kontach.
+const oknoUsuwaniaMakra = document.getElementById('okno-usuwania-makra')
+let makroDoUsuniecia = null
+
+function zapytajOUsuniecieMakra(makro) {
+  makroDoUsuniecia = makro
+  const liczba = (makro.zalaczniki ?? []).length
+  document.getElementById('tresc-usuwania-makra').textContent = liczba
+    ? `Makro "${makro.nazwa}" zniknie razem z zalacznikami (${liczba}).`
+    : `Makro "${makro.nazwa}" zniknie z listy.`
+  pokazDialog(oknoUsuwaniaMakra)
+}
+
+document.getElementById('anuluj-usuniecie-makra').addEventListener('click', (zdarzenie) => {
+  zdarzenie.preventDefault()
+  makroDoUsuniecia = null
+  oknoUsuwaniaMakra.close()
+})
+
+document.getElementById('potwierdz-usuniecie-makra').addEventListener('click', async (zdarzenie) => {
+  zdarzenie.preventDefault()
+  if (!makroDoUsuniecia) return
+  const wynik = await window.mostHub.usunMakro(makroDoUsuniecia.id)
+  makroDoUsuniecia = null
+  oknoUsuwaniaMakra.close()
+  if (!wynik.ok) {
+    pokazKomunikat(wynik.bledy.join('; '))
+    return
+  }
+  await odswiezMakra()
 })

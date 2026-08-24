@@ -2,7 +2,15 @@ import { ipcMain, clipboard, dialog, session } from 'electron'
 import path from 'node:path'
 import { access } from 'node:fs/promises'
 import { wczytajKonta, zapiszKonta, waliduj, utworzIdKonta, PLATFORMY } from './konta.js'
-import { wczytajMakra, zapiszMakra, szukaj, utworzIdMakra, dodajZalacznik } from './makra.js'
+import {
+  wczytajMakra,
+  zapiszMakra,
+  szukaj,
+  utworzIdMakra,
+  dodajZalacznik,
+  wstawLubZastap,
+  usunOsierociZalaczniki,
+} from './makra.js'
 import { wstawTekst } from './wstawianie.js'
 
 export function zarejestrujKanalyKont({
@@ -73,9 +81,21 @@ export function zarejestrujKanalyMakr({ katalogDanych, zarzadca, sesjaSchowka })
     if (!String(makro?.nazwa || '').trim()) return { ok: false, bledy: ['nazwa jest wymagana'] }
     const { makra } = await wczytajMakra(plikMakr)
     const id = makro.id || utworzIdMakra(makro.nazwa)
-    const pozostale = makra.filter((m) => m.id !== id)
-    await zapiszMakra(plikMakr, [...pozostale, { zalaczniki: [], tagi: [], ...makro, id }])
+    const zapisane = wstawLubZastap(makra, { zalaczniki: [], tagi: [], ...makro, id })
+    await zapiszMakra(plikMakr, zapisane)
+    // Zalacznik zdjety w edytorze przestaje byc uzywany — bez sprzatania
+    // zostalby w magazynie na zawsze, a to nierzadko kilka MB wideo.
+    await usunOsierociZalaczniki(katalogAtt, zapisane)
     return { ok: true, id }
+  })
+
+  ipcMain.handle('makra:usun', async (_zdarzenie, idMakra) => {
+    const { makra } = await wczytajMakra(plikMakr)
+    const pozostale = makra.filter((m) => m.id !== idMakra)
+    if (pozostale.length === makra.length) return { ok: false, bledy: ['nie ma takiego makra'] }
+    await zapiszMakra(plikMakr, pozostale)
+    await usunOsierociZalaczniki(katalogAtt, pozostale)
+    return { ok: true }
   })
 
   ipcMain.handle('makra:wstaw', async (_zdarzenie, idMakra) => {

@@ -10,6 +10,7 @@ import {
   dodajZalacznik,
   usunOsierociZalaczniki,
   zajetoscMagazynu,
+  wstawLubZastap,
   LIMIT_ZALACZNIKA_BAJTY,
 } from '../src/glowny/makra.js'
 
@@ -124,5 +125,40 @@ describe('zalaczniki', () => {
     await dodajZalacznik(att, await plikTymczasowy(katalog, 'a.pdf', 'xxxxx'))
 
     expect(await zajetoscMagazynu(att)).toBe(5)
+  })
+})
+
+describe('edycja makra', () => {
+  const lista = [
+    makro({ id: 'mac-a', nazwa: 'Alfa' }),
+    makro({ id: 'mac-b', nazwa: 'Beta' }),
+    makro({ id: 'mac-c', nazwa: 'Gamma' }),
+  ]
+
+  test('zmiana istniejacego makra zostawia je na tej samej pozycji', () => {
+    const wynik = wstawLubZastap(lista, makro({ id: 'mac-b', nazwa: 'Beta poprawiona' }))
+
+    expect(wynik.map((m) => m.id)).toEqual(['mac-a', 'mac-b', 'mac-c'])
+    expect(wynik[1].nazwa).toBe('Beta poprawiona')
+  })
+
+  test('nowe makro laduje na koncu listy', () => {
+    const wynik = wstawLubZastap(lista, makro({ id: 'mac-d', nazwa: 'Delta' }))
+
+    expect(wynik.map((m) => m.id)).toEqual(['mac-a', 'mac-b', 'mac-c', 'mac-d'])
+  })
+
+  test('zrodlowa lista zostaje nietknieta', () => {
+    wstawLubZastap(lista, makro({ id: 'mac-b', nazwa: 'Beta poprawiona' }))
+
+    expect(lista[1].nazwa).toBe('Beta')
+  })
+})
+
+describe('sprzatanie magazynu bez magazynu', () => {
+  test('brak katalogu att nie jest bledem — nie ma czego sprzatac', async () => {
+    const nieistniejacy = path.join(katalog, 'att-ktorego-nie-ma')
+
+    expect(await usunOsierociZalaczniki(nieistniejacy, [])).toEqual([])
   })
 })

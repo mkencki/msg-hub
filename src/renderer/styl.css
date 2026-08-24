@@ -11,7 +11,10 @@ dialog label { display: block; margin: 10px 0; }
 dialog input, dialog select, dialog textarea { width: 100%; padding: 6px; border-radius: 6px; border: 1px solid #3b4a54; background: var(--tlo); color: var(--tekst); font: inherit; }
 .bledy { color: #f15c6d; min-height: 1em; }
 #lista-makr { list-style: none; margin: 8px 0; padding: 0; max-height: 50vh; overflow: auto; }
-#lista-makr li { padding: 8px; border-radius: 6px; cursor: pointer; }
+#lista-makr li { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 6px; cursor: pointer; }
+.etykieta-makra { flex: 1; }
+.edytuj-makro, .usun-makro { padding: 4px 10px; font-size: 12px; flex: none; opacity: 0.55; }
+#lista-makr li:hover .edytuj-makro, #lista-makr li:hover .usun-makro { opacity: 1; }
 #lista-makr li:hover { background: #2a3942; }
 #lista-makr .puste { color: #8696a0; cursor: default; }
 #pasek-formatowania { display: flex; gap: 4px; flex-wrap: wrap; margin: 8px 0; }
@@ -38,3 +41,9 @@ button.grozny { background: #f15c6d; color: #fff; }
 .opis-konta { flex: 1; }
 .platforma-konta { color: #8696a0; font-size: 12px; }
 #lista-kont .usun-konto { padding: 4px 12px; font-size: 12px; opacity: 1; }
+
+#lista-zalacznikow { list-style: none; margin: 0 0 8px; padding: 0; }
+#lista-zalacznikow li { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 6px; background: #2a3942; margin-bottom: 4px; }
+#lista-zalacznikow .puste { color: #8696a0; background: transparent; padding-left: 0; }
+.nazwa-zalacznika { flex: 1; overflow-wrap: anywhere; }
+.zdejmij-zalacznik { padding: 4px 10px; font-size: 12px; flex: none; }

@@ -37,6 +37,16 @@ export async function zapiszMakra(sciezkaPliku, makra) {
   await rename(sciezkaPliku + '.tmp', sciezkaPliku)
 }
 
+// Edycja ma zostawic makro tam, gdzie bylo. Naiwne "odfiltruj i dopisz na koniec"
+// przerzuca poprawiane makro na dol listy przy kazdym zapisie.
+export function wstawLubZastap(makra, makro) {
+  const pozycja = makra.findIndex((m) => m.id === makro.id)
+  if (pozycja === -1) return [...makra, makro]
+  const wynik = [...makra]
+  wynik[pozycja] = makro
+  return wynik
+}
+
 export function szukaj(makra, fraza) {
   const igla = String(fraza || '').trim().toLowerCase()
   if (!igla) return [...makra]
@@ -64,7 +74,13 @@ export async function dodajZalacznik(katalogAtt, sciezkaZrodlowa) {
 export async function usunOsierociZalaczniki(katalogAtt, makra) {
   const uzywane = new Set(makra.flatMap((m) => m.zalaczniki ?? []).map((s) => path.basename(s)))
   const usuniete = []
-  for (const nazwa of await readdir(katalogAtt)) {
+  // Magazyn powstaje dopiero przy pierwszym zalaczniku — jego brak znaczy
+  // po prostu, ze nie ma czego sprzatac.
+  const zawartosc = await readdir(katalogAtt).catch((blad) => {
+    if (blad.code === 'ENOENT') return []
+    throw blad
+  })
+  for (const nazwa of zawartosc) {
     if (!uzywane.has(nazwa)) {
       await unlink(path.join(katalogAtt, nazwa))
       usuniete.push(nazwa)

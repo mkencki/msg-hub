@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('mostHub', {
   naOtwarcieMakr: (sluchacz) => ipcRenderer.on('makra:otworz', () => sluchacz()),
   listaMakr: (fraza) => ipcRenderer.invoke('makra:lista', fraza),
   zapiszMakro: (makro) => ipcRenderer.invoke('makra:zapisz', makro),
+  usunMakro: (idMakra) => ipcRenderer.invoke('makra:usun', idMakra),
   wstawMakro: (idMakra) => ipcRenderer.invoke('makra:wstaw', idMakra),
   wybierzPlik: () => ipcRenderer.invoke('pliki:wybierz'),
 })
