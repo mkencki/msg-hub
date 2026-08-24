@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { loadLayout, saveLayout, DEFAULT_LAYOUT } from '../src/main/shell.js'
@@ -7,8 +8,8 @@ import { loadLayout, saveLayout, DEFAULT_LAYOUT } from '../src/main/shell.js'
 let file, dir
 
 beforeEach(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'msghub-uklad-'))
-  file = path.join(dir, 'uklad.json')
+  dir = await mkdtemp(path.join(tmpdir(), 'msghub-layout-'))
+  file = path.join(dir, 'layout.json')
 })
 
 afterEach(async () => {
@@ -35,6 +36,23 @@ describe('the window layout', () => {
   test('a damaged language value does not sink the start', async () => {
     await writeFile(file, JSON.stringify({ ...DEFAULT_LAYOUT, language: { zly: 'ksztalt' } }), 'utf8')
     expect(typeof (await loadLayout(file)).language).toBe('string')
+  })
+
+  // Version 1 kept this file under a Polish name. Reading the old one keeps the window
+  // position across the upgrade, but leaving it behind would be worse than untidy: it is a
+  // stale copy that would silently come back to life if the new file were ever lost.
+  test('saving under the new name discards the legacy file it superseded', async () => {
+    const legacy = path.join(dir, 'uklad.json')
+    await writeFile(legacy, JSON.stringify({ szerokosc: 999, jezyk: 'pl' }), 'utf8')
+
+    await saveLayout(file, { ...DEFAULT_LAYOUT }, legacy)
+
+    expect(existsSync(legacy)).toBe(false)
+    expect(existsSync(file)).toBe(true)
+  })
+
+  test('a legacy file that is already gone is not an error', async () => {
+    await expect(saveLayout(file, { ...DEFAULT_LAYOUT }, path.join(dir, 'nie-ma.json'))).resolves.toBeUndefined()
   })
 
   test('the layout survives a save and a read', async () => {

@@ -1,4 +1,4 @@
-import { readFile, writeFile, rename } from 'node:fs/promises'
+import { readFile, writeFile, rename, unlink } from 'node:fs/promises'
 
 export const DEFAULT_LAYOUT = {
   width: 1280,
@@ -41,9 +41,16 @@ export async function loadLayout(filePath) {
   }
 }
 
-export async function saveLayout(filePath, layout) {
+// legacyPath is the version 1 file, which lived under a Polish name. It is removed only
+// AFTER the new file is safely in place: leaving it behind would be worse than untidy,
+// because it is a stale copy that would silently come back to life if the new file were
+// ever lost. A legacy file that is already gone is not an error.
+export async function saveLayout(filePath, layout, legacyPath = null) {
   await writeFile(filePath + '.tmp', JSON.stringify(layout, null, 2), 'utf8')
   await rename(filePath + '.tmp', filePath)
+  if (legacyPath && legacyPath !== filePath) {
+    await unlink(legacyPath).catch(() => {})
+  }
 }
 
 export function setAutoStart(enabled, app) {

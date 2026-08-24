@@ -168,7 +168,7 @@ async function createWindow() {
     language = validLanguage(next)
     buildTray()
     refreshBadge()
-    await saveLayout(layoutFile, currentLayout()).catch(() => {})
+    await saveLayout(layoutFile, currentLayout(), legacyLayoutFile).catch(() => {})
     return language
   })
 
@@ -226,7 +226,7 @@ async function createWindow() {
   window.on('close', (event) => {
     if (layoutSaved) return
     event.preventDefault()
-    saveLayout(layoutFile, currentLayout()).finally(() => {
+    saveLayout(layoutFile, currentLayout(), legacyLayoutFile).finally(() => {
       layoutSaved = true
       window.destroy()
     })
