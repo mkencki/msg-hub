@@ -42,16 +42,34 @@ async function utworzOkno() {
   okno.setTitle('msg-hub')
   if (uklad.zmaksymalizowane) okno.maximize()
 
-  // Bez menu nie ma pozycji "Toggle Developer Tools" — skrot zostaje, bo przy
-  // diagnostyce strony komunikatora jest jedynym wgladem w konsole.
-  okno.webContents.on('before-input-event', (_zdarzenie, wejscie) => {
-    const devtools =
-      wejscie.key === 'F12' || (wejscie.control && wejscie.shift && wejscie.key.toLowerCase() === 'i')
-    if (wejscie.type === 'keyDown' && devtools) {
-      const cel = zarzadca?.aktywny()?.webContents ?? okno.webContents
-      cel.toggleDevTools()
-    }
-  })
+  // Widok konta to natywna warstwa NAD rendererem: kiedy trzyma fokus — czyli
+  // przez wiekszosc pracy — klawiatura nie dociera do okna glownego i skroty
+  // renderera sa martwe. Dlatego przechwytywacz dostaje KAZDY webContents,
+  // a nie tylko okno. Bez menu nie ma tez pozycji "Toggle Developer Tools",
+  // wiec F12 jest jedynym wgladem w konsole strony komunikatora.
+  const podepnijSkroty = (webContents) => {
+    webContents.on('before-input-event', (_zdarzenie, wejscie) => {
+      if (wejscie.type !== 'keyDown') return
+
+      if (wejscie.key === 'F12' || (wejscie.control && wejscie.shift && wejscie.key.toLowerCase() === 'i')) {
+        const cel = zarzadca?.aktywny()?.webContents ?? okno.webContents
+        cel.toggleDevTools()
+        return
+      }
+
+      // Ctrl+; wcisniety w oknie glownym obsluguje renderer wlasnym nasluchem
+      // na window. Tutaj przechwytujemy wylacznie klawisz, ktory trafil do
+      // widoku konta — inaczej ten sam skrot zadzialalby dwa razy.
+      if (wejscie.control && wejscie.key === ';' && webContents !== okno.webContents) {
+        // Panel rysuje renderer okna glownego — i tam tez musi wrocic fokus,
+        // inaczej operator otwiera panel i nie moze w nim pisac.
+        okno.webContents.focus()
+        okno.webContents.send('makra:otworz')
+      }
+    })
+  }
+
+  podepnijSkroty(okno.webContents)
 
   // Komunikaty ida do paska w oknie, nie do modalnego okienka systemowego.
   // Modal zatrzymuje calą aplikacje i wymaga klikniecia, a blad ladowania jednego
@@ -101,6 +119,7 @@ async function utworzOkno() {
       przyznaj(uprawnienie === 'notifications')
     })
     widok.webContents.on('page-title-updated', odswiezBadge)
+    podepnijSkroty(widok.webContents)
   }
 
   // KOLEJNOSC JEST ISTOTNA: renderer wola konta:lista natychmiast po zaladowaniu,

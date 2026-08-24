@@ -94,6 +94,10 @@ window.addEventListener('keydown', (zdarzenie) => {
   }
 })
 
+// Ten sam skrot wcisniety, gdy fokus trzyma widok konta, w ogole nie dociera
+// do renderera — przechwytuje go wtedy proces glowny i przysyla gotowa decyzje.
+window.mostHub.naOtwarcieMakr(() => document.getElementById('otworz-makra').click())
+
 // Spec sekcja 8: nieudany start ma dac jawny komunikat, nie pusty pasek.
 function pokazKomunikat(tekst) {
   const pole = document.getElementById('komunikat')
@@ -237,6 +241,9 @@ function odswiezWidocznoscKont() {
 }
 
 function pokazDialog(dialog) {
+  // Powtorny showModal na otwartym dialogu rzuca wyjatek — a skrot da sie
+  // wcisnac drugi raz, zanim operator zauwazy otwarty panel.
+  if (dialog.open) return
   dialog.showModal()
   odswiezWidocznoscKont()
 }
