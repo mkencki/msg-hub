@@ -3,22 +3,34 @@
 Aplikacja desktopowa na Windows: Messenger i dwa konta WhatsApp w jednym oknie,
 każde w izolowanej sesji, plus makra tekstowe z załącznikami.
 
+Interfejs po **polsku** i **angielsku**. Domyślny jest angielski — polski wybierzesz
+w Ustawieniach.
+
+**[English version of this README](README.md)**
+
 Zastępuje płatną aplikację **All-in-One Messenger Hub**, która od 2026-07-18 wymaga
 licencji Pro do drugiego konta WhatsApp. Audyt tamtej aplikacji (sekcja 1 specu) wykazał
 dwa powody, żeby jej nie kupować: nieosiągalny podmiot odpowiedzialny za dane oraz
 `wppconnect-wa.js` na pokładzie, czyli bibliotekę ingerującą w wewnętrzne funkcje
 WhatsApp Web — a to grozi trwałą blokadą numeru.
 
-## Uruchomienie
+## Instalacja
+
+Instalator leży w [Releases](https://github.com/mkencki/msg-hub/releases).
+
+> **Instalator nie jest podpisany cyfrowo.** Windows ostrzeże, a na czystej instalacji
+> Windows 11 **Smart App Control zablokuje go całkiem**. Przeczytaj
+> **[docs/uwaga-instalacja.md](docs/uwaga-instalacja.md)** — tłumaczy, którą z dwóch
+> reakcji właśnie widzisz i co z każdą zrobić.
+
+Uruchomienie ze źródeł działa nawet przy włączonym Smart App Control:
 
 ```bash
 npm install
 npm start
 ```
 
-Skrót w menu Start wskazuje `node_modules/electron/dist/electron.exe` z katalogiem
-projektu. **Nie używaj `npm run dist`** jako drogi codziennej: Smart App Control na
-`hp-x360-win` blokuje własny, niepodpisany `.exe` (szczegóły niżej).
+Skrót w menu Start wskazuje `node_modules/electron/dist/electron.exe` z katalogiem projektu.
 
 ## Co robi
 
@@ -30,6 +42,7 @@ projektu. **Nie używaj `npm run dist`** jako drogi codziennej: Smart App Contro
 | **Makra** | `Ctrl+;` — paleta z wyszukiwarką, wyborem strzałkami i Enterem; edycja i usuwanie za potwierdzeniem |
 | **Edytor makra** | pasek formatowania WhatsApp, podgląd na żywo, dodawanie i zdejmowanie załączników |
 | **Załączniki** | PDF i mp4 **kopiowane do magazynu aplikacji** — oryginalny plik przestaje być potrzebny; limit 100 MB |
+| **Język** | angielski i polski, przełączany w Ustawieniach bez restartu; wybór przeżywa restart |
 
 Makra i załączniki żyją w `%APPDATA%\msg-hub` (`macros.json` oraz katalog `att/`),
 konta w `accounts.json` obok nich. Usunięcie makra albo zdjęcie załącznika sprząta
@@ -83,12 +96,21 @@ zapadną się, jeśli ktoś kiedyś doda zakazaną zależność albo ścieżkę 
 ## Testy
 
 ```bash
-npm test
-npm run test:e2e
+npm test          # Vitest — logika
+npm run test:e2e  # Playwright + Electron — ścieżki operatora na prawdziwym oknie
+npm run dist      # przenośny .exe (buduje się lokalnie)
 ```
 
-Vitest pokrywa logikę, Playwright z `_electron` — ścieżki operatora na prawdziwym oknie.
-Test paczki pomija się sam, gdy wykryje włączony Smart App Control.
+**Instalator** buduje [CI](.github/workflows/build.yml), nie maszyna lokalna: NSIS generuje
+deinstalator, URUCHAMIAJĄC świeżo zbudowany instalator, a Smart App Control to ubija. Runner
+GitHuba nie ma SAC, więc `npm run dist:instalator` należy do niego.
+
+Test paczki pomija się sam, ale **na zmierzonej próbie uruchomienia**, nie na odczycie rejestru —
+wcześniej milczał zawsze, gdy SAC był włączony, także wtedy, gdy paczka działała.
+
+Teksty interfejsu siedzą w [`src/renderer/jezyki/`](src/renderer/jezyki/) pod kluczami, nie
+w kodzie. Test jednostkowy czerwieni się, gdy słowniki się rozjadą — inaczej nowy napis trafiłby
+do jednego języka, a drugi pokazywałby goły klucz dopiero u użytkownika.
 
 ## Znane ograniczenia środowiska
 
@@ -97,7 +119,20 @@ Test paczki pomija się sam, gdy wykryje włączony Smart App Control.
 „An Application Control policy has blocked this file". Dotyczy to i `dist/win-unpacked`,
 i przenośnego `.exe`. `electron.exe` startuje bez przeszkód — jest równie niepodpisany,
 ale ma reputację w chmurze Microsoftu, której unikatowy własny build mieć nie może.
-Prawdziwy przenośny plik wymagałby certyfikatu do podpisu kodu.
+
+Pomiary z 2026-08-24, bo temat kusi do złych wniosków:
+
+| Próba | Wynik |
+|---|---|
+| paczka sprzed ~20 h, bez znacznika MotW | **działa** |
+| ta sama paczka przebudowana przed chwilą | **zablokowana** |
+| kopia w `Downloads` ze znacznikiem `ZoneId=3` | **zablokowana** |
+| ta kopia po `Unblock-File` (znacznik zdjęty) | **dalej zablokowana** |
+
+Zmienną nie jest więc Mark of the Web, tylko **reputacja**: świeży plik żadnej nie ma, a raz
+zapadła blokada nie cofa się po zdjęciu znacznika. Wniosek „znajomy odblokuje plik prawoklikiem"
+jest **fałszywy** — sprawdzony i obalony. Jedynym realnym wyjściem jest certyfikat do podpisu
+kodu; do czasu jego zakupu instalator działa wyłącznie tam, gdzie SAC jest wyłączony.
 
 **Wstawianie plików idzie przez Windows PowerShell 5.1.** `Set-Clipboard -LiteralPath`
 i `Get-Clipboard -Format` **nie istnieją w PowerShell 7** — stąd jawne `powershell.exe`,
@@ -108,3 +143,7 @@ pliku kosztuje wtedy 15 ms zamiast 668 ms na proces jednorazowy.
 
 Node 26, Electron 43, czysty JavaScript ESM bez bundlera. Vitest, Playwright,
 electron-builder. Nazwy plików, funkcji i kluczy JSON po polsku.
+
+## Licencja
+
+[MIT](LICENSE) © 2026 Marek Kencki

@@ -1,0 +1,49 @@
+name: build
+
+# Instalator NSIS NIE zbuduje sie na maszynie ze wlaczonym Smart App Control:
+# NSIS generuje deinstalator, URUCHAMIAJAC swiezo zbudowany instalator, a SAC ubija
+# niepodpisany plik bez werdyktu reputacji (zmierzone 2026-08-24, CodeIntegrity 3077).
+# Runner GitHuba nie ma SAC, wiec instalator powstaje tutaj.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '26'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Unit tests
+        run: npm test
+
+      - name: End-to-end tests
+        run: npm run test:e2e
+
+      - name: Build installer
+        run: npm run dist:instalator
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: msg-hub-installer
+          path: dist/msg-hub-*-instalator.exe
+          if-no-files-found: error
+
+      - name: Attach installer to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/msg-hub-*-instalator.exe
+          body_path: docs/uwaga-instalacja.md
