@@ -46,7 +46,10 @@ test.afterEach(async () => {
 test('szyna startuje zwinieta, wiec widok konta dostaje wiecej miejsca', async () => {
   await dodajKonto()
 
-  expect(await lewaKrawedzWidoku()).toBe(ZWINIETA + MARGINES)
+  // Poll, nie goly odczyt. Kanal pojawia sie w szynie, gdy renderer dostanie liste
+  // kont, ale natywny widok tworzy dopiero proces glowny w odpowiedzi na przelaczenie —
+  // miedzy jednym a drugim jest okno, w ktorym children jest jeszcze puste.
+  await expect.poll(lewaKrawedzWidoku).toBe(ZWINIETA + MARGINES)
 })
 
 test('najechanie kursorem rozwija szyne i odsuwa widok konta', async () => {

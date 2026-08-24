@@ -44,11 +44,14 @@ const prostokatWidoku = () =>
 test('widok konta zaczyna sie na prawo od szyny, nie pod paskiem u gory', async () => {
   await dodajKonto('WhatsApp testowy')
 
+  // Natywny widok powstaje asynchronicznie w procesie glownym, wiec czekamy na jego
+  // pojawienie sie ZANIM zaczniemy mierzyc — inaczej pierwsza asercja dostaje null
+  // i nie wiadomo, czy widok jest zle ulozony, czy jeszcze go nie ma.
+  await expect.poll(async () => (await prostokatWidoku()).widok !== null).toBe(true)
   const { widok, okno: ramka } = await prostokatWidoku()
 
   // Szyna jest zwijana, wiec jej szerokosc sie zmienia — stale jest to, ze widok
   // zaczyna sie ZA nia po lewej i NIE pod paskiem u gory.
-  expect(widok).not.toBeNull()
   expect(widok.x).toBeGreaterThanOrEqual(48)
   expect(widok.y).toBeLessThan(24)
   expect(widok.width).toBeLessThan(ramka.width - 40)

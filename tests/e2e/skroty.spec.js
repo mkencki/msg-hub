@@ -29,6 +29,14 @@ async function fokusNaWidokKonta() {
   await okno.locator('#zapisz-konto').click()
   await expect(okno.locator('.kanal')).toHaveCount(1)
 
+  // Kanal w szynie nie oznacza jeszcze natywnego widoku: ten tworzy proces glowny
+  // w odpowiedzi na przelaczenie, wiec children[0] bywa chwilowo undefined.
+  await expect
+    .poll(() =>
+      aplikacja.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].contentView.children.length),
+    )
+    .toBeGreaterThan(0)
+
   await aplikacja.evaluate(({ BrowserWindow }) => {
     BrowserWindow.getAllWindows()[0].contentView.children[0].webContents.focus()
   })
