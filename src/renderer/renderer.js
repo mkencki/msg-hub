@@ -1,51 +1,111 @@
 import { naHtml } from './podglad.js'
 
-const zakladki = document.getElementById('zakladki')
+const kanaly = document.getElementById('kanaly')
 const oknoKonta = document.getElementById('okno-konta')
 const bledyKonta = document.getElementById('bledy-konta')
 const oknoMakr = document.getElementById('okno-makr')
 const szukajka = document.getElementById('szukaj-makro')
 const listaMakr = document.getElementById('lista-makr')
 
+// Polska odmiana liczebnika: 1 nowa / 2-4 nowe / 5+ nowych, z wyjatkiem nastolatek.
+function odmiana(ile, [jedna, kilka, wiele]) {
+  if (ile === 1) return jedna
+  const setki = ile % 100
+  const jednosci = ile % 10
+  if (jednosci >= 2 && jednosci <= 4 && (setki < 12 || setki > 14)) return kilka
+  return wiele
+}
+
 let aktywneKontoId = null
+let kontaWSzynie = []
+let licznikiKont = {}
+
+function opisLicznika(ile) {
+  return ile ? `${ile} ${odmiana(ile, ['nowa', 'nowe', 'nowych'])}` : 'brak nowych'
+}
+
+// Kolor aktywnego konta obrysowuje cala studnie robocza — to jedyny nasycony
+// element okna i jedyna stala odpowiedz na pytanie "kim teraz jestem".
+function pomalujKanal(konto) {
+  document.documentElement.style.setProperty('--kanal', konto?.kolor ?? '#2f7d5b')
+
+  for (const [chip, nazwa] of [
+    [document.getElementById('listwa-chip'), document.getElementById('listwa-nazwa')],
+    [document.getElementById('cel-chip'), document.getElementById('cel-nazwa')],
+  ]) {
+    chip.style.setProperty('--barwa', konto?.kolor ?? 'transparent')
+    nazwa.textContent = konto?.nazwa ?? 'Brak kont'
+  }
+
+  const suma = Object.values(licznikiKont).reduce((razem, ile) => razem + ile, 0)
+  document.getElementById('listwa-licznik').textContent = suma
+    ? `${suma} ${odmiana(suma, ['nieprzeczytana', 'nieprzeczytane', 'nieprzeczytanych'])}`
+    : 'wszystko przeczytane'
+}
 
 async function przelaczNa(idKonta) {
   aktywneKontoId = idKonta
   await window.mostHub.przelacz(idKonta)
-  for (const zakladka of zakladki.children) {
-    zakladka.setAttribute('aria-selected', String(zakladka.dataset.idKonta === idKonta))
+  for (const kanal of kanaly.children) {
+    kanal.setAttribute('aria-selected', String(kanal.dataset.idKonta === idKonta))
   }
+  pomalujKanal(kontaWSzynie.find((k) => k.id === idKonta))
 }
 
-async function odswiezZakladki() {
-  const konta = await window.mostHub.listaKont()
+function odswiezLiczniki() {
+  for (const kanal of kanaly.children) {
+    const dane = kanal.querySelector('.kanal-dane')
+    const ile = licznikiKont[kanal.dataset.idKonta] ?? 0
+    dane.textContent = opisLicznika(ile)
+    dane.classList.toggle('sa-nowe', ile > 0)
+  }
+  pomalujKanal(kontaWSzynie.find((k) => k.id === aktywneKontoId))
+}
 
-  // Pasek odbudowuje sie po kazdej zmianie nazwy i kolejnosci. Bez zapamietanego
-  // konta operator ladowalby wtedy za kazdym razem na pierwszej zakladce.
-  const wybrane = konta.some((k) => k.id === aktywneKontoId) ? aktywneKontoId : konta[0]?.id ?? null
+async function odswiezSzyne() {
+  kontaWSzynie = await window.mostHub.listaKont()
 
-  zakladki.replaceChildren()
-  for (const konto of konta) {
-    const przycisk = document.createElement('button')
-    przycisk.className = 'zakladka'
-    przycisk.dataset.idKonta = konto.id
-    przycisk.style.setProperty('--kolor-konta', konto.kolor)
-    przycisk.setAttribute('aria-selected', String(konto.id === wybrane))
+  // Szyna odbudowuje sie po kazdej zmianie nazwy i kolejnosci. Bez zapamietanego
+  // konta operator ladowalby wtedy za kazdym razem na pierwszym kanale.
+  const wybrane = kontaWSzynie.some((k) => k.id === aktywneKontoId)
+    ? aktywneKontoId
+    : kontaWSzynie[0]?.id ?? null
+
+  kanaly.replaceChildren()
+  for (const konto of kontaWSzynie) {
+    const kanal = document.createElement('button')
+    kanal.className = 'kanal'
+    kanal.dataset.idKonta = konto.id
+    kanal.style.setProperty('--barwa', konto.kolor)
+    kanal.setAttribute('aria-selected', String(konto.id === wybrane))
+    kanal.title = `${konto.nazwa} (${konto.platforma})`
+
+    const chip = document.createElement('i')
+    chip.className = 'chip'
 
     const nazwa = document.createElement('span')
+    nazwa.className = 'kanal-nazwa'
     nazwa.textContent = konto.nazwa
-    przycisk.append(nazwa)
 
-    przycisk.addEventListener('click', () => przelaczNa(konto.id))
-    zakladki.append(przycisk)
+    // Druga linia odpowiada na jedyne pytanie, ktore zmienia sie co chwile:
+    // czy ten kanal mnie potrzebuje. Platforma jest juz w nazwie i w ustawieniach.
+    const dane = document.createElement('span')
+    dane.className = 'kanal-dane'
+    dane.textContent = opisLicznika(licznikiKont[konto.id] ?? 0)
+    dane.classList.toggle('sa-nowe', (licznikiKont[konto.id] ?? 0) > 0)
+
+    kanal.append(chip, nazwa, dane)
+    kanal.addEventListener('click', () => przelaczNa(konto.id))
+    kanaly.append(kanal)
   }
 
   if (wybrane) await przelaczNa(wybrane)
+  else pomalujKanal(null)
 }
 
 let edytowaneKontoId = null
 
-function otworzFormularzKonta(konto = null) {
+async function otworzFormularzKonta(konto = null) {
   edytowaneKontoId = konto?.id ?? null
   bledyKonta.textContent = ''
 
@@ -62,6 +122,9 @@ function otworzFormularzKonta(konto = null) {
     formularz.querySelector('input[name="nazwa"]').value = konto.nazwa
     platforma.value = konto.platforma
     formularz.querySelector('input[name="kolor"]').value = konto.kolor
+  } else {
+    // Dwa konta w tym samym kolorze znosza sygnal tozsamosci — podpowiadamy wolny.
+    formularz.querySelector('input[name="kolor"]').value = await window.mostHub.wolnyKolor()
   }
 
   pokazDialog(oknoKonta)
@@ -88,32 +151,66 @@ document.getElementById('zapisz-konto').addEventListener('click', async (zdarzen
 
   edytowaneKontoId = null
   oknoKonta.close()
-  await odswiezZakladki()
+  await odswiezSzyne()
   if (oknoUstawien.open) await odswiezListeKont()
 })
 
 // Panel zamyka sie przy kazdym wyborze, wiec brak wstawienia jest niewidoczny —
-// kazdy powod musi trafic na pasek, inaczej wyglada to jak udane wstawienie.
+// kazdy powod musi trafic na listwe, inaczej wyglada to jak udane wstawienie.
 const POWODY_WSTAWIANIA = {
   'brak-konta': 'Nie ma dokad wstawic — najpierw dodaj konto i otworz w nim rozmowe.',
   'brak-makra': 'Tego makra juz nie ma na liscie.',
   'puste-makro': 'Makro nie ma ani tresci, ani zalacznika — nie ma czego wstawic.',
 }
 
+let zaznaczoneMakro = 0
+
+async function wstawMakro(makro) {
+  schowajKomunikat()
+  oknoMakr.close()
+  const wynik = await window.mostHub.wstawMakro(makro.id)
+
+  if (wynik?.ok) {
+    // Obietnica produktu wypowiedziana wprost: aplikacja przygotowuje, nie wysyla.
+    const konto = kontaWSzynie.find((k) => k.id === aktywneKontoId)
+    pokazKomunikat(
+      `Wstawiono "${makro.nazwa}" do ${konto?.nazwa ?? 'konta'}. Enter nalezy do Ciebie.`,
+      'info',
+    )
+    return
+  }
+  if (!wynik) return
+
+  if (wynik.brakujace?.length) {
+    pokazKomunikat(
+      `Brakuje zalacznikow w magazynie: ${wynik.brakujace.join(', ')}. Tekst zostal wstawiony.`,
+    )
+    return
+  }
+  pokazKomunikat(POWODY_WSTAWIANIA[wynik.powod] ?? 'Nie udalo sie wstawic makra.')
+}
+
 export async function odswiezMakra() {
   const makra = await window.mostHub.listaMakr(szukajka.value)
   listaMakr.replaceChildren()
+
   if (!makra.length) {
     const puste = document.createElement('li')
     puste.className = 'puste'
-    puste.textContent = 'Brak makr — kliknij "Nowe makro"'
+    puste.textContent = szukajka.value
+      ? `Nic nie pasuje do "${szukajka.value}". Zmien fraze albo utworz nowe makro.`
+      : 'Brak makr — kliknij "Nowe makro"'
     listaMakr.append(puste)
     return
   }
-  for (const makro of makra) {
+
+  if (zaznaczoneMakro >= makra.length) zaznaczoneMakro = 0
+
+  makra.forEach((makro, indeks) => {
     const pozycja = document.createElement('li')
     const liczba = (makro.zalaczniki ?? []).length
     pozycja.dataset.idMakra = makro.id
+    pozycja.setAttribute('aria-selected', String(indeks === zaznaczoneMakro))
 
     const etykieta = document.createElement('span')
     etykieta.className = 'etykieta-makra'
@@ -122,20 +219,7 @@ export async function odswiezMakra() {
     // Klikniecie wiersza wstawia makro — to najczestsza czynnosc, wiec zostaje
     // najtansza. Przyciski zatrzymuja propagacje, zeby edycja i usuwanie nie
     // wstawialy makra przy okazji.
-    pozycja.addEventListener('click', async () => {
-      schowajKomunikat()
-      oknoMakr.close()
-      const wynik = await window.mostHub.wstawMakro(makro.id)
-      if (!wynik || wynik.ok) return
-
-      if (wynik.brakujace?.length) {
-        pokazKomunikat(
-          `Brakuje zalacznikow w magazynie: ${wynik.brakujace.join(', ')}. Tekst zostal wstawiony.`,
-        )
-        return
-      }
-      pokazKomunikat(POWODY_WSTAWIANIA[wynik.powod] ?? 'Nie udalo sie wstawic makra.')
-    })
+    pozycja.addEventListener('click', () => wstawMakro(makro))
 
     const edytuj = document.createElement('button')
     edytuj.type = 'button'
@@ -159,13 +243,41 @@ export async function odswiezMakra() {
 
     pozycja.append(etykieta, edytuj, usun)
     listaMakr.append(pozycja)
-  }
+  })
 }
 
-szukajka.addEventListener('input', odswiezMakra)
+szukajka.addEventListener('input', () => {
+  zaznaczoneMakro = 0
+  odswiezMakra()
+})
+
+// Wybor makra idzie strzalkami i Enterem: przy kilkudziesieciu pozycjach
+// siegniecie po mysz kosztuje wiecej niz samo wstawienie.
+szukajka.addEventListener('keydown', async (zdarzenie) => {
+  const wiersze = [...listaMakr.querySelectorAll('li[data-id-makra]')]
+  if (!wiersze.length) return
+
+  if (zdarzenie.key === 'ArrowDown' || zdarzenie.key === 'ArrowUp') {
+    zdarzenie.preventDefault()
+    const krok = zdarzenie.key === 'ArrowDown' ? 1 : -1
+    zaznaczoneMakro = (zaznaczoneMakro + krok + wiersze.length) % wiersze.length
+    await odswiezMakra()
+    listaMakr.querySelector('li[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' })
+    return
+  }
+
+  if (zdarzenie.key === 'Enter') {
+    zdarzenie.preventDefault()
+    const idMakra = wiersze[zaznaczoneMakro]?.dataset.idMakra
+    const makra = await window.mostHub.listaMakr(szukajka.value)
+    const makro = makra.find((m) => m.id === idMakra)
+    if (makro) await wstawMakro(makro)
+  }
+})
 
 document.getElementById('otworz-makra').addEventListener('click', async () => {
   szukajka.value = ''
+  zaznaczoneMakro = 0
   await odswiezMakra()
   pokazDialog(oknoMakr)
   szukajka.focus()
@@ -189,12 +301,14 @@ window.addEventListener('keydown', (zdarzenie) => {
 // do renderera — przechwytuje go wtedy proces glowny i przysyla gotowa decyzje.
 window.mostHub.naOtwarcieMakr(() => document.getElementById('otworz-makra').click())
 
-// Spec sekcja 8: nieudany start ma dac jawny komunikat, nie pusty pasek.
-// Komunikat MUSI dac sie zdjac — inaczej nieaktualny blad okupuje pasek do konca
+// Spec sekcja 8: nieudany start ma dac jawny komunikat, nie pusta listwe.
+// Komunikat MUSI dac sie zdjac — inaczej nieaktualny blad okupuje listwe do konca
 // sesji i operator czyta go jeszcze dlugo po naprawieniu przyczyny.
-function pokazKomunikat(tekst) {
+function pokazKomunikat(tekst, ton = 'blad') {
+  const pasek = document.getElementById('komunikat')
   document.getElementById('tresc-komunikatu').textContent = tekst
-  document.getElementById('komunikat').hidden = false
+  pasek.dataset.ton = ton
+  pasek.hidden = false
 }
 
 function schowajKomunikat() {
@@ -204,7 +318,7 @@ function schowajKomunikat() {
 
 document.getElementById('zamknij-komunikat').addEventListener('click', schowajKomunikat)
 
-// Blad zgloszony przez OTWARTE okno dialogowe nie moze isc na gorny pasek: modal
+// Blad zgloszony przez OTWARTE okno dialogowe nie moze isc na listwe: modal
 // unieruchamia wszystko poza soba, wiec komunikat bylby widoczny, ale martwy —
 // nie do zamkniecia i oderwany od pola, ktorego dotyczy. Formularz konta ma
 // wlasne #bledy-konta od poczatku; edytor makra dostaje swoje.
@@ -214,7 +328,7 @@ function pokazBladMakra(tekst) {
 
 async function start() {
   try {
-    await odswiezZakladki()
+    await odswiezSzyne()
   } catch (blad) {
     pokazKomunikat(`Nie udalo sie wczytac kont: ${blad.message}`)
   }
@@ -243,13 +357,18 @@ export function narysujLicznik(suma) {
   return plotno.toDataURL('image/png')
 }
 
-window.mostHub.naLicznik((suma) => {
+// Proces glowny przysyla sume i rozbicie na konta — szyna pokazuje licznik
+// przy kazdym kanale, a nakladka na ikonie nadal potrzebuje samej sumy.
+window.mostHub.naLicznik((dane) => {
+  const suma = typeof dane === 'number' ? dane : (dane?.suma ?? 0)
+  licznikiKont = typeof dane === 'number' ? {} : (dane?.wgKont ?? {})
+  odswiezLiczniki()
   window.mostHub.ustawNakladke(narysujLicznik(suma))
 })
 
-// Komunikaty z procesu glownego (np. nieudane ladowanie konta) ladują w pasku,
+// Komunikaty z procesu glownego (np. nieudane ladowanie konta) ladują na listwie,
 // nie w modalnym okienku — jedno chore konto nie blokuje pozostalych.
-window.mostHub.naKomunikat(pokazKomunikat)
+window.mostHub.naKomunikat((tekst) => pokazKomunikat(tekst))
 
 const oknoEdytora = document.getElementById('okno-edytora')
 const edytorNazwa = document.getElementById('edytor-nazwa')
@@ -437,10 +556,13 @@ async function odswiezListeKont() {
 
     // Kolejnosc zmieniamy przyciskami, nie przeciaganiem: nad trescia okna leza
     // natywne widoki kont i chwytanie elementu myszka bywa przez nie zjadane.
+    const przesuwanie = document.createElement('span')
+    przesuwanie.className = 'przesuwanie'
+
     const wGore = document.createElement('button')
     wGore.type = 'button'
     wGore.className = 'w-gore'
-    wGore.textContent = 'W gore'
+    wGore.textContent = '▲'
     wGore.title = `Przesun ${konto.nazwa} w gore`
     wGore.disabled = indeks === 0
     wGore.addEventListener('click', () => przesunKonto(konto.id, -1))
@@ -448,10 +570,12 @@ async function odswiezListeKont() {
     const wDol = document.createElement('button')
     wDol.type = 'button'
     wDol.className = 'w-dol'
-    wDol.textContent = 'W dol'
+    wDol.textContent = '▼'
     wDol.title = `Przesun ${konto.nazwa} w dol`
     wDol.disabled = indeks === konta.length - 1
     wDol.addEventListener('click', () => przesunKonto(konto.id, 1))
+
+    przesuwanie.append(wGore, wDol)
 
     const edytuj = document.createElement('button')
     edytuj.type = 'button'
@@ -467,14 +591,14 @@ async function odswiezListeKont() {
     usun.title = `Usun konto ${konto.nazwa}`
     usun.addEventListener('click', () => zapytajOUsuniecie(konto))
 
-    pozycja.append(znacznik, opis, platforma, wGore, wDol, edytuj, usun)
+    pozycja.append(znacznik, opis, platforma, przesuwanie, edytuj, usun)
     listaKont.append(pozycja)
   })
 }
 
 async function przesunKonto(idKonta, przesuniecie) {
   await window.mostHub.przesunKonto(idKonta, przesuniecie)
-  await odswiezZakladki()
+  await odswiezSzyne()
   await odswiezListeKont()
 }
 
@@ -499,7 +623,7 @@ document.getElementById('dodaj-konto-ustawienia').addEventListener('click', () =
 function zapytajOUsuniecie(konto) {
   kontoDoUsuniecia = konto
   document.getElementById('tresc-usuwania').textContent =
-    `Konto "${konto.nazwa}" zniknie z paska zakladek.`
+    `Konto "${konto.nazwa}" zniknie z szyny kanalow.`
   pokazDialog(oknoUsuwania)
 }
 
@@ -520,7 +644,7 @@ document.getElementById('potwierdz-usuniecie').addEventListener('click', async (
     pokazKomunikat(wynik.bledy.join('; '))
     return
   }
-  await odswiezZakladki()
+  await odswiezSzyne()
   await odswiezListeKont()
 })
 

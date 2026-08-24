@@ -33,7 +33,7 @@ test.beforeEach(async () => {
   await dodajKonto('Messenger', 'messenger')
   await dodajKonto('WhatsApp prywatny', 'whatsapp')
   await dodajKonto('WhatsApp sluzbowy', 'whatsapp')
-  await expect(okno.locator('.zakladka')).toHaveCount(3)
+  await expect(okno.locator('.kanal')).toHaveCount(3)
 })
 
 test.afterEach(async () => {
@@ -56,8 +56,8 @@ test('zmiana nazwy poprawia zakladke i nie tworzy drugiego konta', async () => {
   await okno.locator('#okno-konta input[name="nazwa"]').fill('WhatsApp dom')
   await okno.locator('#zapisz-konto').click()
 
-  await expect(okno.locator('.zakladka')).toHaveCount(3)
-  await expect(okno.locator('.zakladka').nth(1)).toHaveText('WhatsApp dom')
+  await expect(okno.locator('.kanal')).toHaveCount(3)
+  await expect(okno.locator('.kanal').nth(1).locator('.kanal-nazwa')).toHaveText('WhatsApp dom')
 })
 
 test('zmiana nazwy nie rusza id konta, wiec zalogowanie zostaje', async () => {
@@ -67,7 +67,7 @@ test('zmiana nazwy nie rusza id konta, wiec zalogowanie zostaje', async () => {
   await wierszKonta('WhatsApp prywatny').locator('.edytuj-konto').click()
   await okno.locator('#okno-konta input[name="nazwa"]').fill('WhatsApp dom')
   await okno.locator('#zapisz-konto').click()
-  await expect(okno.locator('.zakladka').nth(1)).toHaveText('WhatsApp dom')
+  await expect(okno.locator('.kanal').nth(1).locator('.kanal-nazwa')).toHaveText('WhatsApp dom')
 
   const po = await zapisaneKonta()
   expect(po[1].id).toBe(przed)
@@ -95,7 +95,7 @@ test('przycisk w gore zmienia kolejnosc zakladek i zapisuje ja', async () => {
   await okno.locator('#otworz-ustawienia').click()
   await wierszKonta('WhatsApp sluzbowy').locator('.w-gore').click()
 
-  await expect(okno.locator('.zakladka').nth(1)).toHaveText('WhatsApp sluzbowy')
+  await expect(okno.locator('.kanal').nth(1).locator('.kanal-nazwa')).toHaveText('WhatsApp sluzbowy')
   expect((await zapisaneKonta()).map((k) => k.nazwa)).toEqual([
     'Messenger',
     'WhatsApp sluzbowy',
@@ -107,7 +107,7 @@ test('przycisk w dol zmienia kolejnosc zakladek', async () => {
   await okno.locator('#otworz-ustawienia').click()
   await wierszKonta('Messenger').locator('.w-dol').click()
 
-  await expect(okno.locator('.zakladka').first()).toHaveText('WhatsApp prywatny')
+  await expect(okno.locator('.kanal').first().locator('.kanal-nazwa')).toHaveText('WhatsApp prywatny')
   expect((await zapisaneKonta()).map((k) => k.nazwa)).toEqual([
     'WhatsApp prywatny',
     'Messenger',
@@ -124,11 +124,11 @@ test('krance listy maja wylaczone przyciski przesuwania', async () => {
 
 test('przesuniecie konta nie przerzuca operatora na pierwsza zakladke', async () => {
   // Operator pracuje na trzecim koncie; porzadkowanie listy nie moze go stamtad wyrzucic.
-  await okno.locator('.zakladka').nth(2).click()
-  await expect(okno.locator('.zakladka').nth(2)).toHaveAttribute('aria-selected', 'true')
+  await okno.locator('.kanal').nth(2).click()
+  await expect(okno.locator('.kanal').nth(2)).toHaveAttribute('aria-selected', 'true')
 
   await okno.locator('#otworz-ustawienia').click()
   await wierszKonta('Messenger').locator('.w-dol').click()
 
-  await expect(okno.locator('.zakladka[aria-selected="true"]')).toHaveText('WhatsApp sluzbowy')
+  await expect(okno.locator('.kanal[aria-selected="true"] .kanal-nazwa')).toHaveText('WhatsApp sluzbowy')
 })

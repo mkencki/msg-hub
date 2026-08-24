@@ -65,7 +65,7 @@ test('spakowana aplikacja wstaje z dzialajacym rendererem i mostem IPC', async (
   await okno.locator('#okno-konta input[name="nazwa"]').fill('Messenger')
   await okno.locator('#okno-konta select[name="platforma"]').selectOption('messenger')
   await okno.locator('#zapisz-konto').click()
-  await expect(okno.locator('.zakladka')).toHaveCount(1)
+  await expect(okno.locator('.kanal')).toHaveCount(1)
 
   await okno.locator('#dodaj-konto').click()
   await expect(okno.locator('#okno-konta')).toBeVisible()

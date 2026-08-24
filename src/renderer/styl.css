@@ -1,60 +1,472 @@
-:root { color-scheme: dark; --tlo: #111b21; --panel: #202c33; --tekst: #e9edef; --akcent: #2f7d5b; }
+/* ---------------------------------------------------------------------------
+   Konsola msg-hub
+
+   Obudowa jest CELOWO odbarwiona: jedynym nasyconym kolorem w oknie jest kolor
+   aktywnego konta. Kolory kont nadaje operator, wiec chrome ma je goscic,
+   a nie z nimi konkurowac.
+
+   Kroje sa systemowe, bez ani jednego zapytania do sieci — aplikacja powstala
+   z audytu prywatnosci, wiec pobieranie czcionek z cudzego serwera przy kazdym
+   starcie bylo by z nia niespojne. Bahnschrift to windowsowa pochodna DIN 1451,
+   pisma niemieckich znakow drogowych: wlasciwy rodowod dla narzedzia o mycie,
+   PASSango i Toll Collect, a przy tym waskie doslownie mieszczace nazwy kont.
+   --------------------------------------------------------------------------- */
+
+:root {
+  --obudowa: #151a20;
+  --panel: #1d242c;
+  --rowek: #0f1319;
+  --kresa: #2b343e;
+  --napis: #e4e8ec;
+  --cichy: #7c8794;
+  --lampa: #d9822b;
+  --kanal: #2f7d5b;
+
+  --szyna: 162px;
+  --listwa: 30px;
+  --gieciec: cubic-bezier(.2, .7, .3, 1);
+
+  --pismo-konsoli: Bahnschrift, "DIN Next", "Segoe UI", system-ui, sans-serif;
+  --pismo-danych: Consolas, "Cascadia Mono", ui-monospace, monospace;
+  --pismo-zdan: "Segoe UI", system-ui, sans-serif;
+}
+
 * { box-sizing: border-box; }
-body { margin: 0; font: 14px/1.4 "Segoe UI", system-ui, sans-serif; background: var(--tlo); color: var(--tekst); }
-#pasek { display: flex; align-items: center; gap: 4px; height: 44px; padding: 0 8px; background: var(--panel); }
-#zakladki { display: flex; gap: 4px; flex: 1; }
-.zakladka { padding: 6px 14px; border: 0; border-radius: 6px; background: transparent; color: var(--tekst); cursor: pointer; border-bottom: 3px solid transparent; }
-.zakladka[aria-selected="true"] { background: #2a3942; border-bottom-color: var(--kolor-konta, var(--akcent)); }
-button { border: 0; border-radius: 6px; padding: 6px 12px; background: #2a3942; color: var(--tekst); cursor: pointer; }
-dialog { border: 0; border-radius: 10px; background: var(--panel); color: var(--tekst); min-width: 420px; }
-dialog label { display: block; margin: 10px 0; }
-dialog input, dialog select, dialog textarea { width: 100%; padding: 6px; border-radius: 6px; border: 1px solid #3b4a54; background: var(--tlo); color: var(--tekst); font: inherit; }
-.bledy { color: #f15c6d; min-height: 1em; }
-#komunikat { display: flex; align-items: center; gap: 6px; max-width: 45%; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  display: grid;
+  grid-template-columns: var(--szyna) 1fr;
+  grid-template-rows: 1fr var(--listwa);
+  grid-template-areas:
+    "szyna studnia"
+    "szyna listwa";
+  background: var(--obudowa);
+  color: var(--napis);
+  font-family: var(--pismo-zdan);
+  font-size: 14px;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ---------- szyna kanalow ---------- */
+#szyna {
+  grid-area: szyna;
+  background: var(--panel);
+  border-right: 1px solid var(--kresa);
+  display: flex;
+  flex-direction: column;
+  padding: 10px 0;
+  min-height: 0;
+}
+
+.szyna-tytul {
+  margin: 0;
+  padding: 4px 14px 10px;
+  font-family: var(--pismo-danych);
+  font-size: 10px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--cichy);
+}
+
+#kanaly { flex: 1; min-height: 0; overflow-y: auto; }
+
+.kanal {
+  position: relative;
+  display: grid;
+  grid-template-columns: 9px 1fr;
+  align-items: center;
+  gap: 2px 9px;
+  width: 100%;
+  padding: 8px 12px 8px 14px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  color: var(--cichy);
+  font-family: var(--pismo-konsoli);
+  font-stretch: 75%;
+  font-size: 17px;
+  letter-spacing: .01em;
+  transition: background .18s var(--gieciec), color .18s var(--gieciec);
+}
+.kanal::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 6px; bottom: 6px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: transparent;
+  transition: background .18s var(--gieciec);
+}
+.kanal:hover { background: #232b34; color: var(--napis); }
+.kanal[aria-selected="true"] { background: #232b34; color: var(--napis); }
+.kanal[aria-selected="true"]::before { background: var(--barwa); }
+.kanal:focus-visible { outline: 2px solid var(--napis); outline-offset: -2px; }
+
+.chip { width: 9px; height: 9px; border-radius: 2px; flex: none; background: var(--barwa); }
+
+.kanal-nazwa { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Licznik stoi POD nazwa: w jednej linii dluzsza nazwa konta konkurowala
+   z odznaka i ladowala na wielokropku. */
+.kanal-dane {
+  grid-column: 2;
+  font-family: var(--pismo-danych);
+  font-size: 10px;
+  letter-spacing: .04em;
+  color: #66707d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kanal[aria-selected="true"] .kanal-dane { color: var(--cichy); }
+.kanal-dane em { font-style: normal; color: var(--barwa); }
+
+.szyna-stopka { padding-top: 8px; border-top: 1px solid var(--kresa); }
+
+.szyna-akcja {
+  display: block;
+  width: 100%;
+  padding: 7px 12px 7px 17px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  color: var(--cichy);
+  font-family: var(--pismo-konsoli);
+  font-stretch: 87.5%;
+  font-size: 15px;
+}
+.szyna-akcja:hover { background: #232b34; color: var(--napis); }
+.szyna-akcja:focus-visible { outline: 2px solid var(--napis); outline-offset: -2px; }
+
+/* ---------- studnia robocza i krawedz na antenie ---------- */
+#studnia { grid-area: studnia; padding: 8px; min-width: 0; }
+
+/* Widok konta to natywna warstwa NAD ta ramka — proces glowny ustawia mu
+   prostokat dokladnie wewnatrz obramowania (MARGINES_STUDNI w main.js). */
+#wglebienie {
+  height: 100%;
+  background: var(--rowek);
+  border: 2px solid var(--kanal);
+  border-radius: 4px;
+  box-shadow: inset 0 0 34px -6px color-mix(in srgb, var(--kanal) 26%, transparent);
+  transition: border-color .3s var(--gieciec), box-shadow .3s var(--gieciec);
+}
+
+/* ---------- listwa stanu ---------- */
+#listwa {
+  grid-area: listwa;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 12px;
+  background: var(--panel);
+  border-top: 1px solid var(--kresa);
+  font-family: var(--pismo-danych);
+  font-size: 11px;
+  color: var(--cichy);
+  min-width: 0;
+}
+
+.listwa-kanal { display: flex; align-items: center; gap: 7px; color: var(--napis); flex: none; }
+.listwa-kanal .chip { width: 7px; height: 7px; border-radius: 50%; }
+
+.listwa-prawa { margin-left: auto; display: flex; align-items: center; gap: 10px; flex: none; }
+#listwa-licznik { font-variant-numeric: tabular-nums; }
+
+#listwa button {
+  font-family: var(--pismo-konsoli);
+  font-stretch: 87.5%;
+  font-size: 14px;
+  color: var(--cichy);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+#listwa button:hover { color: var(--napis); }
+#listwa button:focus-visible { outline: 2px solid var(--napis); outline-offset: 1px; }
+
+.skrot {
+  display: inline-block;
+  border: 1px solid #3a4551;
+  border-radius: 3px;
+  padding: 0 5px;
+  background: #10151a;
+  color: var(--cichy);
+  font-family: var(--pismo-danych);
+  font-size: 10px;
+}
+
+/* ---------- komunikaty ---------- */
+.bledy { color: var(--lampa); min-height: 1em; font-family: var(--pismo-zdan); font-size: 12.5px; }
+
+#komunikat { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1; }
 /* Atrybut hidden dziala regula [hidden]{display:none} z arkusza przegladarki —
    autorskie display powyzej ja bije, wiec pasek trzeba chowac jawnie. */
 #komunikat[hidden] { display: none; }
+#komunikat[data-ton="info"] { color: var(--cichy); }
 #tresc-komunikatu { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#zamknij-komunikat { flex: none; padding: 0 6px; background: transparent; color: inherit; font-size: 16px; line-height: 1; }
-#zamknij-komunikat:hover { background: #f15c6d; color: #fff; }
-#lista-makr { list-style: none; margin: 8px 0; padding: 0; max-height: 50vh; overflow: auto; }
-#lista-makr li { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 6px; cursor: pointer; }
-.etykieta-makra { flex: 1; }
-.edytuj-makro, .usun-makro { padding: 4px 10px; font-size: 12px; flex: none; opacity: 0.55; }
-#lista-makr li:hover .edytuj-makro, #lista-makr li:hover .usun-makro { opacity: 1; }
-#lista-makr li:hover { background: #2a3942; }
-#lista-makr .puste { color: #8696a0; cursor: default; }
-#pasek-formatowania { display: flex; gap: 4px; flex-wrap: wrap; margin: 8px 0; }
-#pasek-formatowania button { padding: 4px 10px; font-size: 12px; }
-#edytor-podglad { background: #0b141a; border-radius: 6px; padding: 10px; min-height: 60px; max-height: 30vh; overflow: auto; }
+
+#zamknij-komunikat {
+  flex: none;
+  padding: 0 6px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: inherit;
+  font-size: 15px;
+  line-height: 1;
+}
+#zamknij-komunikat:hover { background: var(--lampa); color: #16110a; border-radius: 3px; }
+#zamknij-komunikat:focus-visible { outline: 2px solid var(--napis); outline-offset: 1px; }
+
+/* ---------- okna dialogowe ---------- */
+dialog {
+  border: 1px solid var(--kresa);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--napis);
+  padding: 0;
+  max-width: min(620px, 88vw);
+  width: min(560px, 88vw);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, .55);
+}
+dialog::backdrop { background: rgba(8, 11, 14, .62); }
+
+dialog h2 {
+  margin: 0;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--kresa);
+  font-family: var(--pismo-konsoli);
+  font-stretch: 87.5%;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.okno-glowa { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--kresa); }
+.okno-glowa h2 { flex: 1; border-bottom: 0; }
+.cel {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-right: 16px;
+  font-family: var(--pismo-danych);
+  font-size: 11px;
+  color: var(--cichy);
+}
+.cel .chip { width: 7px; height: 7px; border-radius: 50%; }
+.cel b { color: var(--napis); font-weight: 500; }
+
+dialog label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0 16px 10px;
+  font-size: 12.5px;
+  color: var(--cichy);
+}
+dialog form > label:first-of-type { margin-top: 12px; }
+
+dialog input, dialog select, dialog textarea {
+  width: 100%;
+  padding: 8px 9px;
+  border: 1px solid var(--kresa);
+  border-radius: 4px;
+  background: var(--rowek);
+  color: var(--napis);
+  font-family: var(--pismo-danych);
+  font-size: 12.5px;
+  resize: vertical;
+}
+dialog input:focus, dialog select:focus, dialog textarea:focus {
+  outline: 0;
+  border-color: var(--kanal);
+}
+dialog input[type="color"] { padding: 2px; height: 30px; cursor: pointer; }
+
+#bledy-konta, #bledy-makra { margin: 0 16px 10px; }
+
+.podpowiedz {
+  margin: 0;
+  font-family: var(--pismo-danych);
+  font-size: 10.5px;
+  color: var(--cichy);
+}
+dialog > .podpowiedz { padding: 0 16px 12px; }
+
+.ostrzezenie {
+  margin: 0 0 10px;
+  padding: 9px 16px;
+  background: color-mix(in srgb, var(--lampa) 12%, transparent);
+  border-left: 2px solid var(--lampa);
+  color: #f0c393;
+  font-size: 12.5px;
+}
+
+dialog menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 16px;
+  border-top: 1px solid var(--kresa);
+  background: #1a2028;
+  list-style: none;
+}
+dialog menu .podpowiedz { margin-right: auto; }
+dialog menu > button:first-of-type:not(.glowna) { margin-left: auto; }
+
+/* ---------- przyciski ---------- */
+button {
+  font-family: var(--pismo-konsoli);
+  font-stretch: 87.5%;
+  font-size: 15px;
+  padding: 6px 14px;
+  border: 1px solid #37424e;
+  border-radius: 4px;
+  background: #2b343e;
+  color: var(--napis);
+  cursor: pointer;
+}
+button:hover { background: #35404c; }
+button:focus-visible { outline: 2px solid var(--napis); outline-offset: 1px; }
+button.glowna { background: var(--kanal); border-color: transparent; color: #0f1319; font-weight: 600; }
+button.glowna:hover { filter: brightness(1.12); }
+button.grozny { background: transparent; border-color: color-mix(in srgb, var(--lampa) 45%, transparent); color: var(--lampa); }
+button.grozny:hover { background: var(--lampa); color: #16110a; }
+button:disabled { opacity: .3; cursor: default; }
+
+/* ---------- panel makr ---------- */
+/* width:auto znioslby dialog input{width:100%} i pole skurczyloby sie do
+   domyslnej szerokosci — marginesy trzeba odjac jawnie. */
+#szukaj-makro {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 12px 16px;
+  font-size: 13px;
+}
+
+#lista-makr { list-style: none; margin: 0; padding: 0 8px 8px; max-height: 46vh; overflow-y: auto; }
+#lista-makr li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 9px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+#lista-makr li:hover { background: #262f39; }
+#lista-makr li[aria-selected="true"] { background: #262f39; box-shadow: inset 2px 0 0 var(--kanal); }
+#lista-makr .puste { color: var(--cichy); cursor: default; display: block; padding: 20px 9px; text-align: center; }
+
+.etykieta-makra {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--pismo-danych);
+  font-size: 12.5px;
+}
+.edytuj-makro, .usun-makro { flex: none; padding: 3px 9px; font-size: 13px; opacity: 0; }
+#lista-makr li:hover .edytuj-makro,
+#lista-makr li:hover .usun-makro,
+#lista-makr li[aria-selected="true"] .edytuj-makro,
+#lista-makr li[aria-selected="true"] .usun-makro { opacity: 1; }
+
+/* ---------- edytor makra ---------- */
+.edytor { display: grid; grid-template-columns: 1fr 1fr; }
+.edytor-kolumna { padding: 12px 0; min-width: 0; }
+.edytor-kolumna + .edytor-kolumna { border-left: 1px solid var(--kresa); background: #1a2028; }
+.edytor-kolumna .etykieta {
+  margin: 0 16px 5px;
+  font-family: var(--pismo-danych);
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--cichy);
+}
+
+#pasek-formatowania { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 16px 10px; }
+#pasek-formatowania button { padding: 3px 9px; font-size: 13px; }
+
+#edytor-podglad {
+  margin: 0 16px 12px;
+  padding: 10px;
+  min-height: 64px;
+  max-height: 22vh;
+  overflow: auto;
+  background: var(--rowek);
+  border: 1px solid var(--kresa);
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.55;
+  user-select: text;
+}
 #edytor-podglad p { margin: 0 0 6px; }
 #edytor-podglad li { margin-left: 18px; }
-#edytor-podglad blockquote { margin: 0 0 6px; padding-left: 10px; border-left: 3px solid var(--akcent); color: #8696a0; }
-#edytor-podglad code { background: #202c33; padding: 1px 4px; border-radius: 4px; font-family: Consolas, monospace; }
-.zakladka { display: inline-flex; align-items: center; gap: 8px; }
-/* Krzyzyk jest widoczny zawsze, tylko przygaszony — ukryty do najechania nie
-   powiedzialby operatorowi, ze konto w ogole da sie usunac. */
-.usun-konto { padding: 0 5px; border-radius: 4px; background: transparent; color: #8696a0; font-size: 15px; line-height: 1; opacity: 0.5; }
-.zakladka:hover .usun-konto, .zakladka[aria-selected="true"] .usun-konto { opacity: 1; }
-.usun-konto:hover { background: #f15c6d; color: #fff; }
-.ostrzezenie { color: #8696a0; }
-button.grozny { background: #f15c6d; color: #fff; }
-#okno-ustawien { min-width: 520px; }
-#okno-ustawien h3 { margin: 16px 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: #8696a0; }
-#lista-kont { list-style: none; margin: 0 0 12px; padding: 0; }
-#lista-kont li { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 6px; background: #2a3942; margin-bottom: 6px; }
-#lista-kont .puste { color: #8696a0; background: transparent; }
-.znacznik-konta { width: 10px; height: 10px; border-radius: 50%; flex: none; }
-.opis-konta { flex: 1; }
-.platforma-konta { color: #8696a0; font-size: 12px; }
-#lista-kont .usun-konto { padding: 4px 12px; font-size: 12px; opacity: 1; }
-#lista-kont button:not(.grozny), .zdejmij-zalacznik, .edytuj-makro { background: #3b4a54; }
-#lista-kont button { flex: none; padding: 4px 10px; font-size: 12px; }
-.w-gore, .w-dol { min-width: 58px; }
-#lista-kont button:disabled { opacity: 0.3; cursor: default; }
+#edytor-podglad b { color: #fff; }
 
-#lista-zalacznikow { list-style: none; margin: 0 0 8px; padding: 0; }
-#lista-zalacznikow li { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 6px; background: #2a3942; margin-bottom: 4px; }
-#lista-zalacznikow .puste { color: #8696a0; background: transparent; padding-left: 0; }
-.nazwa-zalacznika { flex: 1; overflow-wrap: anywhere; }
-.zdejmij-zalacznik { padding: 4px 10px; font-size: 12px; flex: none; }
+#lista-zalacznikow { list-style: none; margin: 0 16px 10px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+#lista-zalacznikow li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 8px;
+  background: var(--rowek);
+  border: 1px solid var(--kresa);
+  border-radius: 4px;
+  font-family: var(--pismo-danych);
+  font-size: 11px;
+}
+#lista-zalacznikow .puste { color: var(--cichy); background: transparent; border-color: transparent; padding-left: 0; }
+.nazwa-zalacznika { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.zdejmij-zalacznik { flex: none; padding: 3px 9px; font-size: 13px; }
+#dodaj-zalacznik { margin: 0 16px; padding: 3px 9px; font-size: 13px; }
+
+/* ---------- ustawienia ---------- */
+#lista-kont { list-style: none; margin: 12px 16px; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+#lista-kont li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--rowek);
+  border: 1px solid var(--kresa);
+  border-radius: 5px;
+}
+#lista-kont .puste { color: var(--cichy); background: transparent; border-color: transparent; }
+
+.znacznik-konta { width: 14px; height: 14px; border-radius: 3px; flex: none; border: 1px solid #ffffff1f; }
+.opis-konta { flex: 1; min-width: 0; font-family: var(--pismo-konsoli); font-stretch: 87.5%; font-size: 16px; }
+.platforma-konta {
+  font-family: var(--pismo-danych);
+  font-size: 9.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--cichy);
+}
+
+#lista-kont button { flex: none; padding: 3px 9px; font-size: 13px; }
+.przesuwanie { display: flex; flex-direction: column; gap: 1px; flex: none; }
+.przesuwanie button {
+  display: flex; align-items: center; justify-content: center;
+  padding: 0; width: 22px; height: 15px; font-size: 9px; line-height: 1;
+  border-radius: 2px; overflow: hidden;
+}
+
+/* ---------- paski przewijania ---------- */
+::-webkit-scrollbar { width: 9px; }
+::-webkit-scrollbar-track { background: var(--rowek); }
+::-webkit-scrollbar-thumb { background: #39434f; border-radius: 5px; border: 2px solid var(--rowek); }
+::-webkit-scrollbar-thumb:hover { background: #4a5765; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: .01ms !important; }
+}

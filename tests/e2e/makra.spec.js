@@ -52,7 +52,7 @@ test('wybor makra kladzie tekst w schowku i nie wysyla wiadomosci', async () => 
   await okno.locator('#dodaj-konto').click()
   await okno.locator('#okno-konta input[name="nazwa"]').fill('WhatsApp testowy')
   await okno.locator('#zapisz-konto').click()
-  await expect(okno.locator('.zakladka')).toHaveCount(1)
+  await expect(okno.locator('.kanal')).toHaveCount(1)
 
   const tresc = '*Jak dodac kierowce:*\n- Zaloguj sie'
   await okno.evaluate(

@@ -25,9 +25,9 @@ projektu. **Nie używaj `npm run dist`** jako drogi codziennej: Smart App Contro
 | | |
 |---|---|
 | **Konta** | dowolnie wiele, każde w partycji `persist:<id>` — pełna izolacja ciasteczek, `localStorage` i `IndexedDB` |
-| **Zakładki** | przełączanie bez przeładowania strony, kolor per konto, licznik nieprzeczytanych |
+| **Szyna kanałów** | przełączanie bez przeładowania strony, licznik nowych przy każdym koncie, kolor kanału obrysowuje całe okno robocze |
 | **Ustawienia** | zarządzanie kontami: dodanie, zmiana nazwy i koloru, kolejność zakładek, usunięcie wraz z czyszczeniem sesji |
-| **Makra** | `Ctrl+;` — panel z wyszukiwarką po nazwie, treści i tagach; edycja i usuwanie za potwierdzeniem |
+| **Makra** | `Ctrl+;` — paleta z wyszukiwarką, wyborem strzałkami i Enterem; edycja i usuwanie za potwierdzeniem |
 | **Edytor makra** | pasek formatowania WhatsApp, podgląd na żywo, dodawanie i zdejmowanie załączników |
 | **Załączniki** | PDF i mp4 **kopiowane do magazynu aplikacji** — oryginalny plik przestaje być potrzebny; limit 100 MB |
 
@@ -37,6 +37,24 @@ magazyn, żeby kilkumegabajtowe wideo nie zostawało na dysku bez właściciela.
 
 Zmiana nazwy konta **nie rusza jego identyfikatora**, bo na identyfikatorze stoi
 partycja sesji (`persist:<id>`) — poprawka literówki nie wylogowuje konta.
+
+## Interfejs: konsola operatora
+
+Aplikacja obudowuje cudzy interfejs, więc jej własne chrome jest celowo odbarwione —
+jedynym nasyconym kolorem w oknie jest kolor aktywnego konta. Obrysowuje on całe okno
+robocze, bo jedyne realne ryzyko tego produktu to **pomylenie tożsamości**: wysłanie
+treści z prywatnego WhatsAppa do kontaktu służbowego albo odwrotnie. Formularz nowego
+konta podpowiada kolor jeszcze nieużywany, żeby dwa konta nie wyglądały tak samo.
+
+Kanały stoją w szynie po lewej, nie w zakładkach u góry: WhatsApp Web i Messenger mają
+własny nagłówek, więc pasek nad paskiem tworzył wizualną papkę. Paleta makr nazywa konto
+docelowe, a po wstawieniu listwa melduje, co i dokąd poszło — i przypomina, że Enter
+należy do operatora.
+
+Kroje są systemowe, **bez ani jednego zapytania do sieci**: aplikacja powstała z audytu
+prywatności, więc pobieranie czcionek z cudzego serwera przy każdym starcie byłoby z nią
+niespójne. Etykiety konsoli składa Bahnschrift — windowsowa pochodna DIN 1451, pisma
+niemieckich znaków drogowych.
 
 ## Czego NIE robi — i nie będzie robić
 

@@ -8,7 +8,12 @@ import { zarejestrujKanalyKont, zarejestrujKanalyMakr } from './most.js'
 import { utworzSesjeSchowka } from './schowek-pliku.js'
 
 const KATALOG = path.dirname(fileURLToPath(import.meta.url))
-const WYSOKOSC_PASKA = 44
+// Geometria konsoli. Szyna kanalow stoi po lewej, listwa stanu na dole, a widok
+// konta siedzi WEWNATRZ ramki rysowanej przez renderer — margines zostawia miejsce
+// na krawedz w kolorze aktywnego konta.
+const SZEROKOSC_SZYNY = 162
+const WYSOKOSC_LISTWY = 30
+const MARGINES_STUDNI = 10
 const SCIEZKA_IKONY = path.join(KATALOG, '..', 'renderer', 'ikona.png')
 
 app.userAgentFallback = czystyUserAgent(app.userAgentFallback)
@@ -88,7 +93,12 @@ async function utworzOkno() {
 
   const dopasuj = () => {
     const { width, height } = okno.getContentBounds()
-    zarzadca.dopasujGeometrie({ x: 0, y: WYSOKOSC_PASKA, width, height: height - WYSOKOSC_PASKA })
+    zarzadca.dopasujGeometrie({
+      x: SZEROKOSC_SZYNY + MARGINES_STUDNI,
+      y: MARGINES_STUDNI,
+      width: Math.max(0, width - SZEROKOSC_SZYNY - MARGINES_STUDNI * 2),
+      height: Math.max(0, height - WYSOKOSC_LISTWY - MARGINES_STUDNI * 2),
+    })
   }
   okno.on('resize', dopasuj)
 
@@ -101,10 +111,12 @@ async function utworzOkno() {
     // gdy okna juz nie ma. Bez tej straznicy leci "Object has been destroyed"
     // w modalnym oknie bledu Electrona, ktore blokuje zamkniecie procesu.
     if (!okno || okno.isDestroyed()) return
-    const suma = zarzadca.sumaNieprzeczytanych()
+    const wgKont = zarzadca.licznikiKont()
+    const suma = Object.values(wgKont).reduce((razem, ile) => razem + ile, 0)
     okno.setTitle(suma ? `msg-hub (${suma})` : 'msg-hub')
     zasobnik?.setToolTip(suma ? `msg-hub — ${suma} nieprzeczytanych` : 'msg-hub')
-    if (!okno.webContents.isDestroyed()) okno.webContents.send('licznik:zmiana', suma)
+    // Renderer dostaje takze rozbicie na konta — szyna pokazuje licznik przy kazdym.
+    if (!okno.webContents.isDestroyed()) okno.webContents.send('licznik:zmiana', { suma, wgKont })
   }
 
   ipcMain.handle('licznik:nakladka', (_zdarzenie, obrazek) => {

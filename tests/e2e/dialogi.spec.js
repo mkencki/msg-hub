@@ -28,7 +28,7 @@ test.beforeEach(async () => {
   await okno.locator('#okno-konta input[name="nazwa"]').fill('Messenger')
   await okno.locator('#okno-konta select[name="platforma"]').selectOption('messenger')
   await okno.locator('#zapisz-konto').click()
-  await expect(okno.locator('.zakladka')).toHaveCount(1)
+  await expect(okno.locator('.kanal')).toHaveCount(1)
 })
 
 test.afterEach(async () => {
@@ -54,7 +54,7 @@ test('drugie konto da sie dodac po pierwszym', async () => {
   await okno.locator('#okno-konta input[name="nazwa"]').fill('WhatsApp prywatny')
   await okno.locator('#zapisz-konto').click()
 
-  await expect(okno.locator('.zakladka')).toHaveCount(2)
+  await expect(okno.locator('.kanal')).toHaveCount(2)
   await expect.poll(widoczneWidoki).toBe(2)
 })
 

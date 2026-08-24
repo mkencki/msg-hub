@@ -25,7 +25,7 @@ async function dodajKonto() {
   await okno.locator('#dodaj-konto').click()
   await okno.locator('#okno-konta input[name="nazwa"]').fill('Konto testowe')
   await okno.locator('#zapisz-konto').click()
-  await expect(okno.locator('.zakladka')).toHaveCount(1)
+  await expect(okno.locator('.kanal')).toHaveCount(1)
 }
 
 // Ciche niepowodzenie jest gorsze od widocznego bledu: panel znika przy kazdym

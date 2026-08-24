@@ -9,6 +9,8 @@ import {
   utworzIdKonta,
   zmienKonto,
   przesun,
+  wolnyKolor,
+  PALETA_KANALOW,
   WERSJA_SCHEMATU,
 } from '../src/glowny/konta.js'
 
@@ -177,5 +179,28 @@ describe('przesun', () => {
     przesun(konta, 'acc-messenger', 1)
 
     expect(konta.map((k) => k.id)).toEqual(['acc-messenger', 'acc-whatsapp-priv', 'acc-whatsapp-work'])
+  })
+})
+
+describe('wolnyKolor', () => {
+  test('pierwsze konto dostaje pierwszy kolor palety', () => {
+    expect(wolnyKolor([])).toBe(PALETA_KANALOW[0])
+  })
+
+  test('drugie konto NIE dostaje koloru pierwszego — na tym stoi rozroznienie kanalow', () => {
+    const zajety = [{ kolor: PALETA_KANALOW[0] }]
+
+    expect(wolnyKolor(zajety)).not.toBe(PALETA_KANALOW[0])
+    expect(PALETA_KANALOW).toContain(wolnyKolor(zajety))
+  })
+
+  test('porownanie ignoruje wielkosc liter w zapisie koloru', () => {
+    expect(wolnyKolor([{ kolor: PALETA_KANALOW[0].toUpperCase() }])).not.toBe(PALETA_KANALOW[0])
+  })
+
+  test('gdy cala paleta zajeta, wraca do pierwszego zamiast zwrocic nic', () => {
+    const wszystkie = PALETA_KANALOW.map((kolor) => ({ kolor }))
+
+    expect(PALETA_KANALOW).toContain(wolnyKolor(wszystkie))
   })
 })

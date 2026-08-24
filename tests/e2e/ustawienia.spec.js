@@ -29,7 +29,7 @@ test.beforeEach(async () => {
   await wypelnijFormularzKonta('WhatsApp prywatny', 'whatsapp')
   await okno.locator('#dodaj-konto').click()
   await wypelnijFormularzKonta('WhatsApp sluzbowy', 'whatsapp')
-  await expect(okno.locator('.zakladka')).toHaveCount(2)
+  await expect(okno.locator('.kanal')).toHaveCount(2)
 })
 
 test.afterEach(async () => {
@@ -39,7 +39,7 @@ test.afterEach(async () => {
 })
 
 test('zakladka nie ma juz krzyzyka — usuniecie nie moze byc jednym przypadkowym klikiem', async () => {
-  await expect(okno.locator('.zakladka .usun-konto')).toHaveCount(0)
+  await expect(okno.locator('.kanal .usun-konto')).toHaveCount(0)
 })
 
 test('ustawienia pokazuja wszystkie konta z platforma', async () => {
@@ -72,7 +72,7 @@ test('usuniecie konta z ustawien zabiera wpis, zakladke i sesje', async () => {
 
   expect((await zapisaneKonta()).map((k) => k.nazwa)).toEqual(['WhatsApp prywatny'])
   await okno.locator('#zamknij-ustawienia').click()
-  await expect(okno.locator('.zakladka')).toHaveCount(1)
+  await expect(okno.locator('.kanal')).toHaveCount(1)
 
   const ciasteczka = await aplikacja.evaluate(
     ({ session }, id) => session.fromPartition(`persist:${id}`).cookies.get({ name: 'sesja' }),
@@ -95,11 +95,11 @@ test('konto da sie dodac zarowno z ustawien, jak i przyciskiem + w pasku', async
   await okno.locator('#dodaj-konto-ustawienia').click()
   await expect(okno.locator('#okno-konta')).toBeVisible()
   await wypelnijFormularzKonta('Messenger', 'messenger')
-  await expect(okno.locator('.zakladka')).toHaveCount(3)
+  await expect(okno.locator('.kanal')).toHaveCount(3)
 
   await okno.locator('#dodaj-konto').click()
   await wypelnijFormularzKonta('Messenger firmowy', 'messenger')
-  await expect(okno.locator('.zakladka')).toHaveCount(4)
+  await expect(okno.locator('.kanal')).toHaveCount(4)
 })
 
 test('usuniecie ostatniego konta zostawia pusty pasek bez bledu', async () => {
@@ -111,7 +111,7 @@ test('usuniecie ostatniego konta zostawia pusty pasek bez bledu', async () => {
 
   await expect(okno.locator('#lista-kont .puste')).toBeVisible()
   await okno.locator('#zamknij-ustawienia').click()
-  await expect(okno.locator('.zakladka')).toHaveCount(0)
+  await expect(okno.locator('.kanal')).toHaveCount(0)
   await expect(okno.locator('#komunikat')).toBeHidden()
 })
 

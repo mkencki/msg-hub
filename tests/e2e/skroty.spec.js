@@ -27,7 +27,7 @@ async function fokusNaWidokKonta() {
   await okno.locator('#dodaj-konto').click()
   await okno.locator('#okno-konta input[name="nazwa"]').fill('WhatsApp testowy')
   await okno.locator('#zapisz-konto').click()
-  await expect(okno.locator('.zakladka')).toHaveCount(1)
+  await expect(okno.locator('.kanal')).toHaveCount(1)
 
   await aplikacja.evaluate(({ BrowserWindow }) => {
     BrowserWindow.getAllWindows()[0].contentView.children[0].webContents.focus()

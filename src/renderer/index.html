@@ -2,16 +2,36 @@
 <meta charset="utf-8" />
 <title>msg-hub</title>
 <link rel="stylesheet" href="styl.css" />
-<header id="pasek">
-  <nav id="zakladki"></nav>
-  <div id="komunikat" class="bledy" hidden>
+
+<!-- Szyna kanalow po lewej: widoki kont maja wlasny naglowek, wiec zakladki
+     u gory staly naprzeciw niego. Tozsamosc konta idzie teraz w bok, a kolor
+     aktywnego kanalu obrysowuje cala studnie robocza. -->
+<nav id="szyna" aria-label="Kanaly">
+  <p class="szyna-tytul">Kanaly</p>
+  <div id="kanaly"></div>
+  <div class="szyna-stopka">
+    <button id="otworz-ustawienia" class="szyna-akcja" title="Ustawienia">Ustawienia</button>
+    <button id="dodaj-konto" class="szyna-akcja" title="Dodaj konto">Dodaj konto</button>
+  </div>
+</nav>
+
+<main id="studnia">
+  <div id="wglebienie"></div>
+</main>
+
+<footer id="listwa">
+  <span class="listwa-kanal"><i id="listwa-chip" class="chip"></i><span id="listwa-nazwa"></span></span>
+  <div id="komunikat" class="bledy" data-ton="blad" hidden>
     <span id="tresc-komunikatu"></span>
     <button type="button" id="zamknij-komunikat" title="Ukryj komunikat">&times;</button>
   </div>
-  <button id="otworz-makra" title="Makra (Ctrl+;)">Makra</button>
-  <button id="otworz-ustawienia" title="Ustawienia">Ustawienia</button>
-  <button id="dodaj-konto" title="Dodaj konto">+</button>
-</header>
+  <span class="listwa-prawa">
+    <button id="otworz-makra" title="Makra (Ctrl+;)">Makra</button>
+    <span class="skrot">Ctrl+;</span>
+    <span id="listwa-licznik"></span>
+  </span>
+</footer>
+
 <dialog id="okno-konta">
   <form method="dialog">
     <h2 id="tytul-konta">Dodaj konto</h2>
@@ -22,43 +42,50 @@
         <option value="messenger">Messenger</option>
       </select>
     </label>
-    <label>Kolor zakladki <input name="kolor" type="color" value="#2f7d5b" /></label>
+    <label>Kolor kanalu <input name="kolor" type="color" value="#2f7d5b" /></label>
     <p id="bledy-konta" class="bledy"></p>
     <menu>
       <!-- formnovalidate: bez tego walidacja pustego pola "Nazwa" blokuje anulowanie -->
       <button value="anuluj" formnovalidate>Anuluj</button>
-      <button id="zapisz-konto" value="zapisz">Zapisz</button>
+      <button id="zapisz-konto" value="zapisz" class="glowna">Zapisz</button>
     </menu>
   </form>
 </dialog>
+
 <dialog id="okno-ustawien">
-  <h2>Ustawienia</h2>
-  <section>
-    <h3>Zarzadzanie kontami</h3>
-    <ul id="lista-kont"></ul>
-    <button type="button" id="dodaj-konto-ustawienia">Dodaj konto</button>
-  </section>
+  <h2>Konta</h2>
+  <ul id="lista-kont"></ul>
+  <p class="podpowiedz">Kolejnosc na liscie jest kolejnoscia kanalow.</p>
   <menu>
-    <button id="zamknij-ustawienia" value="zamknij">Zamknij</button>
+    <button type="button" id="dodaj-konto-ustawienia">Dodaj konto</button>
+    <button id="zamknij-ustawienia" value="zamknij" class="glowna">Zamknij</button>
   </menu>
 </dialog>
+
 <dialog id="okno-usuwania">
   <h2>Usunac konto?</h2>
   <p id="tresc-usuwania"></p>
-  <p class="ostrzezenie">Zalogowanie zostanie skasowane — ponowne dodanie konta wymaga nowego kodu QR.</p>
+  <p class="ostrzezenie">Usuniecie kasuje zalogowanie. Ponowne dodanie wymaga nowego kodu QR.</p>
   <menu>
     <button id="anuluj-usuniecie" value="anuluj">Anuluj</button>
     <button id="potwierdz-usuniecie" value="usun" class="grozny">Usun konto</button>
   </menu>
 </dialog>
+
 <dialog id="okno-makr">
-  <input id="szukaj-makro" placeholder="Szukaj makra..." autocomplete="off" />
+  <div class="okno-glowa">
+    <h2>Makra</h2>
+    <span class="cel">wstaw do <i id="cel-chip" class="chip"></i><b id="cel-nazwa"></b></span>
+  </div>
+  <input id="szukaj-makro" placeholder="Szukaj po nazwie, tresci lub tagu" autocomplete="off" />
   <ul id="lista-makr"></ul>
   <menu>
+    <span class="podpowiedz"><span class="skrot">&#8593;&#8595;</span> wybor <span class="skrot">Enter</span> wstaw <span class="skrot">Esc</span> zamknij</span>
     <button id="zamknij-makra" value="zamknij">Zamknij</button>
-    <button id="nowe-makro" value="nowe">Nowe makro</button>
+    <button id="nowe-makro" value="nowe" class="glowna">Nowe makro</button>
   </menu>
 </dialog>
+
 <dialog id="okno-usuwania-makra">
   <h2>Usunac makro?</h2>
   <p id="tresc-usuwania-makra"></p>
@@ -67,27 +94,36 @@
     <button id="potwierdz-usuniecie-makra" value="usun" class="grozny">Usun makro</button>
   </menu>
 </dialog>
+
 <dialog id="okno-edytora">
   <h2 id="tytul-edytora">Makro</h2>
-  <label>Nazwa <input id="edytor-nazwa" /></label>
-  <div id="pasek-formatowania">
-    <button type="button" data-znacznik="*">Pogrubienie</button>
-    <button type="button" data-znacznik="_">Kursywa</button>
-    <button type="button" data-znacznik="~">Przekreslenie</button>
-    <button type="button" data-prefiks="- ">Lista</button>
-    <button type="button" data-prefiks="1. ">Numeracja</button>
-    <button type="button" data-prefiks="&gt; ">Cytat</button>
+  <div class="edytor">
+    <div class="edytor-kolumna">
+      <label>Nazwa <input id="edytor-nazwa" /></label>
+      <div id="pasek-formatowania">
+        <button type="button" data-znacznik="*">Pogrubienie</button>
+        <button type="button" data-znacznik="_">Kursywa</button>
+        <button type="button" data-znacznik="~">Przekreslenie</button>
+        <button type="button" data-prefiks="- ">Lista</button>
+        <button type="button" data-prefiks="1. ">Numeracja</button>
+        <button type="button" data-prefiks="&gt; ">Cytat</button>
+      </div>
+      <label>Tresc <textarea id="edytor-tekst" rows="8"></textarea></label>
+    </div>
+    <div class="edytor-kolumna">
+      <p class="etykieta">Podglad w WhatsAppie</p>
+      <div id="edytor-podglad"></div>
+      <p class="etykieta">Zalaczniki</p>
+      <ul id="lista-zalacznikow"></ul>
+      <button type="button" id="dodaj-zalacznik">Dodaj zalacznik</button>
+    </div>
   </div>
-  <label>Tresc <textarea id="edytor-tekst" rows="8"></textarea></label>
-  <p>Podglad:</p>
-  <div id="edytor-podglad"></div>
-  <p>Zalaczniki:</p>
-  <ul id="lista-zalacznikow"></ul>
-  <button type="button" id="dodaj-zalacznik">Dodaj zalacznik</button>
   <p id="bledy-makra" class="bledy"></p>
   <menu>
+    <span class="podpowiedz">Plik trafia do magazynu aplikacji — oryginal przestaje byc potrzebny.</span>
     <button id="anuluj-makro" value="anuluj">Anuluj</button>
-    <button id="zapisz-makro" value="zapisz">Zapisz</button>
+    <button id="zapisz-makro" value="zapisz" class="glowna">Zapisz makro</button>
   </menu>
 </dialog>
+
 <script type="module" src="renderer.js"></script>

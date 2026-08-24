@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('mostHub', {
   listaKont: () => ipcRenderer.invoke('konta:lista'),
   dodajKonto: (dane) => ipcRenderer.invoke('konta:dodaj', dane),
   usunKonto: (idKonta) => ipcRenderer.invoke('konta:usun', idKonta),
+  wolnyKolor: () => ipcRenderer.invoke('konta:wolny-kolor'),
   zmienKonto: (idKonta, zmiany) => ipcRenderer.invoke('konta:zmien', idKonta, zmiany),
   przesunKonto: (idKonta, przesuniecie) =>
     ipcRenderer.invoke('konta:przesun', idKonta, przesuniecie),

@@ -8,6 +8,7 @@ import {
   utworzIdKonta,
   zmienKonto,
   przesun,
+  wolnyKolor,
   PLATFORMY,
 } from './konta.js'
 import {
@@ -66,6 +67,8 @@ export function zarejestrujKanalyKont({
     poDodaniuKonta()
     return { ok: true }
   })
+
+  ipcMain.handle('konta:wolny-kolor', async () => wolnyKolor((await wczytajKonta(plikKont)).konta))
 
   ipcMain.handle('konta:zmien', async (_zdarzenie, idKonta, zmiany) => {
     const { konta } = await wczytajKonta(plikKont)

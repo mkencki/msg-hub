@@ -7,6 +7,22 @@ export const PLATFORMY = {
   messenger: { url: 'https://www.messenger.com/', nazwaDomyslna: 'Messenger' },
 }
 
+// Dwa konta w tym samym kolorze znosza jedyny sygnal tozsamosci, jaki daje szyna.
+// Formularz podpowiada wiec kolor jeszcze nieuzywany, zamiast zawsze tego samego.
+export const PALETA_KANALOW = [
+  '#2f7d5b', // zielen WhatsAppa
+  '#6586ec', // blekit Messengera
+  '#c9a227', // bursztyn
+  '#c9722b', // miedz
+  '#8e6bd1', // fiolet
+  '#3aa6a0', // morska
+]
+
+export function wolnyKolor(konta = []) {
+  const zajete = new Set(konta.map((k) => String(k?.kolor || '').toLowerCase()))
+  return PALETA_KANALOW.find((kolor) => !zajete.has(kolor)) ?? PALETA_KANALOW[konta.length % PALETA_KANALOW.length]
+}
+
 export function utworzIdKonta(nazwa, istniejaceId = []) {
   const rdzen = String(nazwa)
     .toLowerCase()
@@ -34,7 +50,7 @@ export function waliduj(konto) {
   return bledy
 }
 
-// Zmienia sie tylko to, co operator widzi: nazwa i kolor zakladki. ID zostaje
+// Zmienia sie tylko to, co operator widzi: nazwa i kolor kanalu. ID zostaje
 // nietkniete, bo partycja sesji nazywa sie persist:<id> — przeliczenie id z nowej
 // nazwy wylogowaloby konto przy samej poprawce literowki.
 export function zmienKonto(konta, id, zmiany) {

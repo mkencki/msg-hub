@@ -104,12 +104,17 @@ export class ZarzadcaWidokow {
     return this.widoki
   }
 
-  sumaNieprzeczytanych() {
-    let suma = 0
-    for (const widok of this.widoki.values()) {
+  // Szyna kanalow pokazuje licznik przy KAZDYM koncie, wiec sama suma nie wystarcza.
+  licznikiKont() {
+    const wynik = {}
+    for (const [id, widok] of this.widoki) {
       if (widok.webContents.isDestroyed()) continue
-      suma += licznikZTytulu(widok.webContents.getTitle())
+      wynik[id] = licznikZTytulu(widok.webContents.getTitle())
     }
-    return suma
+    return wynik
+  }
+
+  sumaNieprzeczytanych() {
+    return Object.values(this.licznikiKont()).reduce((suma, ile) => suma + ile, 0)
   }
 }

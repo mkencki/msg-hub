@@ -24,7 +24,7 @@ test('okno renderuje pasek zakladek i wystawia most do renderera', async () => {
   const okno = await aplikacja.firstWindow()
 
   expect(await okno.title()).toBe('msg-hub')
-  await expect(okno.locator('#zakladki')).toBeAttached()
+  await expect(okno.locator('#kanaly')).toBeAttached()
   await expect(okno.locator('#dodaj-konto')).toBeVisible()
 
   const metody = await okno.evaluate(() => Object.keys(window.mostHub ?? {}).sort())
