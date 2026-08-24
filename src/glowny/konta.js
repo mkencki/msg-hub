@@ -39,14 +39,17 @@ export function utworzIdKonta(nazwa, istniejaceId = []) {
   return `${podstawa}-${numer}`
 }
 
+// Blad wraca jako KOD, nie jako zdanie. Jezyk interfejsu wybiera renderer i tylko on
+// wie, ktory jest aktywny — gdyby zdania skladal proces glowny, angielski interfejs
+// pokazywalby polskie komunikaty walidacji. Tekst dokleja t() po stronie renderera.
 export function waliduj(konto) {
   const bledy = []
-  if (!konto || typeof konto !== 'object') return ['konto musi byc obiektem']
-  if (!konto.id || !/^acc-[a-z0-9-]+$/.test(konto.id)) bledy.push('id musi pasowac do acc-[a-z0-9-]+')
-  if (!konto.nazwa || !String(konto.nazwa).trim()) bledy.push('nazwa jest wymagana')
-  if (!PLATFORMY[konto.platforma]) bledy.push(`nieznana platforma: ${konto.platforma}`)
-  if (!String(konto.url || '').startsWith('https://')) bledy.push('adres musi zaczynac sie od https://')
-  if (!/^#[0-9a-fA-F]{6}$/.test(konto.kolor || '')) bledy.push('kolor musi byc w formacie #rrggbb')
+  if (!konto || typeof konto !== 'object') return [{ kod: 'walidacjaNazwa', parametry: {} }]
+  if (!konto.id || !/^acc-[a-z0-9-]+$/.test(konto.id)) bledy.push({ kod: 'walidacjaId', parametry: {} })
+  if (!konto.nazwa || !String(konto.nazwa).trim()) bledy.push({ kod: 'walidacjaNazwa', parametry: {} })
+  if (!PLATFORMY[konto.platforma]) bledy.push({ kod: 'walidacjaPlatforma', parametry: { platforma: konto.platforma } })
+  if (!String(konto.url || '').startsWith('https://')) bledy.push({ kod: 'walidacjaUrl', parametry: {} })
+  if (!/^#[0-9a-fA-F]{6}$/.test(konto.kolor || '')) bledy.push({ kod: 'walidacjaKolor', parametry: {} })
   return bledy
 }
 
@@ -55,7 +58,7 @@ export function waliduj(konto) {
 // nazwy wylogowaloby konto przy samej poprawce literowki.
 export function zmienKonto(konta, id, zmiany) {
   const pozycja = konta.findIndex((k) => k.id === id)
-  if (pozycja === -1) return { ok: false, bledy: ['nie ma takiego konta'] }
+  if (pozycja === -1) return { ok: false, bledy: [{ kod: 'walidacjaBrakKonta', parametry: {} }] }
 
   const zmienione = {
     ...konta[pozycja],
@@ -107,7 +110,7 @@ export async function zapiszKonta(sciezkaPliku, konta) {
   const widziane = new Set()
   for (const konto of konta) {
     const bledy = waliduj(konto)
-    if (bledy.length) throw new Error(`niepoprawne konto ${konto?.id}: ${bledy.join(', ')}`)
+    if (bledy.length) throw new Error(`niepoprawne konto ${konto?.id}: ${bledy.map((b) => b.kod).join(', ')}`)
     if (widziane.has(konto.id)) throw new Error(`duplikat id: ${konto.id}`)
     widziane.add(konto.id)
   }

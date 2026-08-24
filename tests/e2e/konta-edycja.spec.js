@@ -87,7 +87,7 @@ test('pusta nazwa przy edycji jest odrzucana z komunikatem', async () => {
   await okno.locator('#okno-konta input[name="nazwa"]').fill('   ')
   await okno.locator('#zapisz-konto').click()
 
-  await expect(okno.locator('#bledy-konta')).toHaveText(/nazwa jest wymagana/)
+  await expect(okno.locator('#bledy-konta')).toHaveText(/name is required/)
   expect((await zapisaneKonta())[1].nazwa).toBe('WhatsApp prywatny')
 })
 

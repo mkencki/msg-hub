@@ -342,6 +342,21 @@ dialog input[type="color"] { padding: 2px; height: 30px; cursor: pointer; }
 
 #bledy-konta, #bledy-makra { margin: 0 16px 10px; }
 
+/* Jezyk to jedyne ustawienie, ktore nie dotyczy zadnego konta — dostaje wlasny
+   wiersz nad stopka, odkreslony od listy, zeby nie czytal sie jak kolejne konto.
+   Klasa bije "dialog label" i "dialog select" specyficznoscia, wiec kolumna
+   i szerokosc 100% stad nie wracaja. */
+.wiersz-jezyka {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 16px 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--kresa);
+}
+.wiersz-jezyka select { width: auto; min-width: 150px; }
+
 .podpowiedz {
   margin: 0;
   font-family: var(--pismo-danych);

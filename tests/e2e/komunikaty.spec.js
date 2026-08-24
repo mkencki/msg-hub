@@ -37,7 +37,7 @@ test('makro klikniete bez zadnego konta mowi, ze nie ma dokad wstawiac', async (
   await okno.locator('#lista-makr li').first().click()
 
   await expect(okno.locator('#komunikat')).toBeVisible()
-  await expect(okno.locator('#komunikat')).toHaveText(/konto/i)
+  await expect(okno.locator('#komunikat')).toHaveText(/account/i)
 })
 
 test('makro bez tresci i bez zalacznika zglasza, ze nie ma czego wstawic', async () => {
@@ -48,7 +48,7 @@ test('makro bez tresci i bez zalacznika zglasza, ze nie ma czego wstawic', async
   await okno.locator('#lista-makr li').first().click()
 
   await expect(okno.locator('#komunikat')).toBeVisible()
-  await expect(okno.locator('#komunikat')).toHaveText(/ani tresci, ani zalacznika/i)
+  await expect(okno.locator('#komunikat')).toHaveText(/neither content nor an attachment/i)
 })
 
 // Pasek na gorze lezy POZA oknem dialogowym, a modal unieruchamia wszystko wokol
@@ -59,7 +59,7 @@ test('blad zapisu makra zostaje w edytorze, nie ucieka do paska nad modalem', as
   await okno.locator('#nowe-makro').click()
   await okno.locator('#zapisz-makro').click()
 
-  await expect(okno.locator('#bledy-makra')).toHaveText(/nazwa jest wymagana/)
+  await expect(okno.locator('#bledy-makra')).toHaveText(/name is required/)
   await expect(okno.locator('#komunikat')).toBeHidden()
 })
 
@@ -67,7 +67,7 @@ test('udany zapis kasuje blad pokazany przy poprzedniej probie', async () => {
   await okno.locator('#otworz-makra').click()
   await okno.locator('#nowe-makro').click()
   await okno.locator('#zapisz-makro').click()
-  await expect(okno.locator('#bledy-makra')).toHaveText(/nazwa jest wymagana/)
+  await expect(okno.locator('#bledy-makra')).toHaveText(/name is required/)
 
   await okno.locator('#edytor-nazwa').fill('Teraz z nazwa')
   await okno.locator('#zapisz-makro').click()

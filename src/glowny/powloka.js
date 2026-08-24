@@ -6,6 +6,10 @@ export const UKLAD_DOMYSLNY = {
   zmaksymalizowane: false,
   // Nieprzypieta szyna zwija sie do ikon i rozwija na najazd kursora.
   szynaPrzypieta: false,
+  // Angielski po instalacji — aplikacja wychodzi poza jeden komputer. Lista jezykow
+  // i ich weryfikacja mieszkaja w src/renderer/i18n.js; tutaj trzymamy sam zapis,
+  // zeby proces glowny nie ciagnal za soba slownikow.
+  jezyk: 'en',
 }
 
 const MIN_SZEROKOSC = 800
@@ -20,6 +24,9 @@ export async function wczytajUklad(sciezkaPliku) {
       wysokosc: Math.max(MIN_WYSOKOSC, Number(dane.wysokosc) || UKLAD_DOMYSLNY.wysokosc),
       zmaksymalizowane: Boolean(dane.zmaksymalizowane),
       szynaPrzypieta: Boolean(dane.szynaPrzypieta),
+      // Tylko napis. Czy taki jezyk istnieje, rozstrzyga renderer przez poprawnyJezyk() —
+      // obiekt albo liczba z uszkodzonego pliku nie moze dojechac do interfejsu.
+      jezyk: typeof dane.jezyk === 'string' ? dane.jezyk : UKLAD_DOMYSLNY.jezyk,
     }
   } catch {
     return { ...UKLAD_DOMYSLNY }

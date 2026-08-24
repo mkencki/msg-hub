@@ -55,7 +55,7 @@ export function zarejestrujKanalyKont({
   ipcMain.handle('konta:usun', async (_zdarzenie, idKonta) => {
     const { konta } = await wczytajKonta(plikKont)
     const pozostale = konta.filter((k) => k.id !== idKonta)
-    if (pozostale.length === konta.length) return { ok: false, bledy: ['nie ma takiego konta'] }
+    if (pozostale.length === konta.length) return { ok: false, bledy: [{ kod: 'walidacjaBrakKonta', parametry: {} }] }
 
     await zapiszKonta(plikKont, pozostale)
     zarzadca.usun(idKonta)
@@ -106,7 +106,7 @@ export function zarejestrujKanalyMakr({ katalogDanych, zarzadca, sesjaSchowka })
   })
 
   ipcMain.handle('makra:zapisz', async (_zdarzenie, makro) => {
-    if (!String(makro?.nazwa || '').trim()) return { ok: false, bledy: ['nazwa jest wymagana'] }
+    if (!String(makro?.nazwa || '').trim()) return { ok: false, bledy: [{ kod: 'walidacjaNazwa', parametry: {} }] }
     const { makra } = await wczytajMakra(plikMakr)
     const id = makro.id || utworzIdMakra(makro.nazwa)
     const zapisane = wstawLubZastap(makra, { zalaczniki: [], tagi: [], ...makro, id })
@@ -120,7 +120,7 @@ export function zarejestrujKanalyMakr({ katalogDanych, zarzadca, sesjaSchowka })
   ipcMain.handle('makra:usun', async (_zdarzenie, idMakra) => {
     const { makra } = await wczytajMakra(plikMakr)
     const pozostale = makra.filter((m) => m.id !== idMakra)
-    if (pozostale.length === makra.length) return { ok: false, bledy: ['nie ma takiego makra'] }
+    if (pozostale.length === makra.length) return { ok: false, bledy: [{ kod: 'walidacjaBrakMakra', parametry: {} }] }
     await zapiszMakra(plikMakr, pozostale)
     await usunOsierociZalaczniki(katalogAtt, pozostale)
     return { ok: true }

@@ -24,7 +24,7 @@ test('Ctrl+; otwiera panel makr, ktory na starcie jest pusty', async () => {
   await okno.keyboard.press('Control+Semicolon')
 
   await expect(okno.locator('#okno-makr')).toBeVisible()
-  await expect(okno.locator('#lista-makr .puste')).toHaveText(/Brak makr/)
+  await expect(okno.locator('#lista-makr .puste')).toHaveText(/No macros/)
 })
 
 test('zapisane makro pojawia sie na liscie i daje sie wyszukac po tresci', async () => {
@@ -113,5 +113,5 @@ test('makro bez nazwy jest odrzucane z komunikatem', async () => {
   await okno.locator('#zapisz-makro').click()
 
   // Blad zostaje w edytorze — gorny pasek lezy poza modalem i bylby nieklikalny.
-  await expect(okno.locator('#bledy-makra')).toHaveText(/nazwa jest wymagana/)
+  await expect(okno.locator('#bledy-makra')).toHaveText(/name is required/)
 })

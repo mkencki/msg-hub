@@ -79,12 +79,21 @@ test('szyna pokazuje liczbe nowych wiadomosci przy koncie', async () => {
     })
   }, idKonta)
 
-  // Polska odmiana liczebnika: 4 nowe, nie "4 nowych".
-  await expect(okno.locator('.kanal .kanal-dane')).toHaveText('4 nowe')
+  await expect(okno.locator('.kanal .kanal-dane')).toHaveText('4 new')
 })
 
-test('szyna odmienia liczebnik zgodnie z polska gramatyka', async () => {
+// Przelaczenie jezyka idzie przez REALNY interfejs, nie przez most: sprawdzamy przy
+// okazji, czy zmiana dosiega tresci rysowanej z JS, a nie tylko napisow z HTML-a.
+// Szyna sklada swoje etykiety sama, wiec to ona pierwsza zostalaby po angielsku.
+async function przelaczNaPolski() {
+  await okno.locator('#otworz-ustawienia').click()
+  await okno.locator('#wybor-jezyka').selectOption('pl')
+  await okno.locator('#zamknij-ustawienia').click()
+}
+
+test('po przelaczeniu na polski szyna odmienia liczebnik przez trzy formy', async () => {
   await dodajKonto('WhatsApp testowy')
+  await przelaczNaPolski()
   const idKonta = await okno.evaluate(async () => (await window.mostHub.listaKont())[0].id)
 
   const pokaz = (ile) =>

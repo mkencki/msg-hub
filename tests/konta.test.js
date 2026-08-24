@@ -66,16 +66,19 @@ describe('waliduj', () => {
   })
 
   test('pusta nazwa jest bledem', () => {
-    expect(waliduj({ ...poprawne, nazwa: '  ' })).toContain('nazwa jest wymagana')
+    expect(waliduj({ ...poprawne, nazwa: '  ' }).map((blad) => blad.kod)).toContain('walidacjaNazwa')
   })
 
   test('nieznana platforma jest bledem', () => {
-    expect(waliduj({ ...poprawne, platforma: 'signal' })).toContain('nieznana platforma: signal')
+    expect(waliduj({ ...poprawne, platforma: 'signal' })).toContainEqual({
+      kod: 'walidacjaPlatforma',
+      parametry: { platforma: 'signal' },
+    })
   })
 
   test('adres inny niz https jest bledem', () => {
-    expect(waliduj({ ...poprawne, url: 'http://web.whatsapp.com/' })).toContain(
-      'adres musi zaczynac sie od https://',
+    expect(waliduj({ ...poprawne, url: 'http://web.whatsapp.com/' }).map((blad) => blad.kod)).toContain(
+      'walidacjaUrl',
     )
   })
 })
@@ -140,8 +143,22 @@ describe('zmienKonto', () => {
     const wynik = zmienKonto(konta, 'acc-messenger', { nazwa: '   ', kolor: '#6586ec' })
 
     expect(wynik.ok).toBe(false)
-    expect(wynik.bledy).toContain('nazwa jest wymagana')
+    expect(wynik.bledy.map((blad) => blad.kod)).toContain('walidacjaNazwa')
     expect(konta[0].nazwa).toBe('Messenger')
+  })
+
+  // Jezyk interfejsu wybiera renderer, wiec proces glowny nie moze zwracac gotowych
+  // zdan — po angielsku wyciekly by polskie. Oddaje kod i parametry, tekst sklada t().
+  test('bledy walidacji wracaja jako kody z parametrami, nie gotowe zdania', () => {
+    const bledy = waliduj({ id: 'acc-x', nazwa: '', platforma: 'nieznana', url: 'http://x', kolor: 'zielony' })
+
+    expect(bledy.map((blad) => blad.kod)).toEqual([
+      'walidacjaNazwa',
+      'walidacjaPlatforma',
+      'walidacjaUrl',
+      'walidacjaKolor',
+    ])
+    expect(bledy.find((blad) => blad.kod === 'walidacjaPlatforma').parametry).toEqual({ platforma: 'nieznana' })
   })
 
   test('nieznane id daje blad, nie wyjatek', () => {

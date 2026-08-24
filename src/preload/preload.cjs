@@ -11,6 +11,8 @@ contextBridge.exposeInMainWorld('mostHub', {
     ipcRenderer.invoke('konta:przesun', idKonta, przesuniecie),
   przelacz: (idKonta) => ipcRenderer.invoke('konta:przelacz', idKonta),
   ustawWidocznoscKont: (czy) => ipcRenderer.invoke('okna:widocznosc-kont', czy),
+  odczytajJezyk: () => ipcRenderer.invoke('jezyk:odczyt'),
+  ustawJezyk: (kod) => ipcRenderer.invoke('jezyk:ustaw', kod),
   stanSzyny: () => ipcRenderer.invoke('szyna:stan'),
   najazdSzyny: (czy) => ipcRenderer.invoke('szyna:najazd', czy),
   przypnijSzyne: (czy) => ipcRenderer.invoke('szyna:przypnij', czy),

@@ -20,6 +20,23 @@ describe('uklad okna', () => {
     expect(await wczytajUklad(plik)).toEqual(UKLAD_DOMYSLNY)
   })
 
+  // Jezyk jest preferencja, nie geometria, ale mieszka w tym samym pliku ustawien —
+  // inaczej pierwsze uruchomienie po instalacji musialoby czytac dwa pliki.
+  test('domyslnym jezykiem po instalacji jest angielski', async () => {
+    expect(UKLAD_DOMYSLNY.jezyk).toBe('en')
+    expect((await wczytajUklad(plik)).jezyk).toBe('en')
+  })
+
+  test('zapisany jezyk przezywa restart', async () => {
+    await zapiszUklad(plik, { ...UKLAD_DOMYSLNY, jezyk: 'pl' })
+    expect((await wczytajUklad(plik)).jezyk).toBe('pl')
+  })
+
+  test('uszkodzony jezyk w pliku nie wywraca startu', async () => {
+    await writeFile(plik, JSON.stringify({ ...UKLAD_DOMYSLNY, jezyk: { zly: 'ksztalt' } }), 'utf8')
+    expect(typeof (await wczytajUklad(plik)).jezyk).toBe('string')
+  })
+
   test('uklad przezywa zapis i odczyt', async () => {
     await zapiszUklad(plik, { x: 100, y: 50, szerokosc: 1000, wysokosc: 700, zmaksymalizowane: false })
     const wynik = await wczytajUklad(plik)

@@ -134,6 +134,33 @@ async function utworzOkno() {
   })
   okno.on('resize', dopasuj)
 
+  // Jezyk interfejsu. Proces glowny trzyma sam zapis — ktore jezyki istnieja,
+  // wie renderer (src/renderer/i18n.js). Zapis idzie na dysk OD RAZU, nie dopiero
+  // przy zamknieciu: wybor jezyka to rzadka, swiadoma decyzja i zgubienie jej przy
+  // ubiciu procesu bylo by widoczne od pierwszego uruchomienia po instalacji.
+  let jezyk = String(uklad.jezyk || 'en')
+
+  const zebranyUklad = () => {
+    const prostokat = okno.getNormalBounds()
+    return {
+      x: prostokat.x,
+      y: prostokat.y,
+      szerokosc: prostokat.width,
+      wysokosc: prostokat.height,
+      zmaksymalizowane: okno.isMaximized(),
+      szynaPrzypieta,
+      jezyk,
+    }
+  }
+
+  ipcMain.handle('jezyk:odczyt', () => jezyk)
+
+  ipcMain.handle('jezyk:ustaw', async (_zdarzenie, nowyJezyk) => {
+    jezyk = String(nowyJezyk || 'en')
+    await zapiszUklad(plikUkladu, zebranyUklad()).catch(() => {})
+    return jezyk
+  })
+
   // app.setBadgeCount dziala tylko na Linuksie i macOS. Na Windowsie licznik pokazuje
   // nakladka na ikonie paska zadan, a ta wymaga obrazka 16x16 — rysuje go renderer
   // i odsyla kanalem licznik:nakladka. Tytul okna i podpowiedz zasobnika sa zapasem,
@@ -188,15 +215,7 @@ async function utworzOkno() {
   okno.on('close', (zdarzenie) => {
     if (ukladZapisany) return
     zdarzenie.preventDefault()
-    const prostokat = okno.getNormalBounds()
-    zapiszUklad(plikUkladu, {
-      x: prostokat.x,
-      y: prostokat.y,
-      szerokosc: prostokat.width,
-      wysokosc: prostokat.height,
-      zmaksymalizowane: okno.isMaximized(),
-      szynaPrzypieta,
-    }).finally(() => {
+    zapiszUklad(plikUkladu, zebranyUklad()).finally(() => {
       ukladZapisany = true
       okno.destroy()
     })

@@ -1,28 +1,45 @@
 import { naHtml } from './podglad.js'
+import { t, dostepneJezyki, poprawnyJezyk, JEZYK_DOMYSLNY } from './i18n.js'
+
+// Jezyk interfejsu. Wartosc przychodzi z procesu glownego przy starcie, wiec do
+// czasu odpowiedzi trzymamy domyslny — inaczej pierwsza klatka pokazalaby gole klucze.
+let jezykUI = JEZYK_DOMYSLNY
+const tr = (klucz, parametry) => t(jezykUI, klucz, parametry)
+
+// Teksty statyczne siedza w HTML pod data-i18n i sa podmieniane na miejscu.
+// Dzieki temu zmiana jezyka nie wymaga przeladowania okna — a przeladowanie
+// zerwaloby natywne widoki kont razem z zalogowaniem.
+function przetlumaczDokument() {
+  document.documentElement.lang = jezykUI
+  for (const element of document.querySelectorAll('[data-i18n]')) {
+    element.textContent = tr(element.dataset.i18n)
+  }
+  for (const element of document.querySelectorAll('[data-i18n-title]')) {
+    element.title = tr(element.dataset.i18nTitle)
+  }
+  for (const element of document.querySelectorAll('[data-i18n-placeholder]')) {
+    element.placeholder = tr(element.dataset.i18nPlaceholder)
+  }
+  for (const element of document.querySelectorAll('[data-i18n-aria]')) {
+    element.setAttribute('aria-label', tr(element.dataset.i18nAria))
+  }
+}
 
 const szyna = document.getElementById('szyna')
 const kanaly = document.getElementById('kanaly')
+const wyborJezyka = document.getElementById('wybor-jezyka')
 const oknoKonta = document.getElementById('okno-konta')
 const bledyKonta = document.getElementById('bledy-konta')
 const oknoMakr = document.getElementById('okno-makr')
 const szukajka = document.getElementById('szukaj-makro')
 const listaMakr = document.getElementById('lista-makr')
 
-// Polska odmiana liczebnika: 1 nowa / 2-4 nowe / 5+ nowych, z wyjatkiem nastolatek.
-function odmiana(ile, [jedna, kilka, wiele]) {
-  if (ile === 1) return jedna
-  const setki = ile % 100
-  const jednosci = ile % 10
-  if (jednosci >= 2 && jednosci <= 4 && (setki < 12 || setki > 14)) return kilka
-  return wiele
-}
-
 let aktywneKontoId = null
 let kontaWSzynie = []
 let licznikiKont = {}
 
 function opisLicznika(ile) {
-  return ile ? `${ile} ${odmiana(ile, ['nowa', 'nowe', 'nowych'])}` : 'brak nowych'
+  return ile ? tr('nieprzeczytane', { n: ile }) : tr('brakNowych')
 }
 
 // Kolor aktywnego konta obrysowuje cala studnie robocza — to jedyny nasycony
@@ -35,13 +52,13 @@ function pomalujKanal(konto) {
     [document.getElementById('cel-chip'), document.getElementById('cel-nazwa')],
   ]) {
     chip.style.setProperty('--barwa', konto?.kolor ?? 'transparent')
-    nazwa.textContent = konto?.nazwa ?? 'Brak kont'
+    nazwa.textContent = konto?.nazwa ?? tr('brakKont')
   }
 
   const suma = Object.values(licznikiKont).reduce((razem, ile) => razem + ile, 0)
   document.getElementById('listwa-licznik').textContent = suma
-    ? `${suma} ${odmiana(suma, ['nieprzeczytana', 'nieprzeczytane', 'nieprzeczytanych'])}`
-    : 'wszystko przeczytane'
+    ? tr('nieprzeczytaneSuma', { n: suma })
+    : tr('wszystkoPrzeczytane')
 }
 
 async function przelaczNa(idKonta) {
@@ -76,7 +93,7 @@ function zastosujStanSzyny({ przypieta, rozwinieta }) {
   szyna.classList.toggle('rozwinieta', Boolean(rozwinieta))
   szyna.classList.toggle('przypieta', szynaPrzypieta)
   const przycisk = document.getElementById('przypnij-szyne')
-  przycisk.title = szynaPrzypieta ? 'Odepnij szyne' : 'Przypnij szyne'
+  przycisk.title = tr(szynaPrzypieta ? 'odepnijSzyne' : 'przypnijSzyne')
   przycisk.setAttribute('aria-pressed', String(szynaPrzypieta))
 }
 
@@ -138,7 +155,7 @@ async function otworzFormularzKonta(konto = null) {
 
   const formularz = oknoKonta.querySelector('form')
   formularz.reset()
-  document.getElementById('tytul-konta').textContent = konto ? 'Edycja konta' : 'Dodaj konto'
+  document.getElementById('tytul-konta').textContent = tr(konto ? 'edycjaKonta' : 'dodajKonto')
 
   // Platforma wyznacza adres i partycje sesji — jej podmiana bylaby innym kontem,
   // nie poprawka tego samego, wiec przy edycji pole jest zablokowane.
@@ -172,7 +189,7 @@ document.getElementById('zapisz-konto').addEventListener('click', async (zdarzen
     : await window.mostHub.dodajKonto(dane)
 
   if (!wynik.ok) {
-    bledyKonta.textContent = wynik.bledy.join('; ')
+    bledyKonta.textContent = opiszBledy(wynik.bledy)
     return
   }
 
@@ -185,9 +202,15 @@ document.getElementById('zapisz-konto').addEventListener('click', async (zdarzen
 // Panel zamyka sie przy kazdym wyborze, wiec brak wstawienia jest niewidoczny —
 // kazdy powod musi trafic na listwe, inaczej wyglada to jak udane wstawienie.
 const POWODY_WSTAWIANIA = {
-  'brak-konta': 'Nie ma dokad wstawic — najpierw dodaj konto i otworz w nim rozmowe.',
-  'brak-makra': 'Tego makra juz nie ma na liscie.',
-  'puste-makro': 'Makro nie ma ani tresci, ani zalacznika — nie ma czego wstawic.',
+  'brak-konta': 'komunikatBrakKonta',
+  'brak-makra': 'komunikatBrakMakra',
+  'puste-makro': 'komunikatPusteMakro',
+}
+
+// Proces glowny oddaje bledy jako kody z parametrami — dopiero tutaj wiadomo,
+// w ktorym jezyku ma je zobaczyc uzytkownik.
+function opiszBledy(bledy) {
+  return (bledy ?? []).map((blad) => tr(blad.kod, blad.parametry)).join('; ')
 }
 
 let zaznaczoneMakro = 0
@@ -201,7 +224,7 @@ async function wstawMakro(makro) {
     // Obietnica produktu wypowiedziana wprost: aplikacja przygotowuje, nie wysyla.
     const konto = kontaWSzynie.find((k) => k.id === aktywneKontoId)
     pokazKomunikat(
-      `Wstawiono "${makro.nazwa}" do ${konto?.nazwa ?? 'konta'}. Enter nalezy do Ciebie.`,
+      tr('komunikatWstawiono', { makro: makro.nazwa, konto: konto?.nazwa ?? tr('komunikatKonta') }),
       'info',
     )
     return
@@ -209,12 +232,10 @@ async function wstawMakro(makro) {
   if (!wynik) return
 
   if (wynik.brakujace?.length) {
-    pokazKomunikat(
-      `Brakuje zalacznikow w magazynie: ${wynik.brakujace.join(', ')}. Tekst zostal wstawiony.`,
-    )
+    pokazKomunikat(tr('komunikatBrakujaZalaczniki', { lista: wynik.brakujace.join(', ') }))
     return
   }
-  pokazKomunikat(POWODY_WSTAWIANIA[wynik.powod] ?? 'Nie udalo sie wstawic makra.')
+  pokazKomunikat(tr(POWODY_WSTAWIANIA[wynik.powod] ?? 'komunikatWstawianieNieudane'))
 }
 
 export async function odswiezMakra() {
@@ -225,8 +246,8 @@ export async function odswiezMakra() {
     const puste = document.createElement('li')
     puste.className = 'puste'
     puste.textContent = szukajka.value
-      ? `Nic nie pasuje do "${szukajka.value}". Zmien fraze albo utworz nowe makro.`
-      : 'Brak makr — kliknij "Nowe makro"'
+      ? tr('nicNiePasuje', { fraza: szukajka.value })
+      : tr('brakMakr')
     listaMakr.append(puste)
     return
   }
@@ -241,7 +262,7 @@ export async function odswiezMakra() {
 
     const etykieta = document.createElement('span')
     etykieta.className = 'etykieta-makra'
-    etykieta.textContent = liczba ? `${makro.nazwa}  (${liczba} zal.)` : makro.nazwa
+    etykieta.textContent = liczba ? tr('etykietaMakra', { nazwa: makro.nazwa, liczba }) : makro.nazwa
 
     // Klikniecie wiersza wstawia makro — to najczestsza czynnosc, wiec zostaje
     // najtansza. Przyciski zatrzymuja propagacje, zeby edycja i usuwanie nie
@@ -251,8 +272,8 @@ export async function odswiezMakra() {
     const edytuj = document.createElement('button')
     edytuj.type = 'button'
     edytuj.className = 'edytuj-makro'
-    edytuj.textContent = 'Edytuj'
-    edytuj.title = `Edytuj makro ${makro.nazwa}`
+    edytuj.textContent = tr('edytuj')
+    edytuj.title = tr('edytujMakro', { nazwa: makro.nazwa })
     edytuj.addEventListener('click', (zdarzenie) => {
       zdarzenie.stopPropagation()
       otworzEdytor(makro)
@@ -261,8 +282,8 @@ export async function odswiezMakra() {
     const usun = document.createElement('button')
     usun.type = 'button'
     usun.className = 'usun-makro grozny'
-    usun.textContent = 'Usun'
-    usun.title = `Usun makro ${makro.nazwa}`
+    usun.textContent = tr('usun')
+    usun.title = tr('usunMakroTytul', { nazwa: makro.nazwa })
     usun.addEventListener('click', (zdarzenie) => {
       zdarzenie.stopPropagation()
       zapytajOUsuniecieMakra(makro)
@@ -353,12 +374,50 @@ function pokazBladMakra(tekst) {
   document.getElementById('bledy-makra').textContent = tekst
 }
 
+function zbudujWyborJezyka() {
+  wyborJezyka.replaceChildren()
+  for (const { kod, nazwa } of dostepneJezyki()) {
+    const opcja = document.createElement('option')
+    opcja.value = kod
+    // Jezyk podpisuje sie wlasna nazwa: kto szuka polskiego, szuka slowa "Polski",
+    // a nie jego tlumaczenia na jezyk, ktorego wlasnie nie rozumie.
+    opcja.textContent = nazwa
+    wyborJezyka.append(opcja)
+  }
+  wyborJezyka.value = jezykUI
+}
+
+// Zmiana jezyka NIE przeladowuje okna — przeladowanie zerwaloby natywne widoki
+// kont razem z zalogowaniem. Przemalowujemy wiec wszystko, co samo sklada teksty.
+async function zastosujJezyk() {
+  przetlumaczDokument()
+  zbudujWyborJezyka()
+  zastosujStanSzyny({ przypieta: szynaPrzypieta, rozwinieta: szyna.classList.contains('rozwinieta') })
+  await odswiezSzyne()
+  if (oknoUstawien.open) await odswiezListeKont()
+  if (oknoMakr.open) await odswiezMakra()
+}
+
+wyborJezyka.addEventListener('change', async () => {
+  jezykUI = poprawnyJezyk(await window.mostHub.ustawJezyk(wyborJezyka.value))
+  await zastosujJezyk()
+})
+
 async function start() {
   try {
+    // Jezyk musi byc znany PRZED pierwszym rysowaniem list, inaczej pierwsza
+    // klatka pokazuje angielski, a druga podmienia go na polski.
+    jezykUI = poprawnyJezyk(await window.mostHub.odczytajJezyk())
+    przetlumaczDokument()
+    zbudujWyborJezyka()
     zastosujStanSzyny(await window.mostHub.stanSzyny())
     await odswiezSzyne()
   } catch (blad) {
-    pokazKomunikat(`Nie udalo sie wczytac kont: ${blad.message}`)
+    pokazKomunikat(tr('komunikatWczytanieKont', { blad: blad.message }))
+  } finally {
+    // Sygnal gotowosci zapada dopiero TERAZ: przedtem teksty byly jeszcze
+    // angielskie z HTML-a, wiec test polskiego interfejsu lapalby stara klatke.
+    document.body.dataset.gotowy = '1'
   }
 }
 
@@ -436,7 +495,7 @@ let edytowaneMakroId = null
 function otworzEdytor(makro = null) {
   edytowaneMakroId = makro?.id ?? null
   pokazBladMakra('')
-  document.getElementById('tytul-edytora').textContent = makro ? 'Edycja makra' : 'Nowe makro'
+  document.getElementById('tytul-edytora').textContent = tr(makro ? 'edycjaMakra' : 'noweMakro')
   edytorNazwa.value = makro?.nazwa ?? ''
   edytorTekst.value = makro?.tekst ?? ''
   zalacznikiMakra = [...(makro?.zalaczniki ?? [])]
@@ -466,16 +525,12 @@ document.getElementById('zapisz-makro').addEventListener('click', async (zdarzen
     zalaczniki: zalacznikiMakra,
   })
   if (!wynik.ok) {
-    pokazBladMakra(wynik.bledy.join('; '))
+    pokazBladMakra(opiszBledy(wynik.bledy))
     return
   }
   edytowaneMakroId = null
   oknoEdytora.close()
 })
-
-// Jawny sygnal, ze wszystkie nasluchy (w tym Ctrl+;) sa juz podpiete.
-// Bez niego test nacisnalby skrot, zanim modul skonczy sie ladowac.
-document.body.dataset.gotowy = '1'
 
 let zalacznikiMakra = []
 
@@ -487,7 +542,7 @@ function odswiezZalaczniki() {
   if (!zalacznikiMakra.length) {
     const puste = document.createElement('li')
     puste.className = 'puste'
-    puste.textContent = 'brak'
+    puste.textContent = tr('brak')
     pole.append(puste)
     return
   }
@@ -504,8 +559,8 @@ function odswiezZalaczniki() {
     const zdejmij = document.createElement('button')
     zdejmij.type = 'button'
     zdejmij.className = 'zdejmij-zalacznik'
-    zdejmij.textContent = 'Zdejmij'
-    zdejmij.title = `Zdejmij ${nazwa.textContent}`
+    zdejmij.textContent = tr('zdejmij')
+    zdejmij.title = tr('zdejmijPlik', { nazwa: nazwa.textContent })
     zdejmij.addEventListener('click', () => {
       zalacznikiMakra = zalacznikiMakra.filter((s) => s !== wzgledna)
       odswiezZalaczniki()
@@ -562,7 +617,7 @@ async function odswiezListeKont() {
   if (!konta.length) {
     const puste = document.createElement('li')
     puste.className = 'puste'
-    puste.textContent = 'Brak kont — kliknij "Dodaj konto"'
+    puste.textContent = tr('brakKontPodpowiedz')
     listaKont.append(puste)
     return
   }
@@ -591,7 +646,7 @@ async function odswiezListeKont() {
     wGore.type = 'button'
     wGore.className = 'w-gore'
     wGore.textContent = '▲'
-    wGore.title = `Przesun ${konto.nazwa} w gore`
+    wGore.title = tr('przesunWGore', { nazwa: konto.nazwa })
     wGore.disabled = indeks === 0
     wGore.addEventListener('click', () => przesunKonto(konto.id, -1))
 
@@ -599,7 +654,7 @@ async function odswiezListeKont() {
     wDol.type = 'button'
     wDol.className = 'w-dol'
     wDol.textContent = '▼'
-    wDol.title = `Przesun ${konto.nazwa} w dol`
+    wDol.title = tr('przesunWDol', { nazwa: konto.nazwa })
     wDol.disabled = indeks === konta.length - 1
     wDol.addEventListener('click', () => przesunKonto(konto.id, 1))
 
@@ -608,15 +663,15 @@ async function odswiezListeKont() {
     const edytuj = document.createElement('button')
     edytuj.type = 'button'
     edytuj.className = 'edytuj-konto'
-    edytuj.textContent = 'Edytuj'
-    edytuj.title = `Edytuj konto ${konto.nazwa}`
+    edytuj.textContent = tr('edytuj')
+    edytuj.title = tr('edytujKonto', { nazwa: konto.nazwa })
     edytuj.addEventListener('click', () => otworzFormularzKonta(konto))
 
     const usun = document.createElement('button')
     usun.type = 'button'
     usun.className = 'usun-konto grozny'
-    usun.textContent = 'Usun'
-    usun.title = `Usun konto ${konto.nazwa}`
+    usun.textContent = tr('usun')
+    usun.title = tr('usunKontoTytul', { nazwa: konto.nazwa })
     usun.addEventListener('click', () => zapytajOUsuniecie(konto))
 
     pozycja.append(znacznik, opis, platforma, przesuwanie, edytuj, usun)
@@ -650,8 +705,7 @@ document.getElementById('dodaj-konto-ustawienia').addEventListener('click', () =
 // tam, skad przyszedl, z odswiezona lista.
 function zapytajOUsuniecie(konto) {
   kontoDoUsuniecia = konto
-  document.getElementById('tresc-usuwania').textContent =
-    `Konto "${konto.nazwa}" zniknie z szyny kanalow.`
+  document.getElementById('tresc-usuwania').textContent = tr('kontoZniknie', { nazwa: konto.nazwa })
   pokazDialog(oknoUsuwania)
 }
 
@@ -669,7 +723,7 @@ document.getElementById('potwierdz-usuniecie').addEventListener('click', async (
   kontoDoUsuniecia = null
   oknoUsuwania.close()
   if (!wynik.ok) {
-    pokazKomunikat(wynik.bledy.join('; '))
+    pokazKomunikat(opiszBledy(wynik.bledy))
     return
   }
   await odswiezSzyne()
@@ -685,8 +739,8 @@ function zapytajOUsuniecieMakra(makro) {
   makroDoUsuniecia = makro
   const liczba = (makro.zalaczniki ?? []).length
   document.getElementById('tresc-usuwania-makra').textContent = liczba
-    ? `Makro "${makro.nazwa}" zniknie razem z zalacznikami (${liczba}).`
-    : `Makro "${makro.nazwa}" zniknie z listy.`
+    ? tr('usunMakroZZalacznikami', { nazwa: makro.nazwa, liczba })
+    : tr('usunMakroPytanie', { nazwa: makro.nazwa })
   pokazDialog(oknoUsuwaniaMakra)
 }
 
@@ -704,7 +758,7 @@ document.getElementById('potwierdz-usuniecie-makra').addEventListener('click', a
   makroDoUsuniecia = null
   oknoUsuwaniaMakra.close()
   if (!wynik.ok) {
-    pokazKomunikat(wynik.bledy.join('; '))
+    pokazKomunikat(opiszBledy(wynik.bledy))
     return
   }
   await odswiezMakra()

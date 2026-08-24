@@ -95,7 +95,7 @@ test('potwierdzone usuniecie zdejmuje makro i kasuje jego zalacznik z magazynu',
   await okno.locator('#lista-makr li .usun-makro').click()
   await okno.locator('#potwierdz-usuniecie-makra').click()
 
-  await expect(okno.locator('#lista-makr .puste')).toHaveText(/Brak makr/)
+  await expect(okno.locator('#lista-makr .puste')).toHaveText(/No macros/)
   expect(await okno.evaluate(() => window.mostHub.listaMakr(''))).toHaveLength(0)
 
   // Bez sprzatania magazynu plik 4 MB zostalby na dysku na zawsze.
