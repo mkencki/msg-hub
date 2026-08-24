@@ -16,6 +16,11 @@ jobs:
   windows:
     runs-on: windows-latest
 
+    # Domyslny GITHUB_TOKEN bywa tylko do odczytu — bez tego krok tworzacy wydanie
+    # odbija sie o 403 dopiero po pelnym, kilkuminutowym budowaniu.
+    permissions:
+      contents: write
+
     steps:
       - uses: actions/checkout@v4
 
