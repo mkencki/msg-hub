@@ -4,7 +4,10 @@
 <link rel="stylesheet" href="styl.css" />
 <header id="pasek">
   <nav id="zakladki"></nav>
-  <p id="komunikat" class="bledy" hidden></p>
+  <div id="komunikat" class="bledy" hidden>
+    <span id="tresc-komunikatu"></span>
+    <button type="button" id="zamknij-komunikat" title="Ukryj komunikat">&times;</button>
+  </div>
   <button id="otworz-makra" title="Makra (Ctrl+;)">Makra</button>
   <button id="otworz-ustawienia" title="Ustawienia">Ustawienia</button>
   <button id="dodaj-konto" title="Dodaj konto">+</button>
@@ -81,6 +84,7 @@
   <p>Zalaczniki:</p>
   <ul id="lista-zalacznikow"></ul>
   <button type="button" id="dodaj-zalacznik">Dodaj zalacznik</button>
+  <p id="bledy-makra" class="bledy"></p>
   <menu>
     <button id="anuluj-makro" value="anuluj">Anuluj</button>
     <button id="zapisz-makro" value="zapisz">Zapisz</button>

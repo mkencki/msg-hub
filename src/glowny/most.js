@@ -126,15 +126,25 @@ export function zarejestrujKanalyMakr({ katalogDanych, zarzadca, sesjaSchowka })
   ipcMain.handle('makra:wstaw', async (_zdarzenie, idMakra) => {
     const { makra } = await wczytajMakra(plikMakr)
     const makro = makra.find((m) => m.id === idMakra)
+
+    // Kazde niepowodzenie ma nazwany powod. Bez tego panel po prostu znikal
+    // i operator nie wiedzial, czy makro poszlo, czy nie — a nie poszlo.
+    if (!makro) return { ok: false, powod: 'brak-makra', brakujace: [] }
+
     const widok = zarzadca.aktywny()
-    if (!makro || !widok) return { ok: false, brakujace: [] }
+    if (!widok) return { ok: false, powod: 'brak-konta', brakujace: [] }
+
+    const zalaczniki = makro.zalaczniki ?? []
+    if (!makro.tekst && !zalaczniki.length) {
+      return { ok: false, powod: 'puste-makro', brakujace: [] }
+    }
 
     if (makro.tekst) wstawTekst(widok.webContents, makro.tekst, clipboard)
 
     // Spec sekcja 8: brak pliku w magazynie nie moze wywrocic makra —
     // tekst ma zadzialac, a interfejs ma pokazac, ktorych zalacznikow brakuje.
     const brakujace = []
-    for (const wzgledna of makro.zalaczniki ?? []) {
+    for (const wzgledna of zalaczniki) {
       const pelna = path.join(katalogDanych, wzgledna)
       try {
         await access(pelna)
@@ -145,7 +155,11 @@ export function zarejestrujKanalyMakr({ katalogDanych, zarzadca, sesjaSchowka })
       await sesjaSchowka.ustawPlik(pelna)
       widok.webContents.paste()
     }
-    return { ok: brakujace.length === 0, brakujace }
+    return {
+      ok: brakujace.length === 0,
+      powod: brakujace.length ? 'brak-plikow' : null,
+      brakujace,
+    }
   })
 
   ipcMain.handle('pliki:wybierz', async () => {

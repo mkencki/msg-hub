@@ -112,6 +112,6 @@ test('makro bez nazwy jest odrzucane z komunikatem', async () => {
   await okno.locator('#edytor-tekst').fill('tresc bez nazwy')
   await okno.locator('#zapisz-makro').click()
 
-  await expect(okno.locator('#komunikat')).toBeVisible()
-  await expect(okno.locator('#komunikat')).toHaveText(/nazwa jest wymagana/)
+  // Blad zostaje w edytorze — gorny pasek lezy poza modalem i bylby nieklikalny.
+  await expect(okno.locator('#bledy-makra')).toHaveText(/nazwa jest wymagana/)
 })

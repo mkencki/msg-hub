@@ -92,6 +92,14 @@ document.getElementById('zapisz-konto').addEventListener('click', async (zdarzen
   if (oknoUstawien.open) await odswiezListeKont()
 })
 
+// Panel zamyka sie przy kazdym wyborze, wiec brak wstawienia jest niewidoczny —
+// kazdy powod musi trafic na pasek, inaczej wyglada to jak udane wstawienie.
+const POWODY_WSTAWIANIA = {
+  'brak-konta': 'Nie ma dokad wstawic — najpierw dodaj konto i otworz w nim rozmowe.',
+  'brak-makra': 'Tego makra juz nie ma na liscie.',
+  'puste-makro': 'Makro nie ma ani tresci, ani zalacznika — nie ma czego wstawic.',
+}
+
 export async function odswiezMakra() {
   const makra = await window.mostHub.listaMakr(szukajka.value)
   listaMakr.replaceChildren()
@@ -115,13 +123,18 @@ export async function odswiezMakra() {
     // najtansza. Przyciski zatrzymuja propagacje, zeby edycja i usuwanie nie
     // wstawialy makra przy okazji.
     pozycja.addEventListener('click', async () => {
+      schowajKomunikat()
       oknoMakr.close()
       const wynik = await window.mostHub.wstawMakro(makro.id)
-      if (wynik && !wynik.ok && wynik.brakujace.length) {
+      if (!wynik || wynik.ok) return
+
+      if (wynik.brakujace?.length) {
         pokazKomunikat(
           `Brakuje zalacznikow w magazynie: ${wynik.brakujace.join(', ')}. Tekst zostal wstawiony.`,
         )
+        return
       }
+      pokazKomunikat(POWODY_WSTAWIANIA[wynik.powod] ?? 'Nie udalo sie wstawic makra.')
     })
 
     const edytuj = document.createElement('button')
@@ -177,10 +190,26 @@ window.addEventListener('keydown', (zdarzenie) => {
 window.mostHub.naOtwarcieMakr(() => document.getElementById('otworz-makra').click())
 
 // Spec sekcja 8: nieudany start ma dac jawny komunikat, nie pusty pasek.
+// Komunikat MUSI dac sie zdjac — inaczej nieaktualny blad okupuje pasek do konca
+// sesji i operator czyta go jeszcze dlugo po naprawieniu przyczyny.
 function pokazKomunikat(tekst) {
-  const pole = document.getElementById('komunikat')
-  pole.textContent = tekst
-  pole.hidden = false
+  document.getElementById('tresc-komunikatu').textContent = tekst
+  document.getElementById('komunikat').hidden = false
+}
+
+function schowajKomunikat() {
+  document.getElementById('tresc-komunikatu').textContent = ''
+  document.getElementById('komunikat').hidden = true
+}
+
+document.getElementById('zamknij-komunikat').addEventListener('click', schowajKomunikat)
+
+// Blad zgloszony przez OTWARTE okno dialogowe nie moze isc na gorny pasek: modal
+// unieruchamia wszystko poza soba, wiec komunikat bylby widoczny, ale martwy —
+// nie do zamkniecia i oderwany od pola, ktorego dotyczy. Formularz konta ma
+// wlasne #bledy-konta od poczatku; edytor makra dostaje swoje.
+function pokazBladMakra(tekst) {
+  document.getElementById('bledy-makra').textContent = tekst
 }
 
 async function start() {
@@ -259,6 +288,7 @@ let edytowaneMakroId = null
 
 function otworzEdytor(makro = null) {
   edytowaneMakroId = makro?.id ?? null
+  pokazBladMakra('')
   document.getElementById('tytul-edytora').textContent = makro ? 'Edycja makra' : 'Nowe makro'
   edytorNazwa.value = makro?.nazwa ?? ''
   edytorTekst.value = makro?.tekst ?? ''
@@ -281,6 +311,7 @@ document.getElementById('anuluj-makro').addEventListener('click', (zdarzenie) =>
 
 document.getElementById('zapisz-makro').addEventListener('click', async (zdarzenie) => {
   zdarzenie.preventDefault()
+  pokazBladMakra('')
   const wynik = await window.mostHub.zapiszMakro({
     ...(edytowaneMakroId ? { id: edytowaneMakroId } : {}),
     nazwa: edytorNazwa.value,
@@ -288,7 +319,7 @@ document.getElementById('zapisz-makro').addEventListener('click', async (zdarzen
     zalaczniki: zalacznikiMakra,
   })
   if (!wynik.ok) {
-    pokazKomunikat(wynik.bledy.join('; '))
+    pokazBladMakra(wynik.bledy.join('; '))
     return
   }
   edytowaneMakroId = null
@@ -339,10 +370,11 @@ function odswiezZalaczniki() {
 }
 
 document.getElementById('dodaj-zalacznik').addEventListener('click', async () => {
+  pokazBladMakra('')
   const wynik = await window.mostHub.wybierzPlik()
   if (!wynik) return
   if (wynik.blad) {
-    pokazKomunikat(`Nie mozna dodac zalacznika: ${wynik.blad}`)
+    pokazBladMakra(`Nie mozna dodac zalacznika: ${wynik.blad}`)
     return
   }
   zalacznikiMakra.push(wynik)
@@ -479,6 +511,7 @@ document.getElementById('anuluj-usuniecie').addEventListener('click', (zdarzenie
 
 document.getElementById('potwierdz-usuniecie').addEventListener('click', async (zdarzenie) => {
   zdarzenie.preventDefault()
+  schowajKomunikat()
   if (!kontoDoUsuniecia) return
   const wynik = await window.mostHub.usunKonto(kontoDoUsuniecia.id)
   kontoDoUsuniecia = null
@@ -513,6 +546,7 @@ document.getElementById('anuluj-usuniecie-makra').addEventListener('click', (zda
 
 document.getElementById('potwierdz-usuniecie-makra').addEventListener('click', async (zdarzenie) => {
   zdarzenie.preventDefault()
+  schowajKomunikat()
   if (!makroDoUsuniecia) return
   const wynik = await window.mostHub.usunMakro(makroDoUsuniecia.id)
   makroDoUsuniecia = null

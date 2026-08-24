@@ -66,7 +66,8 @@ test('renderer wczytuje konta juz przy starcie, bez wyscigu z rejestracja IPC', 
   // Renderer wola konta:lista natychmiast po zaladowaniu. Jesli proces glowny
   // rejestruje kanaly pozniej, wywolanie rzuca i pasek zostaje pusty.
   await expect(okno.locator('#komunikat')).toBeHidden()
-  expect(await okno.locator('#komunikat').textContent()).toBe('')
+  // Celujemy w sama tresc: pasek zawiera takze przycisk zamkniecia.
+  expect(await okno.locator('#tresc-komunikatu').textContent()).toBe('')
 
   await aplikacja.close()
 })

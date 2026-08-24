@@ -10,6 +10,13 @@ dialog { border: 0; border-radius: 10px; background: var(--panel); color: var(--
 dialog label { display: block; margin: 10px 0; }
 dialog input, dialog select, dialog textarea { width: 100%; padding: 6px; border-radius: 6px; border: 1px solid #3b4a54; background: var(--tlo); color: var(--tekst); font: inherit; }
 .bledy { color: #f15c6d; min-height: 1em; }
+#komunikat { display: flex; align-items: center; gap: 6px; max-width: 45%; }
+/* Atrybut hidden dziala regula [hidden]{display:none} z arkusza przegladarki —
+   autorskie display powyzej ja bije, wiec pasek trzeba chowac jawnie. */
+#komunikat[hidden] { display: none; }
+#tresc-komunikatu { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#zamknij-komunikat { flex: none; padding: 0 6px; background: transparent; color: inherit; font-size: 16px; line-height: 1; }
+#zamknij-komunikat:hover { background: #f15c6d; color: #fff; }
 #lista-makr { list-style: none; margin: 8px 0; padding: 0; max-height: 50vh; overflow: auto; }
 #lista-makr li { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 6px; cursor: pointer; }
 .etykieta-makra { flex: 1; }
