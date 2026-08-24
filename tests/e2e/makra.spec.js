@@ -65,6 +65,11 @@ test('wybor makra kladzie tekst w schowku i nie wysyla wiadomosci', async () => 
   await okno.keyboard.press('Control+Semicolon')
   await okno.locator('#lista-makr li').first().click()
 
+  // Panel znika PRZED zakonczeniem wstawiania — wstawMakro() zamyka okno, a dopiero
+  // potem czeka na proces glowny. Jego zniknieciem nie da sie wiec mierzyc konca
+  // operacji; sygnalem jest meldunek na listwie, ktory zapada po rozwiazaniu IPC.
+  await expect(okno.locator('#komunikat')).toBeVisible()
+
   const wSchowku = await aplikacja.evaluate(({ clipboard }) => clipboard.readText())
   expect(wSchowku).toBe(tresc)
 

@@ -124,6 +124,10 @@ test('strzalki i Enter wstawiaja zaznaczone makro bez siegania po mysz', async (
   await okno.keyboard.press('Enter')
 
   await expect(okno.locator('#okno-makr')).toBeHidden()
+  // Panel znika PRZED zakonczeniem wstawiania — wstawMakro() zamyka okno, a dopiero
+  // potem czeka na proces glowny. Jego zniknieciem nie da sie wiec mierzyc konca
+  // operacji; sygnalem jest meldunek na listwie, ktory zapada po rozwiazaniu IPC.
+  await expect(okno.locator('#komunikat')).toBeVisible()
   expect(await aplikacja.evaluate(({ clipboard }) => clipboard.readText())).toBe('tresc beta')
 })
 
