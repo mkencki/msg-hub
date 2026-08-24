@@ -1,16 +1,16 @@
-import { naHtml } from './podglad.js'
-import { t, dostepneJezyki, poprawnyJezyk, JEZYK_DOMYSLNY } from './i18n.js'
+import { toHtml } from './preview.js'
+import { t, availableLanguages, validLanguage, DEFAULT_LANGUAGE } from '../shared/i18n.js'
 
-// Jezyk interfejsu. Wartosc przychodzi z procesu glownego przy starcie, wiec do
-// czasu odpowiedzi trzymamy domyslny — inaczej pierwsza klatka pokazalaby gole klucze.
-let jezykUI = JEZYK_DOMYSLNY
-const tr = (klucz, parametry) => t(jezykUI, klucz, parametry)
+// Interface language. The value arrives from the main process at startup, so until the
+// answer comes back we hold the default — otherwise the first frame would show bare keys.
+let language = DEFAULT_LANGUAGE
+const tr = (key, params) => t(language, key, params)
 
-// Teksty statyczne siedza w HTML pod data-i18n i sa podmieniane na miejscu.
-// Dzieki temu zmiana jezyka nie wymaga przeladowania okna — a przeladowanie
-// zerwaloby natywne widoki kont razem z zalogowaniem.
-function przetlumaczDokument() {
-  document.documentElement.lang = jezykUI
+// Static text carries data-i18n keys in the HTML and is swapped in place. That way
+// changing the language needs no window reload — and a reload would tear down the
+// native account views along with their sign-ins.
+function translateDocument() {
+  document.documentElement.lang = language
   for (const element of document.querySelectorAll('[data-i18n]')) {
     element.textContent = tr(element.dataset.i18n)
   }
@@ -25,741 +25,743 @@ function przetlumaczDokument() {
   }
 }
 
-const szyna = document.getElementById('szyna')
-const kanaly = document.getElementById('kanaly')
-const wyborJezyka = document.getElementById('wybor-jezyka')
-const oknoKonta = document.getElementById('okno-konta')
-const bledyKonta = document.getElementById('bledy-konta')
-const oknoMakr = document.getElementById('okno-makr')
-const szukajka = document.getElementById('szukaj-makro')
-const listaMakr = document.getElementById('lista-makr')
+const rail = document.getElementById('rail')
+const channels = document.getElementById('channels')
+const languageSelect = document.getElementById('language-select')
+const accountDialog = document.getElementById('account-dialog')
+const accountErrors = document.getElementById('account-errors')
+const macrosDialog = document.getElementById('macros-dialog')
+const macroSearch = document.getElementById('macro-search')
+const macroList = document.getElementById('macro-list')
 
-let aktywneKontoId = null
-let kontaWSzynie = []
-let licznikiKont = {}
+let activeAccountId = null
+let railAccounts = []
+let unreadByAccount = {}
 
-function opisLicznika(ile) {
-  return ile ? tr('nieprzeczytane', { n: ile }) : tr('brakNowych')
+function unreadLabel(count) {
+  return count ? tr('unreadNew', { n: count }) : tr('noNew')
 }
 
-// Kolor aktywnego konta obrysowuje cala studnie robocza — to jedyny nasycony
-// element okna i jedyna stala odpowiedz na pytanie "kim teraz jestem".
-function pomalujKanal(konto) {
-  document.documentElement.style.setProperty('--kanal', konto?.kolor ?? '#2f7d5b')
+// The active account's colour outlines the whole working area — it is the only saturated
+// element in the window and the only constant answer to "who am I right now".
+function paintChannel(account) {
+  document.documentElement.style.setProperty('--channel', account?.color ?? '#2f7d5b')
 
-  for (const [chip, nazwa] of [
-    [document.getElementById('listwa-chip'), document.getElementById('listwa-nazwa')],
-    [document.getElementById('cel-chip'), document.getElementById('cel-nazwa')],
+  for (const [chip, name] of [
+    [document.getElementById('status-chip'), document.getElementById('status-name')],
+    [document.getElementById('target-chip'), document.getElementById('target-name')],
   ]) {
-    chip.style.setProperty('--barwa', konto?.kolor ?? 'transparent')
-    nazwa.textContent = konto?.nazwa ?? tr('brakKont')
+    chip.style.setProperty('--tint', account?.color ?? 'transparent')
+    name.textContent = account?.name ?? tr('noAccounts')
   }
 
-  const suma = Object.values(licznikiKont).reduce((razem, ile) => razem + ile, 0)
-  document.getElementById('listwa-licznik').textContent = suma
-    ? tr('nieprzeczytaneSuma', { n: suma })
-    : tr('wszystkoPrzeczytane')
+  const total = Object.values(unreadByAccount).reduce((sum, n) => sum + n, 0)
+  document.getElementById('status-unread').textContent = total
+    ? tr('unreadTotal', { n: total })
+    : tr('allRead')
 }
 
-async function przelaczNa(idKonta) {
-  aktywneKontoId = idKonta
-  await window.mostHub.przelacz(idKonta)
-  for (const kanal of kanaly.children) {
-    kanal.setAttribute('aria-selected', String(kanal.dataset.idKonta === idKonta))
+async function switchTo(accountId) {
+  activeAccountId = accountId
+  await window.msgHub.switchAccount(accountId)
+  for (const channel of channels.children) {
+    channel.setAttribute('aria-selected', String(channel.dataset.accountId === accountId))
   }
-  pomalujKanal(kontaWSzynie.find((k) => k.id === idKonta))
+  paintChannel(railAccounts.find((a) => a.id === accountId))
 }
 
-function odswiezLiczniki() {
-  for (const kanal of kanaly.children) {
-    const ile = licznikiKont[kanal.dataset.idKonta] ?? 0
-    const dane = kanal.querySelector('.kanal-dane')
-    dane.textContent = opisLicznika(ile)
-    dane.classList.toggle('sa-nowe', ile > 0)
-    // W zwinieciu nazwy nie ma, wiec nieprzeczytane musi niesc sam kolor kanalu.
-    kanal.classList.toggle('ma-nowe', ile > 0)
+function refreshUnread() {
+  for (const channel of channels.children) {
+    const count = unreadByAccount[channel.dataset.accountId] ?? 0
+    const meta = channel.querySelector('.channel-meta')
+    meta.textContent = unreadLabel(count)
+    meta.classList.toggle('unread', count > 0)
+    // Collapsed, there is no name, so the channel colour alone has to carry unread.
+    channel.classList.toggle('has-unread', count > 0)
   }
-  pomalujKanal(kontaWSzynie.find((k) => k.id === aktywneKontoId))
+  paintChannel(railAccounts.find((a) => a.id === activeAccountId))
 }
 
-// Szyna zwija sie do samych kolorow kanalow i rozwija na najazd kursora — az do
-// przypiecia, ktore trzyma ja rozwinieta na stale. Stan liczy proces glowny, bo
-// to on ustawia geometrie widokow; renderer tylko zglasza najazd i maluje wynik.
-let szynaPrzypieta = false
+// The rail collapses to bare channel colours and expands on hover — until it is pinned,
+// which holds it open. The main process owns the state, because it also computes the
+// geometry of the views; the renderer only reports hover and paints the answer.
+let railPinned = false
 
-function zastosujStanSzyny({ przypieta, rozwinieta }) {
-  szynaPrzypieta = Boolean(przypieta)
-  document.documentElement.style.setProperty('--szyna', rozwinieta ? '162px' : '48px')
-  szyna.classList.toggle('rozwinieta', Boolean(rozwinieta))
-  szyna.classList.toggle('przypieta', szynaPrzypieta)
-  const przycisk = document.getElementById('przypnij-szyne')
-  przycisk.title = tr(szynaPrzypieta ? 'odepnijSzyne' : 'przypnijSzyne')
-  przycisk.setAttribute('aria-pressed', String(szynaPrzypieta))
+function applyRailState({ pinned, expanded }) {
+  railPinned = Boolean(pinned)
+  document.documentElement.style.setProperty('--rail', expanded ? '162px' : '48px')
+  rail.classList.toggle('expanded', Boolean(expanded))
+  rail.classList.toggle('pinned', railPinned)
+  const button = document.getElementById('pin-rail')
+  button.title = tr(railPinned ? 'unpinRail' : 'pinRail')
+  button.setAttribute('aria-pressed', String(railPinned))
 }
 
-szyna.addEventListener('mouseenter', () => window.mostHub.najazdSzyny(true))
-szyna.addEventListener('mouseleave', () => window.mostHub.najazdSzyny(false))
+rail.addEventListener('mouseenter', () => window.msgHub.hoverRail(true))
+rail.addEventListener('mouseleave', () => window.msgHub.hoverRail(false))
 
-document.getElementById('przypnij-szyne').addEventListener('click', () => {
-  window.mostHub.przypnijSzyne(!szynaPrzypieta)
+document.getElementById('pin-rail').addEventListener('click', () => {
+  window.msgHub.pinRail(!railPinned)
 })
 
-window.mostHub.naZmianeSzyny(zastosujStanSzyny)
+window.msgHub.onRailChange(applyRailState)
 
-async function odswiezSzyne() {
-  kontaWSzynie = await window.mostHub.listaKont()
+async function refreshRail() {
+  railAccounts = await window.msgHub.listAccounts()
 
-  // Szyna odbudowuje sie po kazdej zmianie nazwy i kolejnosci. Bez zapamietanego
-  // konta operator ladowalby wtedy za kazdym razem na pierwszym kanale.
-  const wybrane = kontaWSzynie.some((k) => k.id === aktywneKontoId)
-    ? aktywneKontoId
-    : kontaWSzynie[0]?.id ?? null
+  // The rail rebuilds itself after every rename and reorder. Without remembering the
+  // account, the operator would land back on the first channel every single time.
+  const selected = railAccounts.some((a) => a.id === activeAccountId)
+    ? activeAccountId
+    : railAccounts[0]?.id ?? null
 
-  kanaly.replaceChildren()
-  for (const konto of kontaWSzynie) {
-    const kanal = document.createElement('button')
-    kanal.className = 'kanal'
-    kanal.dataset.idKonta = konto.id
-    kanal.style.setProperty('--barwa', konto.kolor)
-    kanal.setAttribute('aria-selected', String(konto.id === wybrane))
-    kanal.title = `${konto.nazwa} (${konto.platforma})`
+  channels.replaceChildren()
+  for (const account of railAccounts) {
+    const channel = document.createElement('button')
+    channel.className = 'channel'
+    channel.dataset.accountId = account.id
+    channel.style.setProperty('--tint', account.color)
+    channel.setAttribute('aria-selected', String(account.id === selected))
+    channel.title = `${account.name} (${account.platform})`
 
     const chip = document.createElement('i')
     chip.className = 'chip'
 
-    const nazwa = document.createElement('span')
-    nazwa.className = 'kanal-nazwa'
-    nazwa.textContent = konto.nazwa
+    const name = document.createElement('span')
+    name.className = 'channel-name'
+    name.textContent = account.name
 
-    // Druga linia odpowiada na jedyne pytanie, ktore zmienia sie co chwile:
-    // czy ten kanal mnie potrzebuje. Platforma jest juz w nazwie i w ustawieniach.
-    const dane = document.createElement('span')
-    dane.className = 'kanal-dane'
-    dane.textContent = opisLicznika(licznikiKont[konto.id] ?? 0)
-    dane.classList.toggle('sa-nowe', (licznikiKont[konto.id] ?? 0) > 0)
+    // The second line answers the only question that changes minute to minute: does this
+    // channel need me. The platform is already in the name and in the settings.
+    const meta = document.createElement('span')
+    meta.className = 'channel-meta'
+    meta.textContent = unreadLabel(unreadByAccount[account.id] ?? 0)
+    meta.classList.toggle('unread', (unreadByAccount[account.id] ?? 0) > 0)
 
-    kanal.append(chip, nazwa, dane)
-    kanal.addEventListener('click', () => przelaczNa(konto.id))
-    kanaly.append(kanal)
+    channel.append(chip, name, meta)
+    channel.addEventListener('click', () => switchTo(account.id))
+    channels.append(channel)
   }
 
-  if (wybrane) await przelaczNa(wybrane)
-  else pomalujKanal(null)
+  if (selected) await switchTo(selected)
+  else paintChannel(null)
 }
 
-let edytowaneKontoId = null
+let editedAccountId = null
 
-async function otworzFormularzKonta(konto = null) {
-  edytowaneKontoId = konto?.id ?? null
-  bledyKonta.textContent = ''
+async function openAccountForm(account = null) {
+  editedAccountId = account?.id ?? null
+  accountErrors.textContent = ''
 
-  const formularz = oknoKonta.querySelector('form')
-  formularz.reset()
-  document.getElementById('tytul-konta').textContent = tr(konto ? 'edycjaKonta' : 'dodajKonto')
+  const form = accountDialog.querySelector('form')
+  form.reset()
+  document.getElementById('account-dialog-title').textContent = tr(account ? 'editAccount' : 'addAccount')
 
-  // Platforma wyznacza adres i partycje sesji — jej podmiana bylaby innym kontem,
-  // nie poprawka tego samego, wiec przy edycji pole jest zablokowane.
-  const platforma = formularz.querySelector('select[name="platforma"]')
-  platforma.disabled = Boolean(konto)
+  // The platform determines the address and the session partition — swapping it would be
+  // a different account, not a correction of this one, so the field is locked when editing.
+  const platform = form.querySelector('select[name="platform"]')
+  platform.disabled = Boolean(account)
 
-  if (konto) {
-    formularz.querySelector('input[name="nazwa"]').value = konto.nazwa
-    platforma.value = konto.platforma
-    formularz.querySelector('input[name="kolor"]').value = konto.kolor
+  if (account) {
+    form.querySelector('input[name="name"]').value = account.name
+    platform.value = account.platform
+    form.querySelector('input[name="color"]').value = account.color
   } else {
-    // Dwa konta w tym samym kolorze znosza sygnal tozsamosci — podpowiadamy wolny.
-    formularz.querySelector('input[name="kolor"]').value = await window.mostHub.wolnyKolor()
+    // Two accounts in one colour cancel out the identity signal — suggest a free one.
+    form.querySelector('input[name="color"]').value = await window.msgHub.unusedColor()
   }
 
-  pokazDialog(oknoKonta)
+  showDialog(accountDialog)
 }
 
-document.getElementById('dodaj-konto').addEventListener('click', () => otworzFormularzKonta())
+document.getElementById('add-account').addEventListener('click', () => openAccountForm())
 
-oknoKonta.addEventListener('close', () => {
-  edytowaneKontoId = null
+accountDialog.addEventListener('close', () => {
+  editedAccountId = null
 })
 
-document.getElementById('zapisz-konto').addEventListener('click', async (zdarzenie) => {
-  zdarzenie.preventDefault()
-  const dane = Object.fromEntries(new FormData(oknoKonta.querySelector('form')))
+document.getElementById('save-account').addEventListener('click', async (event) => {
+  event.preventDefault()
+  const data = Object.fromEntries(new FormData(accountDialog.querySelector('form')))
 
-  const wynik = edytowaneKontoId
-    ? await window.mostHub.zmienKonto(edytowaneKontoId, { nazwa: dane.nazwa, kolor: dane.kolor })
-    : await window.mostHub.dodajKonto(dane)
+  const result = editedAccountId
+    ? await window.msgHub.updateAccount(editedAccountId, { name: data.name, color: data.color })
+    : await window.msgHub.addAccount(data)
 
-  if (!wynik.ok) {
-    bledyKonta.textContent = opiszBledy(wynik.bledy)
+  if (!result.ok) {
+    accountErrors.textContent = describeErrors(result.errors)
     return
   }
 
-  edytowaneKontoId = null
-  oknoKonta.close()
-  await odswiezSzyne()
-  if (oknoUstawien.open) await odswiezListeKont()
+  editedAccountId = null
+  accountDialog.close()
+  await refreshRail()
+  if (settingsDialog.open) await refreshAccountList()
 })
 
-// Panel zamyka sie przy kazdym wyborze, wiec brak wstawienia jest niewidoczny —
-// kazdy powod musi trafic na listwe, inaczej wyglada to jak udane wstawienie.
-const POWODY_WSTAWIANIA = {
-  'brak-konta': 'komunikatBrakKonta',
-  'brak-makra': 'komunikatBrakMakra',
-  'puste-makro': 'komunikatPusteMakro',
+// The panel closes on every choice, so a failed insertion is invisible — every reason
+// has to reach the status bar, otherwise it looks exactly like a successful insertion.
+const INSERT_REASONS = {
+  'no-account': 'messageNoAccount',
+  'no-macro': 'messageNoMacro',
+  'empty-macro': 'messageEmptyMacro',
 }
 
-// Proces glowny oddaje bledy jako kody z parametrami — dopiero tutaj wiadomo,
-// w ktorym jezyku ma je zobaczyc uzytkownik.
-function opiszBledy(bledy) {
-  return (bledy ?? []).map((blad) => tr(blad.kod, blad.parametry)).join('; ')
+// The main process returns errors as codes with parameters — only here is it known which
+// language the user should read them in.
+function describeErrors(errors) {
+  return (errors ?? []).map((error) => tr(error.code, error.params)).join('; ')
 }
 
-let zaznaczoneMakro = 0
+let selectedMacro = 0
 
-async function wstawMakro(makro) {
-  schowajKomunikat()
-  oknoMakr.close()
-  const wynik = await window.mostHub.wstawMakro(makro.id)
+async function insertMacro(macro) {
+  hideMessage()
+  macrosDialog.close()
+  const result = await window.msgHub.insertMacro(macro.id)
 
-  if (wynik?.ok) {
-    // Obietnica produktu wypowiedziana wprost: aplikacja przygotowuje, nie wysyla.
-    const konto = kontaWSzynie.find((k) => k.id === aktywneKontoId)
-    pokazKomunikat(
-      tr('komunikatWstawiono', { makro: makro.nazwa, konto: konto?.nazwa ?? tr('komunikatKonta') }),
+  if (result?.ok) {
+    // The product promise, said out loud: this app prepares, it does not send.
+    const account = railAccounts.find((a) => a.id === activeAccountId)
+    showMessage(
+      tr('messageInserted', { macro: macro.name, account: account?.name ?? tr('messageTheAccount') }),
       'info',
     )
     return
   }
-  if (!wynik) return
+  if (!result) return
 
-  if (wynik.brakujace?.length) {
-    pokazKomunikat(tr('komunikatBrakujaZalaczniki', { lista: wynik.brakujace.join(', ') }))
+  if (result.missing?.length) {
+    showMessage(tr('messageMissingAttachments', { list: result.missing.join(', ') }))
     return
   }
-  pokazKomunikat(tr(POWODY_WSTAWIANIA[wynik.powod] ?? 'komunikatWstawianieNieudane'))
+  showMessage(tr(INSERT_REASONS[result.reason] ?? 'messageInsertFailed'))
 }
 
-export async function odswiezMakra() {
-  const makra = await window.mostHub.listaMakr(szukajka.value)
-  listaMakr.replaceChildren()
+export async function refreshMacros() {
+  const macros = await window.msgHub.listMacros(macroSearch.value)
+  macroList.replaceChildren()
 
-  if (!makra.length) {
-    const puste = document.createElement('li')
-    puste.className = 'puste'
-    puste.textContent = szukajka.value
-      ? tr('nicNiePasuje', { fraza: szukajka.value })
-      : tr('brakMakr')
-    listaMakr.append(puste)
+  if (!macros.length) {
+    const empty = document.createElement('li')
+    empty.className = 'empty'
+    empty.textContent = macroSearch.value
+      ? tr('nothingMatches', { phrase: macroSearch.value })
+      : tr('noMacros')
+    macroList.append(empty)
     return
   }
 
-  if (zaznaczoneMakro >= makra.length) zaznaczoneMakro = 0
+  if (selectedMacro >= macros.length) selectedMacro = 0
 
-  makra.forEach((makro, indeks) => {
-    const pozycja = document.createElement('li')
-    const liczba = (makro.zalaczniki ?? []).length
-    pozycja.dataset.idMakra = makro.id
-    pozycja.setAttribute('aria-selected', String(indeks === zaznaczoneMakro))
+  macros.forEach((macro, index) => {
+    const row = document.createElement('li')
+    const count = (macro.attachments ?? []).length
+    row.dataset.macroId = macro.id
+    row.setAttribute('aria-selected', String(index === selectedMacro))
 
-    const etykieta = document.createElement('span')
-    etykieta.className = 'etykieta-makra'
-    etykieta.textContent = liczba ? tr('etykietaMakra', { nazwa: makro.nazwa, liczba }) : makro.nazwa
+    const label = document.createElement('span')
+    label.className = 'macro-label'
+    label.textContent = count ? tr('macroLabel', { name: macro.name, count }) : macro.name
 
-    // Klikniecie wiersza wstawia makro — to najczestsza czynnosc, wiec zostaje
-    // najtansza. Przyciski zatrzymuja propagacje, zeby edycja i usuwanie nie
-    // wstawialy makra przy okazji.
-    pozycja.addEventListener('click', () => wstawMakro(makro))
+    // Clicking the row inserts the macro — the most frequent action, so it stays the
+    // cheapest. The buttons stop propagation so editing and deleting do not insert
+    // the macro on the way.
+    row.addEventListener('click', () => insertMacro(macro))
 
-    const edytuj = document.createElement('button')
-    edytuj.type = 'button'
-    edytuj.className = 'edytuj-makro'
-    edytuj.textContent = tr('edytuj')
-    edytuj.title = tr('edytujMakro', { nazwa: makro.nazwa })
-    edytuj.addEventListener('click', (zdarzenie) => {
-      zdarzenie.stopPropagation()
-      otworzEdytor(makro)
+    const edit = document.createElement('button')
+    edit.type = 'button'
+    edit.className = 'edit-macro'
+    edit.textContent = tr('edit')
+    edit.title = tr('editMacroTitle', { name: macro.name })
+    edit.addEventListener('click', (event) => {
+      event.stopPropagation()
+      openEditor(macro)
     })
 
-    const usun = document.createElement('button')
-    usun.type = 'button'
-    usun.className = 'usun-makro grozny'
-    usun.textContent = tr('usun')
-    usun.title = tr('usunMakroTytul', { nazwa: makro.nazwa })
-    usun.addEventListener('click', (zdarzenie) => {
-      zdarzenie.stopPropagation()
-      zapytajOUsuniecieMakra(makro)
+    const remove = document.createElement('button')
+    remove.type = 'button'
+    remove.className = 'remove-macro danger'
+    remove.textContent = tr('remove')
+    remove.title = tr('removeMacroTitle', { name: macro.name })
+    remove.addEventListener('click', (event) => {
+      event.stopPropagation()
+      confirmMacroRemoval(macro)
     })
 
-    pozycja.append(etykieta, edytuj, usun)
-    listaMakr.append(pozycja)
+    row.append(label, edit, remove)
+    macroList.append(row)
   })
 }
 
-szukajka.addEventListener('input', () => {
-  zaznaczoneMakro = 0
-  odswiezMakra()
+macroSearch.addEventListener('input', () => {
+  selectedMacro = 0
+  refreshMacros()
 })
 
-// Wybor makra idzie strzalkami i Enterem: przy kilkudziesieciu pozycjach
-// siegniecie po mysz kosztuje wiecej niz samo wstawienie.
-szukajka.addEventListener('keydown', async (zdarzenie) => {
-  const wiersze = [...listaMakr.querySelectorAll('li[data-id-makra]')]
-  if (!wiersze.length) return
+// Choosing a macro goes by arrows and Enter: with a few dozen entries, reaching for the
+// mouse costs more than the insertion itself.
+macroSearch.addEventListener('keydown', async (event) => {
+  const rows = [...macroList.querySelectorAll('li[data-macro-id]')]
+  if (!rows.length) return
 
-  if (zdarzenie.key === 'ArrowDown' || zdarzenie.key === 'ArrowUp') {
-    zdarzenie.preventDefault()
-    const krok = zdarzenie.key === 'ArrowDown' ? 1 : -1
-    zaznaczoneMakro = (zaznaczoneMakro + krok + wiersze.length) % wiersze.length
-    await odswiezMakra()
-    listaMakr.querySelector('li[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' })
+  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    event.preventDefault()
+    const step = event.key === 'ArrowDown' ? 1 : -1
+    selectedMacro = (selectedMacro + step + rows.length) % rows.length
+    await refreshMacros()
+    macroList.querySelector('li[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' })
     return
   }
 
-  if (zdarzenie.key === 'Enter') {
-    zdarzenie.preventDefault()
-    const idMakra = wiersze[zaznaczoneMakro]?.dataset.idMakra
-    const makra = await window.mostHub.listaMakr(szukajka.value)
-    const makro = makra.find((m) => m.id === idMakra)
-    if (makro) await wstawMakro(makro)
+  if (event.key === 'Enter') {
+    event.preventDefault()
+    const macroId = rows[selectedMacro]?.dataset.macroId
+    const macros = await window.msgHub.listMacros(macroSearch.value)
+    const macro = macros.find((m) => m.id === macroId)
+    if (macro) await insertMacro(macro)
   }
 })
 
-document.getElementById('otworz-makra').addEventListener('click', async () => {
-  szukajka.value = ''
-  zaznaczoneMakro = 0
-  await odswiezMakra()
-  pokazDialog(oknoMakr)
-  szukajka.focus()
+document.getElementById('open-macros').addEventListener('click', async () => {
+  macroSearch.value = ''
+  selectedMacro = 0
+  await refreshMacros()
+  showDialog(macrosDialog)
+  macroSearch.focus()
 })
 
-// Panel makr nie ma <form method="dialog">, wiec samo value="zamknij" niczego
-// nie zamyka — przycisk potrzebuje jawnej obslugi, tak jak w ustawieniach.
-document.getElementById('zamknij-makra').addEventListener('click', (zdarzenie) => {
-  zdarzenie.preventDefault()
-  oknoMakr.close()
+// The macro panel has no <form method="dialog">, so value="close" alone closes nothing —
+// the button needs an explicit handler, exactly as in the settings dialog.
+document.getElementById('close-macros').addEventListener('click', (event) => {
+  event.preventDefault()
+  macrosDialog.close()
 })
 
-window.addEventListener('keydown', (zdarzenie) => {
-  if (zdarzenie.ctrlKey && zdarzenie.key === ';') {
-    zdarzenie.preventDefault()
-    document.getElementById('otworz-makra').click()
+window.addEventListener('keydown', (event) => {
+  if (event.ctrlKey && event.key === ';') {
+    event.preventDefault()
+    document.getElementById('open-macros').click()
   }
 })
 
-// Ten sam skrot wcisniety, gdy fokus trzyma widok konta, w ogole nie dociera
-// do renderera — przechwytuje go wtedy proces glowny i przysyla gotowa decyzje.
-window.mostHub.naOtwarcieMakr(() => document.getElementById('otworz-makra').click())
+// The same shortcut pressed while an account view holds focus never reaches the renderer
+// at all — the main process intercepts it there and sends the decision back.
+window.msgHub.onOpenMacros(() => document.getElementById('open-macros').click())
 
-// Spec sekcja 8: nieudany start ma dac jawny komunikat, nie pusta listwe.
-// Komunikat MUSI dac sie zdjac — inaczej nieaktualny blad okupuje listwe do konca
-// sesji i operator czyta go jeszcze dlugo po naprawieniu przyczyny.
-function pokazKomunikat(tekst, ton = 'blad') {
-  const pasek = document.getElementById('komunikat')
-  document.getElementById('tresc-komunikatu').textContent = tekst
-  pasek.dataset.ton = ton
-  pasek.hidden = false
+// Spec section 8: a failed start must produce a visible message, not an empty status bar.
+// The message MUST be dismissable — otherwise a stale error occupies the bar for the rest
+// of the session and the operator keeps reading it long after the cause is fixed.
+function showMessage(text, tone = 'error') {
+  const bar = document.getElementById('message')
+  document.getElementById('message-text').textContent = text
+  bar.dataset.tone = tone
+  bar.hidden = false
 }
 
-function schowajKomunikat() {
-  document.getElementById('tresc-komunikatu').textContent = ''
-  document.getElementById('komunikat').hidden = true
+function hideMessage() {
+  document.getElementById('message-text').textContent = ''
+  document.getElementById('message').hidden = true
 }
 
-document.getElementById('zamknij-komunikat').addEventListener('click', schowajKomunikat)
+document.getElementById('dismiss-message').addEventListener('click', hideMessage)
 
-// Blad zgloszony przez OTWARTE okno dialogowe nie moze isc na listwe: modal
-// unieruchamia wszystko poza soba, wiec komunikat bylby widoczny, ale martwy —
-// nie do zamkniecia i oderwany od pola, ktorego dotyczy. Formularz konta ma
-// wlasne #bledy-konta od poczatku; edytor makra dostaje swoje.
-function pokazBladMakra(tekst) {
-  document.getElementById('bledy-makra').textContent = tekst
+// An error raised by an OPEN dialog must not go to the status bar: a modal freezes
+// everything around it, so the message would be visible but dead — impossible to dismiss
+// and detached from the field it concerns. The account form has had its own error line
+// from the start; the macro editor gets one too.
+function showMacroError(text) {
+  document.getElementById('macro-errors').textContent = text
 }
 
-function zbudujWyborJezyka() {
-  wyborJezyka.replaceChildren()
-  for (const { kod, nazwa } of dostepneJezyki()) {
-    const opcja = document.createElement('option')
-    opcja.value = kod
-    // Jezyk podpisuje sie wlasna nazwa: kto szuka polskiego, szuka slowa "Polski",
-    // a nie jego tlumaczenia na jezyk, ktorego wlasnie nie rozumie.
-    opcja.textContent = nazwa
-    wyborJezyka.append(opcja)
+function buildLanguageSelect() {
+  languageSelect.replaceChildren()
+  for (const { code, name } of availableLanguages()) {
+    const option = document.createElement('option')
+    option.value = code
+    option.textContent = name
+    languageSelect.append(option)
   }
-  wyborJezyka.value = jezykUI
+  languageSelect.value = language
 }
 
-// Zmiana jezyka NIE przeladowuje okna — przeladowanie zerwaloby natywne widoki
-// kont razem z zalogowaniem. Przemalowujemy wiec wszystko, co samo sklada teksty.
-async function zastosujJezyk() {
-  przetlumaczDokument()
-  zbudujWyborJezyka()
-  zastosujStanSzyny({ przypieta: szynaPrzypieta, rozwinieta: szyna.classList.contains('rozwinieta') })
-  await odswiezSzyne()
-  if (oknoUstawien.open) await odswiezListeKont()
-  if (oknoMakr.open) await odswiezMakra()
+// Changing the language does NOT reload the window — a reload would tear down the native
+// account views along with their sign-ins. Instead everything that composes its own text
+// is repainted.
+async function applyLanguage() {
+  translateDocument()
+  buildLanguageSelect()
+  applyRailState({ pinned: railPinned, expanded: rail.classList.contains('expanded') })
+  await refreshRail()
+  if (settingsDialog.open) await refreshAccountList()
+  if (macrosDialog.open) await refreshMacros()
 }
 
-wyborJezyka.addEventListener('change', async () => {
-  jezykUI = poprawnyJezyk(await window.mostHub.ustawJezyk(wyborJezyka.value))
-  await zastosujJezyk()
+languageSelect.addEventListener('change', async () => {
+  language = validLanguage(await window.msgHub.setLanguage(languageSelect.value))
+  await applyLanguage()
 })
 
 async function start() {
   try {
-    // Jezyk musi byc znany PRZED pierwszym rysowaniem list, inaczej pierwsza
-    // klatka pokazuje angielski, a druga podmienia go na polski.
-    jezykUI = poprawnyJezyk(await window.mostHub.odczytajJezyk())
-    przetlumaczDokument()
-    zbudujWyborJezyka()
-    zastosujStanSzyny(await window.mostHub.stanSzyny())
-    await odswiezSzyne()
-  } catch (blad) {
-    pokazKomunikat(tr('komunikatWczytanieKont', { blad: blad.message }))
+    // The language must be known BEFORE the first list is drawn, otherwise the first
+    // frame shows English and the second swaps it for Polish.
+    language = validLanguage(await window.msgHub.getLanguage())
+    translateDocument()
+    buildLanguageSelect()
+    applyRailState(await window.msgHub.railState())
+    await refreshRail()
+  } catch (error) {
+    showMessage(tr('messageLoadAccountsFailed', { reason: error.message }))
   } finally {
-    // Sygnal gotowosci zapada dopiero TERAZ: przedtem teksty byly jeszcze
-    // angielskie z HTML-a, wiec test polskiego interfejsu lapalby stara klatke.
-    document.body.dataset.gotowy = '1'
+    // The ready signal lands only NOW: before this the text was still the English
+    // placeholder from the HTML, so a test of the Polish interface would catch the
+    // stale frame.
+    document.body.dataset.ready = '1'
   }
 }
 
 start()
 
-// Nakladka licznika na ikonie paska zadan. Electron przyjmuje tylko gotowy obrazek,
-// wiec 16x16 rysuje renderer i odsyla jako data URL. Zero = brak nakladki.
-export function narysujLicznik(suma) {
-  if (!suma) return null
-  const napis = suma > 99 ? '99+' : String(suma)
-  const plotno = document.createElement('canvas')
-  plotno.width = 16
-  plotno.height = 16
-  const pedzel = plotno.getContext('2d')
-  pedzel.fillStyle = '#f15c6d'
-  pedzel.beginPath()
-  pedzel.arc(8, 8, 8, 0, Math.PI * 2)
-  pedzel.fill()
-  pedzel.fillStyle = '#ffffff'
-  pedzel.font = `bold ${napis.length > 2 ? 8 : 11}px "Segoe UI", sans-serif`
-  pedzel.textAlign = 'center'
-  pedzel.textBaseline = 'middle'
-  pedzel.fillText(napis, 8, 9)
-  return plotno.toDataURL('image/png')
+// The unread overlay on the taskbar icon. Electron accepts only a finished image, so the
+// renderer draws the 16x16 and sends it back as a data URL. Zero means no overlay.
+export function drawUnreadBadge(total) {
+  if (!total) return null
+  const caption = total > 99 ? '99+' : String(total)
+  const canvas = document.createElement('canvas')
+  canvas.width = 16
+  canvas.height = 16
+  const brush = canvas.getContext('2d')
+  brush.fillStyle = '#f15c6d'
+  brush.beginPath()
+  brush.arc(8, 8, 8, 0, Math.PI * 2)
+  brush.fill()
+  brush.fillStyle = '#ffffff'
+  brush.font = `bold ${caption.length > 2 ? 8 : 11}px "Segoe UI", sans-serif`
+  brush.textAlign = 'center'
+  brush.textBaseline = 'middle'
+  brush.fillText(caption, 8, 9)
+  return canvas.toDataURL('image/png')
 }
 
-// Proces glowny przysyla sume i rozbicie na konta — szyna pokazuje licznik
-// przy kazdym kanale, a nakladka na ikonie nadal potrzebuje samej sumy.
-window.mostHub.naLicznik((dane) => {
-  const suma = typeof dane === 'number' ? dane : (dane?.suma ?? 0)
-  licznikiKont = typeof dane === 'number' ? {} : (dane?.wgKont ?? {})
-  odswiezLiczniki()
-  window.mostHub.ustawNakladke(narysujLicznik(suma))
+// The main process sends the total and the per-account breakdown — the rail shows a count
+// on each channel, and the taskbar overlay still needs the total on its own.
+window.msgHub.onUnread((data) => {
+  const total = typeof data === 'number' ? data : (data?.total ?? 0)
+  unreadByAccount = typeof data === 'number' ? {} : (data?.byAccount ?? {})
+  refreshUnread()
+  window.msgHub.setOverlay(drawUnreadBadge(total))
 })
 
-// Komunikaty z procesu glownego (np. nieudane ladowanie konta) ladują na listwie,
-// nie w modalnym okienku — jedno chore konto nie blokuje pozostalych.
-window.mostHub.naKomunikat((tekst) => pokazKomunikat(tekst))
+// Messages from the main process (a failed account load, for instance) land on the status
+// bar rather than in a modal — one sick account must not block the rest.
+window.msgHub.onMessage((text) => showMessage(text))
 
-const oknoEdytora = document.getElementById('okno-edytora')
-const edytorNazwa = document.getElementById('edytor-nazwa')
-const edytorTekst = document.getElementById('edytor-tekst')
-const edytorPodglad = document.getElementById('edytor-podglad')
+const editorDialog = document.getElementById('editor-dialog')
+const editorName = document.getElementById('editor-name')
+const editorText = document.getElementById('editor-text')
+const editorPreview = document.getElementById('editor-preview')
 
-function odswiezPodglad() {
-  edytorPodglad.innerHTML = naHtml(edytorTekst.value)
+function refreshPreview() {
+  editorPreview.innerHTML = toHtml(editorText.value)
 }
 
-edytorTekst.addEventListener('input', odswiezPodglad)
+editorText.addEventListener('input', refreshPreview)
 
-document.getElementById('pasek-formatowania').addEventListener('click', (zdarzenie) => {
-  const przycisk = zdarzenie.target.closest('button')
-  if (!przycisk) return
-  const poczatek = edytorTekst.selectionStart
-  const koniec = edytorTekst.selectionEnd
-  const tresc = edytorTekst.value
+document.getElementById('format-bar').addEventListener('click', (event) => {
+  const button = event.target.closest('button')
+  if (!button) return
+  const start = editorText.selectionStart
+  const end = editorText.selectionEnd
+  const content = editorText.value
 
-  if (przycisk.dataset.znacznik) {
-    const znak = przycisk.dataset.znacznik
-    const zaznaczone = tresc.slice(poczatek, koniec) || 'tekst'
-    edytorTekst.value = tresc.slice(0, poczatek) + znak + zaznaczone + znak + tresc.slice(koniec)
-  } else if (przycisk.dataset.prefiks) {
-    const prefiks = przycisk.dataset.prefiks
-    const poczatekLinii = tresc.lastIndexOf('\n', poczatek - 1) + 1
-    edytorTekst.value = tresc.slice(0, poczatekLinii) + prefiks + tresc.slice(poczatekLinii)
+  if (button.dataset.marker) {
+    const mark = button.dataset.marker
+    const selected = content.slice(start, end) || ''
+    editorText.value = content.slice(0, start) + mark + selected + mark + content.slice(end)
+    editorText.setSelectionRange(start + mark.length, end + mark.length)
+  } else if (button.dataset.prefix) {
+    const lineStart = content.lastIndexOf('\n', start - 1) + 1
+    editorText.value = content.slice(0, lineStart) + button.dataset.prefix + content.slice(lineStart)
+    editorText.setSelectionRange(start + button.dataset.prefix.length, end + button.dataset.prefix.length)
   }
-  edytorTekst.focus()
-  odswiezPodglad()
+
+  editorText.focus()
+  refreshPreview()
 })
 
-// Edycja zachowuje id makra, nawet gdy zmieni sie nazwa — inaczej poprawka
-// nazwy tworzylaby drugie makro obok starego.
-let edytowaneMakroId = null
+// Editing keeps the macro's id even when the name changes — otherwise correcting a name
+// would create a second macro next to the old one.
+let editedMacroId = null
 
-function otworzEdytor(makro = null) {
-  edytowaneMakroId = makro?.id ?? null
-  pokazBladMakra('')
-  document.getElementById('tytul-edytora').textContent = tr(makro ? 'edycjaMakra' : 'noweMakro')
-  edytorNazwa.value = makro?.nazwa ?? ''
-  edytorTekst.value = makro?.tekst ?? ''
-  zalacznikiMakra = [...(makro?.zalaczniki ?? [])]
-  odswiezZalaczniki()
-  odswiezPodglad()
-  oknoMakr.close()
-  pokazDialog(oknoEdytora)
+function openEditor(macro = null) {
+  editedMacroId = macro?.id ?? null
+  showMacroError('')
+  document.getElementById('editor-title').textContent = tr(macro ? 'editMacro' : 'newMacro')
+  editorName.value = macro?.name ?? ''
+  editorText.value = macro?.text ?? ''
+  macroAttachments = [...(macro?.attachments ?? [])]
+  refreshAttachments()
+  refreshPreview()
+  macrosDialog.close()
+  showDialog(editorDialog)
 }
 
-document.getElementById('nowe-makro').addEventListener('click', (zdarzenie) => {
-  zdarzenie.preventDefault()
-  otworzEdytor()
+document.getElementById('new-macro').addEventListener('click', (event) => {
+  event.preventDefault()
+  openEditor()
 })
 
-document.getElementById('anuluj-makro').addEventListener('click', (zdarzenie) => {
-  zdarzenie.preventDefault()
-  oknoEdytora.close()
+document.getElementById('cancel-macro').addEventListener('click', (event) => {
+  event.preventDefault()
+  editorDialog.close()
 })
 
-document.getElementById('zapisz-makro').addEventListener('click', async (zdarzenie) => {
-  zdarzenie.preventDefault()
-  pokazBladMakra('')
-  const wynik = await window.mostHub.zapiszMakro({
-    ...(edytowaneMakroId ? { id: edytowaneMakroId } : {}),
-    nazwa: edytorNazwa.value,
-    tekst: edytorTekst.value,
-    zalaczniki: zalacznikiMakra,
+document.getElementById('save-macro').addEventListener('click', async (event) => {
+  event.preventDefault()
+  showMacroError('')
+  const result = await window.msgHub.saveMacro({
+    ...(editedMacroId ? { id: editedMacroId } : {}),
+    name: editorName.value,
+    text: editorText.value,
+    attachments: macroAttachments,
   })
-  if (!wynik.ok) {
-    pokazBladMakra(opiszBledy(wynik.bledy))
+  if (!result.ok) {
+    showMacroError(describeErrors(result.errors))
     return
   }
-  edytowaneMakroId = null
-  oknoEdytora.close()
+  editedMacroId = null
+  editorDialog.close()
 })
 
-let zalacznikiMakra = []
+let macroAttachments = []
 
-// Nazwa w magazynie ma prefiks UUID — operatorowi pokazujemy tylko oryginalna nazwe.
-function odswiezZalaczniki() {
-  const pole = document.getElementById('lista-zalacznikow')
-  pole.replaceChildren()
+// The stored name carries a UUID prefix — the operator only ever sees the original name.
+function refreshAttachments() {
+  const list = document.getElementById('attachment-list')
+  list.replaceChildren()
 
-  if (!zalacznikiMakra.length) {
-    const puste = document.createElement('li')
-    puste.className = 'puste'
-    puste.textContent = tr('brak')
-    pole.append(puste)
+  if (!macroAttachments.length) {
+    const empty = document.createElement('li')
+    empty.className = 'empty'
+    empty.textContent = tr('none')
+    list.append(empty)
     return
   }
 
-  for (const wzgledna of zalacznikiMakra) {
-    const pozycja = document.createElement('li')
+  for (const relative of macroAttachments) {
+    const row = document.createElement('li')
 
-    const nazwa = document.createElement('span')
-    nazwa.className = 'nazwa-zalacznika'
-    nazwa.textContent = wzgledna.replace(/^att\/[0-9a-f-]+-/, '')
+    const name = document.createElement('span')
+    name.className = 'attachment-name'
+    name.textContent = relative.replace(/^att\/[0-9a-f-]+-/, '')
 
-    // Zdjecie tylko odpina zalacznik od makra; plik znika z magazynu dopiero
-    // przy zapisie, wiec anulowanie edytora niczego nie kasuje.
-    const zdejmij = document.createElement('button')
-    zdejmij.type = 'button'
-    zdejmij.className = 'zdejmij-zalacznik'
-    zdejmij.textContent = tr('zdejmij')
-    zdejmij.title = tr('zdejmijPlik', { nazwa: nazwa.textContent })
-    zdejmij.addEventListener('click', () => {
-      zalacznikiMakra = zalacznikiMakra.filter((s) => s !== wzgledna)
-      odswiezZalaczniki()
+    // Detaching only unlinks the attachment from the macro; the file leaves the store on
+    // save, so cancelling the editor deletes nothing.
+    const detach = document.createElement('button')
+    detach.type = 'button'
+    detach.className = 'detach-attachment'
+    detach.textContent = tr('detach')
+    detach.title = tr('detachFile', { name: name.textContent })
+    detach.addEventListener('click', () => {
+      macroAttachments = macroAttachments.filter((p) => p !== relative)
+      refreshAttachments()
     })
 
-    pozycja.append(nazwa, zdejmij)
-    pole.append(pozycja)
+    row.append(name, detach)
+    list.append(row)
   }
 }
 
-document.getElementById('dodaj-zalacznik').addEventListener('click', async () => {
-  pokazBladMakra('')
-  const wynik = await window.mostHub.wybierzPlik()
-  if (!wynik) return
-  if (wynik.blad) {
-    pokazBladMakra(`Nie mozna dodac zalacznika: ${wynik.blad}`)
+document.getElementById('add-attachment').addEventListener('click', async () => {
+  showMacroError('')
+  const result = await window.msgHub.pickFile()
+  if (!result) return
+  if (result.error) {
+    showMacroError(tr('messageAttachmentFailed', { reason: tr(result.error.code, result.error.params) }))
     return
   }
-  zalacznikiMakra.push(wynik)
-  odswiezZalaczniki()
+  macroAttachments.push(result)
+  refreshAttachments()
 })
 
-// Widoki kont to natywna warstwa NAD trescia okna — otwarty <dialog> chowa sie
-// pod nia i tylko blokuje klikniecia. Warstwa schodzi, gdy otwarte jest JAKIEKOLWIEK
-// okno dialogowe. Stan liczymy z DOM, bo zdarzenie "close" dialogu jest kolejkowane,
-// nie synchroniczne: przy przejsciu panel -> edytor przyszloby PO otwarciu edytora
-// i przywrocilo warstwe na wierzch.
-function odswiezWidocznoscKont() {
-  const ktoregokolwiek = [...document.querySelectorAll('dialog')].some((d) => d.open)
-  window.mostHub.ustawWidocznoscKont(!ktoregokolwiek)
+// Account views are a native layer ABOVE the window content — an open <dialog> hides
+// underneath it and only blocks clicks. The layer steps aside while ANY dialog is open.
+// The state is computed from the DOM, because a dialog's "close" event is queued rather
+// than synchronous: moving from the panel to the editor it would arrive AFTER the editor
+// opened and would put the layer back on top.
+function refreshViewVisibility() {
+  const anyOpen = [...document.querySelectorAll('dialog')].some((d) => d.open)
+  window.msgHub.setViewsVisible(!anyOpen)
 }
 
-function pokazDialog(dialog) {
-  // Powtorny showModal na otwartym dialogu rzuca wyjatek — a skrot da sie
-  // wcisnac drugi raz, zanim operator zauwazy otwarty panel.
+function showDialog(dialog) {
+  // Calling showModal again on an open dialog throws — and the shortcut can be pressed a
+  // second time before the operator notices the panel is already open.
   if (dialog.open) return
   dialog.showModal()
-  odswiezWidocznoscKont()
+  refreshViewVisibility()
 }
 
 for (const dialog of document.querySelectorAll('dialog')) {
-  dialog.addEventListener('close', odswiezWidocznoscKont)
+  dialog.addEventListener('close', refreshViewVisibility)
 }
 
-const oknoUstawien = document.getElementById('okno-ustawien')
-const listaKont = document.getElementById('lista-kont')
-const oknoUsuwania = document.getElementById('okno-usuwania')
-let kontoDoUsuniecia = null
+const settingsDialog = document.getElementById('settings-dialog')
+const accountList = document.getElementById('account-list')
+const removeAccountDialog = document.getElementById('remove-account-dialog')
+let accountToRemove = null
 
-async function odswiezListeKont() {
-  const konta = await window.mostHub.listaKont()
-  listaKont.replaceChildren()
+async function refreshAccountList() {
+  const accounts = await window.msgHub.listAccounts()
+  accountList.replaceChildren()
 
-  if (!konta.length) {
-    const puste = document.createElement('li')
-    puste.className = 'puste'
-    puste.textContent = tr('brakKontPodpowiedz')
-    listaKont.append(puste)
+  if (!accounts.length) {
+    const empty = document.createElement('li')
+    empty.className = 'empty'
+    empty.textContent = tr('noAccountsHint')
+    accountList.append(empty)
     return
   }
 
-  konta.forEach((konto, indeks) => {
-    const pozycja = document.createElement('li')
+  accounts.forEach((account, index) => {
+    const row = document.createElement('li')
 
-    const znacznik = document.createElement('span')
-    znacznik.className = 'znacznik-konta'
-    znacznik.style.background = konto.kolor
+    const swatch = document.createElement('span')
+    swatch.className = 'account-swatch'
+    swatch.style.background = account.color
 
-    const opis = document.createElement('span')
-    opis.className = 'opis-konta'
-    opis.textContent = konto.nazwa
+    const name = document.createElement('span')
+    name.className = 'account-name'
+    name.textContent = account.name
 
-    const platforma = document.createElement('span')
-    platforma.className = 'platforma-konta'
-    platforma.textContent = konto.platforma
+    const platform = document.createElement('span')
+    platform.className = 'account-platform'
+    platform.textContent = account.platform
 
-    // Kolejnosc zmieniamy przyciskami, nie przeciaganiem: nad trescia okna leza
-    // natywne widoki kont i chwytanie elementu myszka bywa przez nie zjadane.
-    const przesuwanie = document.createElement('span')
-    przesuwanie.className = 'przesuwanie'
+    // Order changes by buttons, not by dragging: native account views sit above the
+    // window content and grabbing an element with the mouse tends to be eaten by them.
+    const reorder = document.createElement('span')
+    reorder.className = 'reorder'
 
-    const wGore = document.createElement('button')
-    wGore.type = 'button'
-    wGore.className = 'w-gore'
-    wGore.textContent = '▲'
-    wGore.title = tr('przesunWGore', { nazwa: konto.nazwa })
-    wGore.disabled = indeks === 0
-    wGore.addEventListener('click', () => przesunKonto(konto.id, -1))
+    const up = document.createElement('button')
+    up.type = 'button'
+    up.className = 'move-up'
+    up.textContent = '▲'
+    up.title = tr('moveUp', { name: account.name })
+    up.disabled = index === 0
+    up.addEventListener('click', () => moveAccount(account.id, -1))
 
-    const wDol = document.createElement('button')
-    wDol.type = 'button'
-    wDol.className = 'w-dol'
-    wDol.textContent = '▼'
-    wDol.title = tr('przesunWDol', { nazwa: konto.nazwa })
-    wDol.disabled = indeks === konta.length - 1
-    wDol.addEventListener('click', () => przesunKonto(konto.id, 1))
+    const down = document.createElement('button')
+    down.type = 'button'
+    down.className = 'move-down'
+    down.textContent = '▼'
+    down.title = tr('moveDown', { name: account.name })
+    down.disabled = index === accounts.length - 1
+    down.addEventListener('click', () => moveAccount(account.id, 1))
 
-    przesuwanie.append(wGore, wDol)
+    reorder.append(up, down)
 
-    const edytuj = document.createElement('button')
-    edytuj.type = 'button'
-    edytuj.className = 'edytuj-konto'
-    edytuj.textContent = tr('edytuj')
-    edytuj.title = tr('edytujKonto', { nazwa: konto.nazwa })
-    edytuj.addEventListener('click', () => otworzFormularzKonta(konto))
+    const edit = document.createElement('button')
+    edit.type = 'button'
+    edit.className = 'edit-account'
+    edit.textContent = tr('edit')
+    edit.title = tr('editAccountTitle', { name: account.name })
+    edit.addEventListener('click', () => openAccountForm(account))
 
-    const usun = document.createElement('button')
-    usun.type = 'button'
-    usun.className = 'usun-konto grozny'
-    usun.textContent = tr('usun')
-    usun.title = tr('usunKontoTytul', { nazwa: konto.nazwa })
-    usun.addEventListener('click', () => zapytajOUsuniecie(konto))
+    const remove = document.createElement('button')
+    remove.type = 'button'
+    remove.className = 'remove-account danger'
+    remove.textContent = tr('remove')
+    remove.title = tr('removeAccountTitle', { name: account.name })
+    remove.addEventListener('click', () => confirmAccountRemoval(account))
 
-    pozycja.append(znacznik, opis, platforma, przesuwanie, edytuj, usun)
-    listaKont.append(pozycja)
+    row.append(swatch, name, platform, reorder, edit, remove)
+    accountList.append(row)
   })
 }
 
-async function przesunKonto(idKonta, przesuniecie) {
-  await window.mostHub.przesunKonto(idKonta, przesuniecie)
-  await odswiezSzyne()
-  await odswiezListeKont()
+async function moveAccount(accountId, offset) {
+  await window.msgHub.moveAccount(accountId, offset)
+  await refreshRail()
+  await refreshAccountList()
 }
 
-document.getElementById('otworz-ustawienia').addEventListener('click', async () => {
-  await odswiezListeKont()
-  pokazDialog(oknoUstawien)
+document.getElementById('open-settings').addEventListener('click', async () => {
+  await refreshAccountList()
+  showDialog(settingsDialog)
 })
 
-document.getElementById('zamknij-ustawienia').addEventListener('click', (zdarzenie) => {
-  zdarzenie.preventDefault()
-  oknoUstawien.close()
+document.getElementById('close-settings').addEventListener('click', (event) => {
+  event.preventDefault()
+  settingsDialog.close()
 })
 
-document.getElementById('dodaj-konto-ustawienia').addEventListener('click', () => {
-  oknoUstawien.close()
-  otworzFormularzKonta()
+document.getElementById('add-account-from-settings').addEventListener('click', () => {
+  settingsDialog.close()
+  openAccountForm()
 })
 
-// Usuniecie kasuje sesje, czyli wylogowuje — dlatego potwierdzenie, a nie samo klikniecie.
-// Okno potwierdzenia otwiera sie NAD ustawieniami, wiec po zamknieciu operator wraca
-// tam, skad przyszedl, z odswiezona lista.
-function zapytajOUsuniecie(konto) {
-  kontoDoUsuniecia = konto
-  document.getElementById('tresc-usuwania').textContent = tr('kontoZniknie', { nazwa: konto.nazwa })
-  pokazDialog(oknoUsuwania)
+// Removing an account clears its session, which signs it out — hence a confirmation
+// rather than a bare click. The confirmation opens ON TOP of the settings, so closing it
+// returns the operator where they came from, with a refreshed list.
+function confirmAccountRemoval(account) {
+  accountToRemove = account
+  document.getElementById('remove-account-text').textContent = tr('accountWillDisappear', { name: account.name })
+  showDialog(removeAccountDialog)
 }
 
-document.getElementById('anuluj-usuniecie').addEventListener('click', (zdarzenie) => {
-  zdarzenie.preventDefault()
-  kontoDoUsuniecia = null
-  oknoUsuwania.close()
+document.getElementById('cancel-remove-account').addEventListener('click', (event) => {
+  event.preventDefault()
+  accountToRemove = null
+  removeAccountDialog.close()
 })
 
-document.getElementById('potwierdz-usuniecie').addEventListener('click', async (zdarzenie) => {
-  zdarzenie.preventDefault()
-  schowajKomunikat()
-  if (!kontoDoUsuniecia) return
-  const wynik = await window.mostHub.usunKonto(kontoDoUsuniecia.id)
-  kontoDoUsuniecia = null
-  oknoUsuwania.close()
-  if (!wynik.ok) {
-    pokazKomunikat(opiszBledy(wynik.bledy))
+document.getElementById('confirm-remove-account').addEventListener('click', async (event) => {
+  event.preventDefault()
+  hideMessage()
+  if (!accountToRemove) return
+  const result = await window.msgHub.removeAccount(accountToRemove.id)
+  accountToRemove = null
+  removeAccountDialog.close()
+  if (!result.ok) {
+    showMessage(describeErrors(result.errors))
     return
   }
-  await odswiezSzyne()
-  await odswiezListeKont()
+  await refreshRail()
+  await refreshAccountList()
 })
 
-// Usuniecie kasuje takze zalaczniki z magazynu, wiec wymaga potwierdzenia —
-// dokladnie jak przy kontach.
-const oknoUsuwaniaMakra = document.getElementById('okno-usuwania-makra')
-let makroDoUsuniecia = null
+// Removing a macro also deletes its attachments from the store, so it too asks first —
+// exactly as accounts do.
+const removeMacroDialog = document.getElementById('remove-macro-dialog')
+let macroToRemove = null
 
-function zapytajOUsuniecieMakra(makro) {
-  makroDoUsuniecia = makro
-  const liczba = (makro.zalaczniki ?? []).length
-  document.getElementById('tresc-usuwania-makra').textContent = liczba
-    ? tr('usunMakroZZalacznikami', { nazwa: makro.nazwa, liczba })
-    : tr('usunMakroPytanie', { nazwa: makro.nazwa })
-  pokazDialog(oknoUsuwaniaMakra)
+function confirmMacroRemoval(macro) {
+  macroToRemove = macro
+  const count = (macro.attachments ?? []).length
+  document.getElementById('remove-macro-text').textContent = count
+    ? tr('macroWillDisappearWithAttachments', { name: macro.name, count })
+    : tr('macroWillDisappear', { name: macro.name })
+  showDialog(removeMacroDialog)
 }
 
-document.getElementById('anuluj-usuniecie-makra').addEventListener('click', (zdarzenie) => {
-  zdarzenie.preventDefault()
-  makroDoUsuniecia = null
-  oknoUsuwaniaMakra.close()
+document.getElementById('cancel-remove-macro').addEventListener('click', (event) => {
+  event.preventDefault()
+  macroToRemove = null
+  removeMacroDialog.close()
 })
 
-document.getElementById('potwierdz-usuniecie-makra').addEventListener('click', async (zdarzenie) => {
-  zdarzenie.preventDefault()
-  schowajKomunikat()
-  if (!makroDoUsuniecia) return
-  const wynik = await window.mostHub.usunMakro(makroDoUsuniecia.id)
-  makroDoUsuniecia = null
-  oknoUsuwaniaMakra.close()
-  if (!wynik.ok) {
-    pokazKomunikat(opiszBledy(wynik.bledy))
+document.getElementById('confirm-remove-macro').addEventListener('click', async (event) => {
+  event.preventDefault()
+  hideMessage()
+  if (!macroToRemove) return
+  const result = await window.msgHub.removeMacro(macroToRemove.id)
+  macroToRemove = null
+  removeMacroDialog.close()
+  if (!result.ok) {
+    showMessage(describeErrors(result.errors))
     return
   }
-  await odswiezMakra()
+  await refreshMacros()
 })

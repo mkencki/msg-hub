@@ -1,0 +1,537 @@
+/* ---------------------------------------------------------------------------
+   The msg-hub console
+
+   The chrome is DELIBERATELY desaturated: the only saturated colour in the window
+   is the colour of the active account. Account colours are chosen by the operator,
+   so the chrome has to host them rather than compete with them.
+
+   Typefaces are system ones, with not a single network request — this app grew out
+   of a privacy audit, so fetching fonts from someone else's server on every start
+   would contradict it. Bahnschrift is Microsoft's derivative of DIN 1451, the
+   typeface of German road signs: the right pedigree for an operator's tool, and
+   narrow enough to actually fit account names.
+   --------------------------------------------------------------------------- */
+
+:root {
+  --shell: #151a20;
+  --panel: #1d242c;
+  --groove: #0f1319;
+  --line: #2b343e;
+  --text: #e4e8ec;
+  --muted: #7c8794;
+  --lamp: #d9822b;
+  --channel: #2f7d5b;
+
+  --rail: 48px;   /* overwritten from JS: 48 collapsed, 162 expanded */
+  --status-bar: 30px;
+  --ease: cubic-bezier(.2, .7, .3, 1);
+
+  --font-console: Bahnschrift, "DIN Next", "Segoe UI", system-ui, sans-serif;
+  --font-data: Consolas, "Cascadia Mono", ui-monospace, monospace;
+  --font-prose: "Segoe UI", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  display: grid;
+  grid-template-columns: var(--rail) 1fr;
+  grid-template-rows: 1fr var(--status-bar);
+  grid-template-areas:
+    "rail well"
+    "rail status-bar";
+  background: var(--shell);
+  color: var(--text);
+  font-family: var(--font-prose);
+  font-size: 14px;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ---------- the channel rail ---------- */
+#rail {
+  grid-area: rail;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  padding: 10px 0;
+  min-height: 0;
+}
+
+.rail-head { display: flex; align-items: center; gap: 6px; padding: 2px 8px 8px 14px; }
+
+.rail-title {
+  flex: 1;
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: 10px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+#pin-rail {
+  flex: none;
+  padding: 4px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+#pin-rail svg { display: block; width: 14px; height: 14px; }
+#pin-rail:hover { background: #232b34; color: var(--text); }
+#pin-rail:focus-visible { outline: 2px solid var(--text); outline-offset: 1px; }
+#rail.pinned #pin-rail { background: #2b343e; color: var(--text); }
+
+#channels { flex: 1; min-height: 0; overflow-y: auto; }
+
+.channel {
+  position: relative;
+  display: grid;
+  grid-template-columns: 9px 1fr;
+  align-items: center;
+  gap: 2px 9px;
+  width: 100%;
+  padding: 8px 12px 8px 14px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  color: var(--muted);
+  font-family: var(--font-console);
+  font-stretch: 75%;
+  font-size: 17px;
+  letter-spacing: .01em;
+  transition: background .18s var(--ease), color .18s var(--ease);
+}
+.channel::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 6px; bottom: 6px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: transparent;
+  transition: background .18s var(--ease);
+}
+.channel:hover { background: #232b34; color: var(--text); }
+.channel[aria-selected="true"] { background: #232b34; color: var(--text); }
+.channel[aria-selected="true"]::before { background: var(--tint); }
+.channel:focus-visible { outline: 2px solid var(--text); outline-offset: -2px; }
+
+.chip { width: 9px; height: 9px; border-radius: 2px; flex: none; background: var(--tint); }
+
+.channel-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* The count sits BELOW the name: on one line a longer account name competed with
+   the badge and ended up truncated. */
+.channel-meta {
+  grid-column: 2;
+  font-family: var(--font-data);
+  font-size: 10px;
+  letter-spacing: .04em;
+  color: #66707d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.channel[aria-selected="true"] .channel-meta { color: var(--muted); }
+.channel-meta em { font-style: normal; color: var(--tint); }
+
+.rail-foot { padding-top: 8px; border-top: 1px solid var(--line); }
+
+.rail-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 12px 7px 17px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  color: var(--muted);
+  font-family: var(--font-console);
+  font-stretch: 87.5%;
+  font-size: 15px;
+}
+.rail-action svg { flex: none; width: 14px; height: 14px; }
+.rail-action:hover { background: #232b34; color: var(--text); }
+.rail-action:focus-visible { outline: 2px solid var(--text); outline-offset: -2px; }
+
+/* ---------- the collapsed rail ----------
+   Collapsing keeps the thing the rail exists for: the channel colour. Names go,
+   because they would not fit in 48 px anyway, and the status bar at the bottom
+   plus the hover tooltip already carry them. */
+#rail:not(.expanded) .rail-title,
+#rail:not(.expanded) .channel-name,
+#rail:not(.expanded) .channel-meta,
+#rail:not(.expanded) .action-label { display: none; }
+
+#rail:not(.expanded) .rail-head { justify-content: center; padding: 2px 0 8px; }
+#rail:not(.expanded) .channel { grid-template-columns: 1fr; justify-items: center; padding: 7px 0; }
+#rail:not(.expanded) .rail-action { justify-content: center; padding: 9px 0; }
+
+#rail:not(.expanded) .chip { position: relative; width: 26px; height: 26px; border-radius: 7px; }
+/* Collapsed there is no name and no row background to read — the active channel has
+   to be recognisable from the tile alone, so it gets a bright ring. */
+#rail:not(.expanded) .channel[aria-selected="true"] .chip {
+  box-shadow: 0 0 0 2px var(--panel), 0 0 0 3px var(--text);
+}
+#rail:not(.expanded) .channel.has-unread .chip::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--lamp);
+  border: 2px solid var(--panel);
+}
+
+/* ---------- the working well and the on-air edge ---------- */
+#well { grid-area: well; padding: 8px; min-width: 0; }
+
+/* The account view is a native layer ABOVE this frame — the main process gives it a
+   rectangle exactly inside the border (WELL_MARGIN in main.js). */
+#well-inset {
+  height: 100%;
+  background: var(--groove);
+  border: 2px solid var(--channel);
+  border-radius: 4px;
+  box-shadow: inset 0 0 34px -6px color-mix(in srgb, var(--channel) 26%, transparent);
+  transition: border-color .3s var(--ease), box-shadow .3s var(--ease);
+}
+
+/* ---------- the status bar ---------- */
+#status-bar {
+  grid-area: status-bar;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 12px;
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+  font-family: var(--font-data);
+  font-size: 11px;
+  color: var(--muted);
+  min-width: 0;
+}
+
+.status-channel { display: flex; align-items: center; gap: 7px; color: var(--text); flex: none; }
+.status-channel .chip { width: 7px; height: 7px; border-radius: 50%; }
+
+.status-right { margin-left: auto; display: flex; align-items: center; gap: 10px; flex: none; }
+#status-unread { font-variant-numeric: tabular-nums; }
+
+#status-bar button {
+  font-family: var(--font-console);
+  font-stretch: 87.5%;
+  font-size: 14px;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+#status-bar button:hover { color: var(--text); }
+#status-bar button:focus-visible { outline: 2px solid var(--text); outline-offset: 1px; }
+
+.shortcut {
+  display: inline-block;
+  border: 1px solid #3a4551;
+  border-radius: 3px;
+  padding: 0 5px;
+  background: #10151a;
+  color: var(--muted);
+  font-family: var(--font-data);
+  font-size: 10px;
+}
+
+/* ---------- messages ---------- */
+.errors { color: var(--lamp); min-height: 1em; font-family: var(--font-prose); font-size: 12.5px; }
+
+#message { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1; }
+/* The hidden attribute works through [hidden]{display:none} in the UA stylesheet —
+   the author display above beats it, so the bar has to be hidden explicitly. */
+#message[hidden] { display: none; }
+#message[data-tone="info"] { color: var(--muted); }
+#message-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+#dismiss-message {
+  flex: none;
+  padding: 0 6px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: inherit;
+  font-size: 15px;
+  line-height: 1;
+}
+#dismiss-message:hover { background: var(--lamp); color: #16110a; border-radius: 3px; }
+#dismiss-message:focus-visible { outline: 2px solid var(--text); outline-offset: 1px; }
+
+/* ---------- okna dialogowe ---------- */
+dialog {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  padding: 0;
+  max-width: min(620px, 88vw);
+  width: min(560px, 88vw);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, .55);
+}
+dialog::backdrop { background: rgba(8, 11, 14, .62); }
+
+dialog h2 {
+  margin: 0;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-console);
+  font-stretch: 87.5%;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.dialog-head { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); }
+.dialog-head h2 { flex: 1; border-bottom: 0; }
+.target {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-right: 16px;
+  font-family: var(--font-data);
+  font-size: 11px;
+  color: var(--muted);
+}
+.target .chip { width: 7px; height: 7px; border-radius: 50%; }
+.target b { color: var(--text); font-weight: 500; }
+
+dialog label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0 16px 10px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+dialog form > label:first-of-type { margin-top: 12px; }
+
+dialog input, dialog select, dialog textarea {
+  width: 100%;
+  padding: 8px 9px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--groove);
+  color: var(--text);
+  font-family: var(--font-data);
+  font-size: 12.5px;
+  resize: vertical;
+}
+dialog input:focus, dialog select:focus, dialog textarea:focus {
+  outline: 0;
+  border-color: var(--channel);
+}
+dialog input[type="color"] { padding: 2px; height: 30px; cursor: pointer; }
+
+#account-errors, #macro-errors { margin: 0 16px 10px; }
+
+/* Language is the only setting that concerns no particular account — it gets its own
+   row above the footer, ruled off from the list so it does not read as another
+   account. The class outranks "dialog label" and "dialog select" on specificity, so
+   the column direction and the 100% width do not come back from there. */
+.language-row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 16px 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.language-row select { width: auto; min-width: 150px; }
+
+.hint {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: 10.5px;
+  color: var(--muted);
+}
+dialog > .hint { padding: 0 16px 12px; }
+
+.warning {
+  margin: 0 0 10px;
+  padding: 9px 16px;
+  background: color-mix(in srgb, var(--lamp) 12%, transparent);
+  border-left: 2px solid var(--lamp);
+  color: #f0c393;
+  font-size: 12.5px;
+}
+
+dialog menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 16px;
+  border-top: 1px solid var(--line);
+  background: #1a2028;
+  list-style: none;
+}
+dialog menu .hint { margin-right: auto; }
+dialog menu > button:first-of-type:not(.primary) { margin-left: auto; }
+
+/* ---------- buttons ---------- */
+button {
+  font-family: var(--font-console);
+  font-stretch: 87.5%;
+  font-size: 15px;
+  padding: 6px 14px;
+  border: 1px solid #37424e;
+  border-radius: 4px;
+  background: #2b343e;
+  color: var(--text);
+  cursor: pointer;
+}
+button:hover { background: #35404c; }
+button:focus-visible { outline: 2px solid var(--text); outline-offset: 1px; }
+button.primary { background: var(--channel); border-color: transparent; color: #0f1319; font-weight: 600; }
+button.primary:hover { filter: brightness(1.12); }
+button.danger { background: transparent; border-color: color-mix(in srgb, var(--lamp) 45%, transparent); color: var(--lamp); }
+button.danger:hover { background: var(--lamp); color: #16110a; }
+button:disabled { opacity: .3; cursor: default; }
+
+/* ---------- the macro palette ---------- */
+/* width:auto would undo dialog input{width:100%} and the field would shrink to its
+   default size — the margins have to be subtracted explicitly. */
+#macro-search {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 12px 16px;
+  font-size: 13px;
+}
+
+#macro-list { list-style: none; margin: 0; padding: 0 8px 8px; max-height: 46vh; overflow-y: auto; }
+#macro-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 9px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+#macro-list li:hover { background: #262f39; }
+#macro-list li[aria-selected="true"] { background: #262f39; box-shadow: inset 2px 0 0 var(--channel); }
+#macro-list .empty { color: var(--muted); cursor: default; display: block; padding: 20px 9px; text-align: center; }
+
+.macro-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: 12.5px;
+}
+.edit-macro, .remove-macro { flex: none; padding: 3px 9px; font-size: 13px; opacity: 0; }
+#macro-list li:hover .edit-macro,
+#macro-list li:hover .remove-macro,
+#macro-list li[aria-selected="true"] .edit-macro,
+#macro-list li[aria-selected="true"] .remove-macro { opacity: 1; }
+
+/* ---------- the macro editor ---------- */
+.editor { display: grid; grid-template-columns: 1fr 1fr; }
+.editor-column { padding: 12px 0; min-width: 0; }
+.editor-column + .editor-column { border-left: 1px solid var(--line); background: #1a2028; }
+.editor-column .label {
+  margin: 0 16px 5px;
+  font-family: var(--font-data);
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+#format-bar { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 16px 10px; }
+#format-bar button { padding: 3px 9px; font-size: 13px; }
+
+#editor-preview {
+  margin: 0 16px 12px;
+  padding: 10px;
+  min-height: 64px;
+  max-height: 22vh;
+  overflow: auto;
+  background: var(--groove);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.55;
+  user-select: text;
+}
+#editor-preview p { margin: 0 0 6px; }
+#editor-preview li { margin-left: 18px; }
+#editor-preview b { color: #fff; }
+
+#attachment-list { list-style: none; margin: 0 16px 10px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+#attachment-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 8px;
+  background: var(--groove);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-family: var(--font-data);
+  font-size: 11px;
+}
+#attachment-list .empty { color: var(--muted); background: transparent; border-color: transparent; padding-left: 0; }
+.attachment-name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.detach-attachment { flex: none; padding: 3px 9px; font-size: 13px; }
+#add-attachment { margin: 0 16px; padding: 3px 9px; font-size: 13px; }
+
+/* ---------- settings ---------- */
+#account-list { list-style: none; margin: 12px 16px; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+#account-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--groove);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+#account-list .empty { color: var(--muted); background: transparent; border-color: transparent; }
+
+.account-swatch { width: 14px; height: 14px; border-radius: 3px; flex: none; border: 1px solid #ffffff1f; }
+.account-name { flex: 1; min-width: 0; font-family: var(--font-console); font-stretch: 87.5%; font-size: 16px; }
+.account-platform {
+  font-family: var(--font-data);
+  font-size: 9.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+#account-list button { flex: none; padding: 3px 9px; font-size: 13px; }
+.reorder { display: flex; flex-direction: column; gap: 1px; flex: none; }
+.reorder button {
+  display: flex; align-items: center; justify-content: center;
+  padding: 0; width: 22px; height: 15px; font-size: 9px; line-height: 1;
+  border-radius: 2px; overflow: hidden;
+}
+
+/* ---------- scrollbars ---------- */
+::-webkit-scrollbar { width: 9px; }
+::-webkit-scrollbar-track { background: var(--groove); }
+::-webkit-scrollbar-thumb { background: #39434f; border-radius: 5px; border: 2px solid var(--groove); }
+::-webkit-scrollbar-thumb:hover { background: #4a5765; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: .01ms !important; }
+}

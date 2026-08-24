@@ -1,0 +1,113 @@
+export const en = {
+  // Channel rail
+  channels: 'Channels',
+  pinRail: 'Pin the sidebar',
+  unpinRail: 'Unpin the sidebar',
+  settings: 'Settings',
+  addAccount: 'Add account',
+  noAccounts: 'No accounts',
+
+  // Status bar
+  macros: 'Macros',
+  macrosWithShortcut: 'Macros (Ctrl+;)',
+  dismissMessage: 'Dismiss message',
+  select: 'select',
+  insert: 'insert',
+  closeHint: 'close',
+  unreadNew: { one: '{n} new', other: '{n} new' },
+  unreadTotal: { one: '{n} unread', other: '{n} unread' },
+  noNew: 'no new',
+  allRead: 'all read',
+
+  // Account dialog
+  editAccount: 'Edit account',
+  name: 'Name',
+  platform: 'Platform',
+  channelColor: 'Channel colour',
+  cancel: 'Cancel',
+  save: 'Save',
+
+  // Settings
+  accounts: 'Accounts',
+  orderHint: 'The order on this list is the order of the channels.',
+  language: 'Language',
+  close: 'Close',
+  noAccountsHint: 'No accounts yet — click "Add account".',
+  edit: 'Edit',
+  remove: 'Remove',
+  editAccountTitle: 'Edit {name}',
+  removeAccountTitle: 'Remove {name}',
+  moveUp: 'Move {name} up',
+  moveDown: 'Move {name} down',
+
+  // Removing an account
+  removeAccountQuestion: 'Remove this account?',
+  accountWillDisappear: '"{name}" will disappear from the channel rail.',
+  removalWarning: 'Removing an account also deletes its sign-in. Adding it back needs a new QR code.',
+  removeAccountButton: 'Remove account',
+
+  // Macros
+  insertInto: 'insert into',
+  searchMacros: 'Search by name, content or tag',
+  noMacros: 'No macros yet — click "New macro".',
+  nothingMatches: 'Nothing matches "{phrase}". Try another phrase, or create a new macro.',
+  newMacro: 'New macro',
+  macro: 'Macro',
+  editMacro: 'Edit macro',
+  editMacroTitle: 'Edit {name}',
+  removeMacroTitle: 'Remove {name}',
+  removeMacroQuestion: 'Remove this macro?',
+  macroWillDisappear: '"{name}" will disappear from the list.',
+  macroWillDisappearWithAttachments: '"{name}" will disappear along with its attachments ({count}).',
+  removeMacroButton: 'Remove macro',
+  macroLabel: '{name}  ({count} att.)',
+
+  // Macro editor
+  content: 'Content',
+  bold: 'Bold',
+  italic: 'Italic',
+  strikethrough: 'Strikethrough',
+  bulletedList: 'Bulleted list',
+  numberedList: 'Numbered list',
+  quote: 'Quote',
+  whatsappPreview: 'WhatsApp preview',
+  attachments: 'Attachments',
+  addAttachment: 'Add attachment',
+  detach: 'Remove',
+  detachFile: 'Remove {name}',
+  storageHint: 'The file is copied into the app storage — you no longer need the original.',
+  saveMacro: 'Save macro',
+  none: 'none',
+
+  // Status-bar messages
+  messageNoAccount: 'Nowhere to insert — add an account first, then open a conversation in it.',
+  messageNoMacro: 'That macro is no longer on the list.',
+  messageEmptyMacro: 'This macro has neither content nor an attachment — there is nothing to insert.',
+  messageInsertFailed: 'Could not insert the macro.',
+  messageInserted: 'Inserted "{macro}" into {account}. Pressing Enter is up to you.',
+  messageTheAccount: 'the account',
+  messageMissingAttachments: 'Attachments missing from storage: {list}. The text was inserted anyway.',
+  messageAttachmentFailed: 'Could not add the attachment: {reason}',
+  messageLoadAccountsFailed: 'Could not load the accounts: {reason}',
+
+  // Text for the codes the main process returns
+  validationId: 'the id must match acc-[a-z0-9-]+',
+  validationName: 'the name is required',
+  validationPlatform: 'unknown platform: {platform}',
+  validationUrl: 'the address must start with https://',
+  validationColor: 'the colour must use the #rrggbb format',
+  validationNoSuchAccount: 'no such account',
+  validationNoSuchMacro: 'no such macro',
+  attachmentTooLarge: 'the file is {mb} MB, over the {limitMb} MB limit',
+  attachmentFailed: 'the file could not be copied into the app storage',
+
+  // Main process: tray, taskbar overlay, load failures
+  trayShow: 'Show',
+  trayAutoStart: 'Start with Windows',
+  trayQuit: 'Quit',
+  trayUnread: { one: 'msg-hub — {n} unread', other: 'msg-hub — {n} unread' },
+  overlayUnread: 'unread messages',
+  loadAccountFailed:
+    'Could not load {account} — error {code}: {description}. If your network is fine and the site ' +
+    'refuses the client, update Electron (npm install electron@latest) — WhatsApp Web needs a recent Chromium.',
+}

@@ -1,0 +1,315 @@
+# msg-hub — design
+
+Written: 2026-08-23
+Status: approved, implemented
+Translated from the Polish original: 2026-08-24
+
+## 1. Purpose
+
+One window on Windows for three messenger accounts: Messenger, a private WhatsApp and a
+work WhatsApp. It replaces the paid All-in-One Messenger Hub, which — after the grace
+period for existing users ended on 2026-07-18 — requires a Pro licence to run a second
+WhatsApp account.
+
+This project follows an audit of that application. The audit showed that the only feature
+actually needed — several accounts of the same platform — comes down to isolated browser
+profiles and requires no reverse engineering whatsoever. It also showed that the other app
+loads `wppconnect-wa.js` (WPPConnect/wa-js v3.23.2), a library that reaches into the
+internals of WhatsApp Web. That breaches WhatsApp's terms and risks a permanent ban on the
+phone number. The operator's work number is one of the accounts in question, so avoiding
+that entire category of tooling is an overriding requirement, not a preference.
+
+## 2. Scope
+
+### In scope
+
+- three (eventually any number of) accounts in one window, each in an isolated session
+- a configurable account list in a JSON file, plus an add-account screen in the app
+- macros: saved fragments of text with WhatsApp formatting, and attachments
+- dark theme, remembered window size and position
+- a system tray icon and start-with-Windows
+- system notifications and an unread count on the taskbar icon
+
+### Out of scope
+
+- locking the window with a PIN or Windows Hello (rejected by the operator)
+- separate rules for the work account, a mute schedule (rejected)
+- a notification bridge to `ntfy` (deferred; returns only if native notifications fail)
+- any automatic sending of messages (forbidden — see section 7)
+- contact export, chatbots, AI replies (the `wa-js` category, forbidden — see section 7)
+- a web version and access from the work laptop (withdrawn by the operator, 2026-08-23)
+
+## 3. Architecture
+
+A single Electron application, run locally. No server, no containers, no dependency on any
+existing infrastructure.
+
+```
+main window (BrowserWindow)
+├── channel rail + macro panel          ← renderer, plain HTML/CSS
+└── content area
+    ├── WebContentsView  session persist:acc-messenger  → messenger.com
+    ├── WebContentsView  session persist:acc-wa-priv    → web.whatsapp.com
+    └── WebContentsView  session persist:acc-wa-work    → web.whatsapp.com
+```
+
+Isolation comes from a separate session partition per account. The two WhatsApp accounts
+see each other as two independent browsers — they share no cookies, no `localStorage` and
+no `IndexedDB`. This is the heart of the application and the one mechanism without which
+there is no product.
+
+`WebContentsView` is Electron's current API for multiple views; `BrowserView` is deprecated
+and the `webview` tag is discouraged by Electron itself. For content that needs its own
+session, the documentation points directly at `WebContentsView` with a separate partition.
+
+## 4. Components
+
+Each component has one responsibility and can be tested on its own.
+
+### 4.1 `accounts` — the account registry
+
+Reads and writes the account list and assigns partition identifiers. Knows nothing about
+windows.
+
+### 4.2 `views` — the view manager
+
+Creates a `WebContentsView` per account, attaches its session, sets the `User-Agent`,
+governs geometry as the window resizes, and switches the active view. Knows nothing about
+where the account list came from.
+
+### 4.3 `macros` — the macro store
+
+Holds macro definitions and copies of attachments, and searches by name and content. Knows
+nothing about how a macro reaches a chat.
+
+### 4.4 `insertion` — putting content in
+
+Places text or a file on the clipboard and triggers a paste in the active view. The only
+component that touches the clipboard. It does not send messages — ever (section 7).
+
+Text goes through Electron's `clipboard.writeText`. A file needs the `CF_HDROP` format —
+the one Windows sets on `Ctrl+C` in Explorer and the one Chromium hands to a page as
+`DataTransfer.files`. Electron's `clipboard.writeBuffer('FileNameW', …)` handles only a
+single file and gives no assurance that Chromium will interpret it that way, so we use the
+method **verified empirically in stage 0**: calling
+`powershell.exe -NoProfile -STA -Command "Set-Clipboard -LiteralPath …"`.
+
+A catch found in stage 0: `Set-Clipboard -LiteralPath` and `Get-Clipboard -Format` exist
+**only in Windows PowerShell 5.1**. PowerShell 7 has neither parameter, so the call must
+name `powershell.exe` explicitly, never `pwsh`.
+
+Cost: starting a process, on the order of hundreds of milliseconds. If that turns out to be
+noticeable, the alternative is a native module setting up a `DROPFILES` structure — a purely
+performance decision, not a functional one, and taken only after measurement.
+
+### 4.5 `shell` — the window shell
+
+Window, tray, autostart, dark theme, remembered layout, notifications, badge.
+
+## 5. Data model
+
+Everything lives in the application data directory (`app.getPath('userData')`).
+
+### 5.1 `accounts.json`
+
+```json
+{
+  "version": 2,
+  "accounts": [
+    {
+      "id": "acc-wa-work",
+      "name": "WhatsApp work",
+      "platform": "whatsapp",
+      "url": "https://web.whatsapp.com/",
+      "color": "#2f7d5b"
+    }
+  ]
+}
+```
+
+`id` is immutable — it serves as the partition name (`persist:acc-wa-work`). Changing `id`
+means losing the session, so the interface does not allow editing it. `platform` selects the
+default address and icon; `url` can be overridden by hand.
+
+> Schema version 1 used Polish key names (`wersja`, `konta`, `nazwa`, `platforma`, `kolor`),
+> because the app began as a private tool. Both spellings are accepted on read and version 2
+> is written back on the next save, so upgrading costs nobody their accounts. See
+> `tests/migration.test.js`.
+
+### 5.2 `macros.json`
+
+```json
+{
+  "version": 2,
+  "macros": [
+    {
+      "id": "mac-client-area",
+      "name": "Guide — Client Area",
+      "text": "*How to add a driver:*\n\n1. Sign in\n2. Open the Drivers tab\n\n> Get in touch if anything is unclear.",
+      "attachments": ["att/4f2a-guide.pdf"],
+      "tags": ["client-area", "guide"]
+    }
+  ]
+}
+```
+
+The `text` field stores **plain text with WhatsApp markers**, not rich text. WhatsApp
+supports bold (asterisks), italics (underscores), strikethrough (tildes), a code block
+(triple backticks), inline code (single backticks), a quote (greater-than at the start of a
+line), a bulleted list (dash or asterisk plus a space) and a numbered one (digit, dot,
+space). It has no underline. The markers behave identically on desktop and on the phone.
+
+A consequence accepted deliberately: the markers are WhatsApp's. The same text pasted into
+Messenger will show raw asterisks. Macros are aimed mainly at clients on WhatsApp, so
+WhatsApp is the target format.
+
+### 5.3 The attachment store
+
+An attachment added to a macro is **copied** into the `att/` directory in the app data,
+under a name prefixed with a UUID. This delivers the operator's requirement: files should
+live in the application, so they need not be hunted down on disk each time. Deleting a macro
+deletes the copies nothing else links to.
+
+The interface shows the total size of the store. Single-file limit: 100 MB — safely below
+WhatsApp's own limits and above a typical instructional video.
+
+## 6. Flows
+
+### 6.1 Application start
+
+1. Read `accounts.json`; with no file, run the first-account wizard.
+2. Create a view per account, with a `persist:<id>` session and an overridden `User-Agent`.
+3. Restore the window size and position and the last active channel.
+4. Inactive views load in the background so notifications work for every account.
+
+### 6.2 Using a macro
+
+1. The macro panel (`Ctrl+;`) with search across name and content.
+2. Choosing a macro inserts the text into the message box of the active chat.
+3. If the macro has an attachment, it goes in as a separate step, after the text.
+4. **The application stops there.** The operator sends the message by pressing Enter.
+
+### 6.3 Adding an account
+
+An "Add account" screen: name, platform from a list, optionally a custom address and channel
+colour. Saved to `accounts.json`, a view created, and sign-in by QR code or the platform's
+own form — exactly as in a browser.
+
+## 7. Security boundaries
+
+Three rules the design does not cross. They follow directly from the audit of 2026-08-23.
+
+**7.1 The application does not send messages.** A macro prepares the content and stops.
+Preparing a message is user behaviour; sending it automatically would be the automation the
+audit warned about. The boundary is here, not further out.
+
+**7.2 The application does not load `wa-js`, WPPConnect, Baileys or any related library.**
+No access to the internals of WhatsApp Web. Pages load exactly as Meta serves them.
+
+**7.3 Content is inserted through the clipboard.** A clipboard write and a paste are
+indistinguishable from doing it by hand. Stage 0 settled this rule positively and **without
+exceptions** — see section 9. The application does not manipulate elements of the WhatsApp
+page for any purpose, attachments included.
+
+Beyond these rules the application is an ordinary browser with tabs.
+
+## 8. Error handling
+
+| Situation | Behaviour |
+|---|---|
+| `accounts.json` damaged | a backup copy alongside it, start with an empty list, message shown |
+| no network | the view shows the platform's own state; the app does not intervene |
+| WhatsApp refuses the client (`User-Agent`) | an explicit message suggesting an update |
+| attachment file missing from the store | the macro is marked incomplete, the text still works |
+| file over the limit | refused, with the size and the limit reported |
+| session signed out | the view shows a QR code; the app does not intervene |
+
+## 9. Stages
+
+**Stage 0 — settling the clipboard question. DONE 2026-08-23, result POSITIVE.**
+
+The question: does WhatsApp Web accept a file pasted from the Windows clipboard (`CF_HDROP`)?
+
+How it went. The first layer was checked by reading the artefact, not by the absence of an
+error: `Set-Clipboard -LiteralPath` in Windows PowerShell 5.1, then `Get-Clipboard -Format
+FileDropList` confirmed one file on the clipboard with the text layer empty. The second layer
+was checked by hand by the operator, in Edge on `web.whatsapp.com`, in a chat with himself,
+outside the audited application (that one loads `wa-js` and would have given a false positive).
+
+Material: a 10.23 MB instructional video (signature `ftypmp42`) and a 0.74 MB PDF — real
+files of the same class as future macro content. Sizes were chosen below WhatsApp's limits so
+that a refusal could not be blamed on file size.
+
+Result: **both types pasted correctly.** The video showed a player with a caption field, the
+document a file card. A visible thumbnail strip with a button to add another attachment
+confirms that several files can be inserted one after another.
+
+Consequences: substituting a file into the page's form field is **not needed and does not
+enter the design**. Rule 7.3 applies without exception. Stage 3 builds the clipboard path only.
+
+**Stage 1 — the core.** `accounts`, `views`, `shell`. Three accounts, isolation, channels,
+`User-Agent`, dark theme, window layout, tray, autostart, notifications.
+
+**Stage 2 — text macros.** `macros`, `insertion`, the panel with search, the editor with a
+formatting bar and a preview, the `Ctrl+;` shortcut.
+
+**Stage 3 — attachments.** The `att/` store, insertion per the result of stage 0.
+
+**Stage 4 — distribution.** `electron-builder`, a single installer, autostart.
+
+## 10. Tests
+
+Behaviour is tested, not implementation detail.
+
+- **session isolation** — proof that a cookie written in one account's partition is invisible
+  in another's. The heart of the product, so covered by a test rather than by inspection.
+- `accounts` — read, write, damaged file, missing file, refusal to change `id`
+- `macros` — adding, searching, deleting along with attachment copies, the size limit
+- `insertion` — content reaches the clipboard in the expected shape; **a negative test: no
+  path invokes sending a message** (enforcement of rule 7.1)
+- `shell` — the window layout survives a restart
+
+## 11. Risks
+
+| Risk | Weight | Response |
+|---|---|---|
+| WhatsApp refuses the client over `User-Agent` | high | override the UA from the first launch; stage 1 |
+| Electron's Chromium too old for WhatsApp | medium | keep the version fresh; the fix is a version bump |
+| Delay inserting a file (`powershell.exe` startup) | low | measured in stage 3; noticeable above ~500 ms, beyond that a native module |
+| The attachment store growing without bound | low | per-file limit, a usage counter, copies deleted with the macro |
+
+The risk "the clipboard does not accept files" was **closed** in stage 0 (2026-08-23). With
+it went the risk of being sensitive to Meta rebuilding the page — the mechanism of
+substituting a file into a form does not enter the design.
+
+## 12. Rejected alternatives
+
+Recorded for the record. The road to this design was long, and these dead ends are documented
+so that nobody walks back into them.
+
+**A web version as a page with tabs.** Not feasible. `web.whatsapp.com` sends
+`frame-ancestors https://*.whatsapp.com https://whatsapp.com`, and `www.messenger.com` sends
+`frame-ancestors 'self'`. Embedding either in a frame on a foreign domain is blocked by the
+browser. Working around it with a rewriting proxy was rejected: WhatsApp Web rests on
+WebSockets, service workers and Web Crypto, and that kind of manipulation would be
+indistinguishable from an attack.
+
+**A hub on a server, streamed with Neko (WebRTC).** Rejected after looking at the topology:
+WebRTC media travels over UDP, while the operator's ingress is a Cloudflare Tunnel on a CGNAT
+link. It would require a TURN server or open UDP ports — the first adds a dependency billed
+by traffic, the second is impossible.
+
+**A hub on a server, streamed with KasmVNC.** Technically feasible (WebSockets pass through
+the tunnel) and designed all the way to the deployment stage, then withdrawn on 2026-08-23
+along with the decision to drop access from the work laptop. It would have cost WSL2 and
+Docker Engine on a node — the first container in that infrastructure and a permanent widening
+of the maintenance surface.
+
+**Cloudflare browser-based RDP.** A workable fallback should remote access ever return as a
+requirement: available on all plans, reuses the existing `cloudflared` and CF Access, and
+leaves the RDP port on loopback. Dropped for the same reason as above.
+
+**C# WPF with WebView2, and Tauri 2.** A lighter result (roughly 15 MB and 10 MB against
+roughly 200 MB), but the first needs the .NET SDK installed and pulls in a stack outside the
+operator's toolkit, while the second needs a Rust toolchain and rests on a young API across
+several webviews.

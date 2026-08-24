@@ -1,0 +1,82 @@
+import { test, expect, _electron as electron } from '@playwright/test'
+import { mkdtemp, rm, access } from 'node:fs/promises'
+import { spawnSync } from 'node:child_process'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
+
+const EXE = path.resolve('dist/win-unpacked/msg-hub.exe')
+
+// The package exists only after `npm run dist` — without it the test has nothing to check.
+let built = true
+try {
+  await access(EXE)
+} catch {
+  built = false
+}
+
+const OPIS_BLOKADY =
+  'Smart App Control zablokowal te paczke. Zmierzone 2026-08-24: SAC przepuszcza file ' +
+  'niepodpisany wylacznie na werdykt reputacji z chmury Defendera, a SWIEZO ZBUDOWANY zadnego ' +
+  'nie ma — blokada nie potrzebuje znacznika MotW. Instalator powstaje na runnerze CI, gdzie ' +
+  'SAC nie dziala; lokalnie uruchamiaj zrodla przez npm start.'
+
+// The probe has to run BEFORE electron.launch: Playwright reports every failed attempt as
+// a bare "Process failed to launch!" with no reason from the system, and test.skip() called
+// from a catch block does NOT mark the test skipped — measured, it ends up red.
+// On a Code Integrity refusal, a Node spawn returns errno UNKNOWN (not ENOENT, not EACCES).
+function zablokowanePrzezCodeIntegrity(dataDir) {
+  const probe = spawnSync(EXE, [`--user-data-dir=${dataDir}`], { timeout: 2500 })
+  return /UNKNOWN/i.test(String(probe.error?.code ?? ''))
+}
+
+test('the packaged application starts with a working renderer and IPC bridge', async () => {
+  // The skip condition has to sit INSIDE the test — at file level Playwright reads
+  // test.skip(condition, description) as a declaration of a skipped test, not as a condition.
+  test.skip(!built, 'brak dist/win-unpacked — uruchom najpierw npm run dist')
+
+  const dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-paczka-'))
+
+  // This test used to skip on a REGISTRY READ ALONE ("SAC is on, so it will surely block"),
+  // which is a guess. It now skips on a MEASURED attempt to launch.
+  test.skip(zablokowanePrzezCodeIntegrity(dataDir), OPIS_BLOKADY)
+
+  const electronApp = await electron.launch({
+    executablePath: EXE,
+    args: [`--user-data-dir=${dataDir}`],
+  })
+  const page = await electronApp.firstWindow()
+  await page.waitForSelector('body[data-ready="1"]')
+
+  // These are exactly the places where a package can drift from the sources: asar, ESM in
+  // the main process, and a CommonJS preload.
+  expect(await page.title()).toBe('msg-hub')
+  await expect(page.locator('#add-account')).toBeVisible()
+  expect(await page.evaluate(() => window.msgHub.listAccounts())).toEqual([])
+
+  await page.keyboard.press('Control+Semicolon')
+  await expect(page.locator('#macros-dialog')).toBeVisible()
+  await page.locator('#macros-dialog button[value="close"]').click()
+
+  // Regression from 2026-08-24: with an account loaded, dialogs hid underneath the native
+  // account view. We check it on the PACKAGE, because the sources may already be fixed while
+  // the shipped package is still the old one.
+  await page.locator('#add-account').click()
+  await page.locator('#account-dialog input[name="name"]').fill('Messenger')
+  await page.locator('#account-dialog select[name="platform"]').selectOption('messenger')
+  await page.locator('#save-account').click()
+  await expect(page.locator('.channel')).toHaveCount(1)
+
+  await page.locator('#add-account').click()
+  await expect(page.locator('#account-dialog')).toBeVisible()
+  await expect
+    .poll(() =>
+      electronApp.evaluate(({ BrowserWindow }) =>
+        BrowserWindow.getAllWindows()[0].contentView.children.filter((w) => w.getVisible()).length,
+      ),
+    )
+    .toBe(0)
+
+  await electronApp.close()
+  const cleanup = rm(dataDir, { recursive: true, force: true, maxRetries: 3 }).catch(() => {})
+  await Promise.race([cleanup, new Promise((done) => setTimeout(done, 3000))])
+})

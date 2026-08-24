@@ -1,0 +1,267 @@
+import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain } from 'electron'
+import path from 'node:path'
+import { existsSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { cleanUserAgent, ViewManager } from './views.js'
+import { loadLayout, saveLayout, setAutoStart } from './shell.js'
+import { loadAccounts } from './accounts.js'
+import { registerAccountChannels, registerMacroChannels } from './bridge.js'
+import { createClipboardSession } from './file-clipboard.js'
+import { t, validLanguage } from '../shared/i18n.js'
+
+const HERE = path.dirname(fileURLToPath(import.meta.url))
+
+// Console geometry. The channel rail stands on the left, the status bar along the
+// bottom, and the account view sits INSIDE the frame the renderer draws — the margin
+// leaves room for the edge painted in the active account's colour.
+//
+// An unpinned rail collapses to bare channel colours and expands when the cursor
+// enters it. Expanding PUSHES the account view aside instead of covering it: account
+// views are a native layer ABOVE the renderer, so an overlay drawn in HTML would hide
+// underneath the messenger page. A true overlay would need its own native view.
+const RAIL_COLLAPSED = 48
+const RAIL_EXPANDED = 162
+const STATUS_BAR_HEIGHT = 30
+const WELL_MARGIN = 10
+const ICON_PATH = path.join(HERE, '..', 'renderer', 'icon.png')
+
+app.userAgentFallback = cleanUserAgent(app.userAgentFallback)
+
+// Electron's default menu (File/Edit/View/Window) does not belong to this app and on
+// Windows it eats a strip inside the client area.
+Menu.setApplicationMenu(null)
+
+let window
+let tray
+let manager
+let clipboardSession
+
+// Interface language. The main process owns the stored value, while the list of
+// languages lives in src/shared/i18n.js. The tray menu and load errors are main-process
+// surfaces, so they need translating here too.
+let language = 'en'
+const tr = (key, params) => t(language, key, params)
+
+async function createWindow() {
+  const dataDir = app.getPath('userData')
+  const layoutFile = path.join(dataDir, 'layout.json')
+  // Schema version 1 kept this file under a Polish name. Reading the old one when the
+  // new one is absent keeps the window position, the pinned rail and the chosen
+  // language across the upgrade; the next save writes the new name.
+  const legacyLayoutFile = path.join(dataDir, 'uklad.json')
+  const layout = await loadLayout(existsSync(layoutFile) ? layoutFile : legacyLayoutFile)
+  language = validLanguage(layout.language)
+
+  window = new BrowserWindow({
+    width: layout.width,
+    height: layout.height,
+    x: layout.x,
+    y: layout.y,
+    minWidth: 800,
+    minHeight: 600,
+    title: 'msg-hub',
+    icon: ICON_PATH,
+    backgroundColor: '#111b21',
+    webPreferences: { preload: path.join(HERE, '..', 'preload', 'preload.cjs') },
+  })
+  window.setTitle('msg-hub')
+  if (layout.maximized) window.maximize()
+
+  // An account view is a native layer ABOVE the renderer: while it holds focus — which
+  // is most of the working time — the keyboard never reaches the main window and the
+  // renderer's shortcuts are dead. The interceptor is therefore attached to EVERY
+  // webContents, not just the window. With no menu there is also no "Toggle Developer
+  // Tools" item, so F12 is the only way into the messenger page's console.
+  const attachShortcuts = (webContents) => {
+    webContents.on('before-input-event', (_event, input) => {
+      if (input.type !== 'keyDown') return
+
+      if (input.key === 'F12' || (input.control && input.shift && input.key.toLowerCase() === 'i')) {
+        const target = manager?.active()?.webContents ?? window.webContents
+        target.toggleDevTools()
+        return
+      }
+
+      // Ctrl+; pressed in the main window is handled by the renderer's own listener on
+      // window. Here we intercept only the key that landed in an account view —
+      // otherwise the same shortcut would fire twice.
+      if (input.control && input.key === ';' && webContents !== window.webContents) {
+        // The panel is drawn by the main window's renderer — and focus has to return
+        // there too, or the operator opens the panel and cannot type in it.
+        window.webContents.focus()
+        window.webContents.send('macros:open')
+      }
+    })
+  }
+
+  attachShortcuts(window.webContents)
+
+  // Messages go to the status bar inside the window, not to a modal system dialog.
+  // A modal freezes the whole application and demands a click, and one account failing
+  // to load should not block the others.
+  const showMessage = (text) => {
+    if (!window.webContents.isDestroyed()) window.webContents.send('message:show', text)
+  }
+
+  manager = new ViewManager(window, app.userAgentFallback, ({ account, code, description }) => {
+    showMessage(tr('loadAccountFailed', { account: account.name, code, description }))
+  })
+
+  let railPinned = Boolean(layout.railPinned)
+  let railHovered = false
+  const railExpanded = () => railPinned || railHovered
+
+  const fitViews = () => {
+    const { width, height } = window.getContentBounds()
+    const rail = railExpanded() ? RAIL_EXPANDED : RAIL_COLLAPSED
+    manager.setGeometry({
+      x: rail + WELL_MARGIN,
+      y: WELL_MARGIN,
+      width: Math.max(0, width - rail - WELL_MARGIN * 2),
+      height: Math.max(0, height - STATUS_BAR_HEIGHT - WELL_MARGIN * 2),
+    })
+  }
+
+  const railState = () => ({ pinned: railPinned, expanded: railExpanded() })
+
+  const broadcastRailState = () => {
+    if (!window.webContents.isDestroyed()) window.webContents.send('rail:changed', railState())
+  }
+
+  // The main process is the single owner of the rail state: it computes the geometry of
+  // the views, so the renderer only reports events and receives a finished decision.
+  ipcMain.handle('rail:state', () => railState())
+
+  ipcMain.handle('rail:hover', (_event, hovered) => {
+    railHovered = Boolean(hovered)
+    fitViews()
+    broadcastRailState()
+  })
+
+  ipcMain.handle('rail:pin', (_event, pinned) => {
+    railPinned = Boolean(pinned)
+    fitViews()
+    broadcastRailState()
+  })
+  window.on('resize', fitViews)
+
+  const currentLayout = () => {
+    const rect = window.getNormalBounds()
+    return {
+      x: rect.x,
+      y: rect.y,
+      width: rect.width,
+      height: rect.height,
+      maximized: window.isMaximized(),
+      railPinned,
+      language,
+    }
+  }
+
+  ipcMain.handle('language:get', () => language)
+
+  // Written to disk IMMEDIATELY, not only on close: choosing a language is a rare,
+  // deliberate act, and losing it to a killed process would be visible from the very
+  // first launch after installation. The tray menu is rebuilt because it is a
+  // main-process surface the renderer cannot repaint.
+  ipcMain.handle('language:set', async (_event, next) => {
+    language = validLanguage(next)
+    buildTray()
+    refreshBadge()
+    await saveLayout(layoutFile, currentLayout()).catch(() => {})
+    return language
+  })
+
+  // app.setBadgeCount works only on Linux and macOS. On Windows the count is shown by an
+  // overlay on the taskbar icon, and that needs a 16x16 image — the renderer draws it and
+  // sends it back over unread:overlay. The window title and tray tooltip are the fallback,
+  // visible even when the overlay does not take.
+  const refreshBadge = () => {
+    // Account views emit page-title-updated while the application is closing too, when
+    // the window is already gone. Without this guard Electron raises "Object has been
+    // destroyed" in a modal error dialog that blocks the process from exiting.
+    if (!window || window.isDestroyed()) return
+    const byAccount = manager.unreadByAccount()
+    const total = Object.values(byAccount).reduce((sum, n) => sum + n, 0)
+    window.setTitle(total ? `msg-hub (${total})` : 'msg-hub')
+    tray?.setToolTip(total ? tr('trayUnread', { n: total }) : 'msg-hub')
+    // The renderer also gets the per-account breakdown — the rail shows a count on each.
+    if (!window.webContents.isDestroyed()) window.webContents.send('unread:changed', { total, byAccount })
+  }
+
+  ipcMain.handle('unread:overlay', (_event, image) => {
+    window.setOverlayIcon(
+      image ? nativeImage.createFromDataURL(image) : null,
+      image ? tr('overlayUnread') : '',
+    )
+  })
+
+  const prepareView = (view) => {
+    view.webContents.session.setPermissionRequestHandler((_wc, permission, grant) => {
+      grant(permission === 'notifications')
+    })
+    view.webContents.on('page-title-updated', refreshBadge)
+    attachShortcuts(view.webContents)
+  }
+
+  // ORDER MATTERS: the renderer calls accounts:list the moment it loads, so the views
+  // and the IPC channels must stand BEFORE loadFile. The other way round yields
+  // "No handler registered for 'accounts:list'" and an empty rail.
+  const { accounts } = await loadAccounts(path.join(dataDir, 'accounts.json'))
+  for (const account of accounts) prepareView(manager.add(account))
+  fitViews()
+  if (accounts.length) manager.show(accounts[0].id)
+
+  registerAccountChannels({ dataDir, manager, onAccountsChanged: fitViews, prepareView })
+  clipboardSession = createClipboardSession()
+  clipboardSession.warmUp()
+  registerMacroChannels({ dataDir, manager, clipboardSession })
+
+  await window.loadFile(path.join(HERE, '..', 'renderer', 'index.html'))
+  refreshBadge()
+
+  // Saving the layout must FINISH before the window closes — otherwise app.quit() cuts
+  // the asynchronous write short and the window position does not survive a restart.
+  let layoutSaved = false
+  window.on('close', (event) => {
+    if (layoutSaved) return
+    event.preventDefault()
+    saveLayout(layoutFile, currentLayout()).finally(() => {
+      layoutSaved = true
+      window.destroy()
+    })
+  })
+}
+
+// Rebuilt rather than mutated, because Electron's Menu is immutable once set — this is
+// also how the tray follows a language change.
+function buildTray() {
+  if (!tray) {
+    // An empty tray icon is INVISIBLE on Windows — it has to be a real image.
+    tray = new Tray(nativeImage.createFromPath(ICON_PATH).resize({ width: 16, height: 16 }))
+    tray.setToolTip('msg-hub')
+    tray.on('click', () => (window?.isVisible() ? window.hide() : window?.show()))
+  }
+  tray.setContextMenu(
+    Menu.buildFromTemplate([
+      { label: tr('trayShow'), click: () => window?.show() },
+      {
+        label: tr('trayAutoStart'),
+        type: 'checkbox',
+        checked: app.getLoginItemSettings().openAtLogin,
+        click: (item) => setAutoStart(item.checked, app),
+      },
+      { type: 'separator' },
+      { label: tr('trayQuit'), click: () => app.quit() },
+    ]),
+  )
+}
+
+app.whenReady().then(async () => {
+  await createWindow()
+  buildTray()
+})
+
+app.on('before-quit', () => clipboardSession?.close())
+
+app.on('window-all-closed', () => app.quit())

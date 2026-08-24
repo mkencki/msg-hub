@@ -1,154 +1,154 @@
 <!doctype html>
 <meta charset="utf-8" />
 <title>msg-hub</title>
-<link rel="stylesheet" href="styl.css" />
+<link rel="stylesheet" href="style.css" />
 
-<!-- Teksty nosza klucze data-i18n zamiast gotowych napisow: jezyk wybiera uzytkownik
-     w ustawieniach, a przetlumaczDokument() w rendererze podmienia je na miejscu.
-     Wartosci wpisane ponizej to tylko podglad dla kogos, kto czyta zrodlo. -->
+<!-- Text carries data-i18n keys instead of finished strings: the user picks the language
+     in Settings, and translateDocument() in the renderer swaps them in place. The values
+     written below are only a preview for whoever reads the source. -->
 
-<!-- Szyna kanalow po lewej: widoki kont maja wlasny naglowek, wiec zakladki
-     u gory staly naprzeciw niego. Tozsamosc konta idzie teraz w bok, a kolor
-     aktywnego kanalu obrysowuje cala studnie robocza. -->
-<nav id="szyna" data-i18n-aria="kanaly" aria-label="Channels">
-  <div class="szyna-glowa">
-    <p class="szyna-tytul" data-i18n="kanaly">Channels</p>
-    <button id="przypnij-szyne" type="button">
+<!-- The channel rail on the left: account views bring their own header, so tabs along the
+     top stood face to face with it. Account identity now runs down the side, and the
+     colour of the active channel outlines the whole working area. -->
+<nav id="rail" data-i18n-aria="channels" aria-label="Channels">
+  <div class="rail-head">
+    <p class="rail-title" data-i18n="channels">Channels</p>
+    <button id="pin-rail" type="button">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
         <path d="M9.6 1.8 14.2 6.4l-2 .5-3.3 3.3-.4 2.6-4.9-4.9 2.6-.4L9.5 4.2z" />
         <path d="M5.6 10.4 2.2 13.8" />
       </svg>
     </button>
   </div>
-  <div id="kanaly"></div>
-  <div class="szyna-stopka">
-    <button id="otworz-ustawienia" class="szyna-akcja" data-i18n-title="ustawienia">
+  <div id="channels"></div>
+  <div class="rail-foot">
+    <button id="open-settings" class="rail-action" data-i18n-title="settings">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
         <circle cx="8" cy="8" r="2.4" />
         <path d="M8 1.6v1.7M8 12.7v1.7M14.4 8h-1.7M3.3 8H1.6M12.5 3.5l-1.2 1.2M4.7 11.3l-1.2 1.2M12.5 12.5l-1.2-1.2M4.7 4.7 3.5 3.5" />
       </svg>
-      <span class="etykieta-akcji" data-i18n="ustawienia">Settings</span>
+      <span class="action-label" data-i18n="settings">Settings</span>
     </button>
-    <button id="dodaj-konto" class="szyna-akcja" data-i18n-title="dodajKonto">
+    <button id="add-account" class="rail-action" data-i18n-title="addAccount">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
         <path d="M8 3.2v9.6M3.2 8h9.6" />
       </svg>
-      <span class="etykieta-akcji" data-i18n="dodajKonto">Add account</span>
+      <span class="action-label" data-i18n="addAccount">Add account</span>
     </button>
   </div>
 </nav>
 
-<main id="studnia">
-  <div id="wglebienie"></div>
+<main id="well">
+  <div id="well-inset"></div>
 </main>
 
-<footer id="listwa">
-  <span class="listwa-kanal"><i id="listwa-chip" class="chip"></i><span id="listwa-nazwa"></span></span>
-  <div id="komunikat" class="bledy" data-ton="blad" hidden>
-    <span id="tresc-komunikatu"></span>
-    <button type="button" id="zamknij-komunikat" data-i18n-title="ukryjKomunikat">&times;</button>
+<footer id="status-bar">
+  <span class="status-channel"><i id="status-chip" class="chip"></i><span id="status-name"></span></span>
+  <div id="message" class="errors" data-tone="error" hidden>
+    <span id="message-text"></span>
+    <button type="button" id="dismiss-message" data-i18n-title="dismissMessage">&times;</button>
   </div>
-  <span class="listwa-prawa">
-    <button id="otworz-makra" data-i18n-title="makraZeSkrotem" data-i18n="makra">Macros</button>
-    <span class="skrot">Ctrl+;</span>
-    <span id="listwa-licznik"></span>
+  <span class="status-right">
+    <button id="open-macros" data-i18n-title="macrosWithShortcut" data-i18n="macros">Macros</button>
+    <span class="shortcut">Ctrl+;</span>
+    <span id="status-unread"></span>
   </span>
 </footer>
 
-<dialog id="okno-konta">
+<dialog id="account-dialog">
   <form method="dialog">
-    <h2 id="tytul-konta">Add account</h2>
-    <label><span data-i18n="nazwa">Name</span> <input name="nazwa" required /></label>
-    <label><span data-i18n="platforma">Platform</span>
-      <select name="platforma">
+    <h2 id="account-dialog-title">Add account</h2>
+    <label><span data-i18n="name">Name</span> <input name="name" required /></label>
+    <label><span data-i18n="platform">Platform</span>
+      <select name="platform">
         <option value="whatsapp">WhatsApp</option>
         <option value="messenger">Messenger</option>
       </select>
     </label>
-    <label><span data-i18n="kolorKanalu">Channel colour</span> <input name="kolor" type="color" value="#2f7d5b" /></label>
-    <p id="bledy-konta" class="bledy"></p>
+    <label><span data-i18n="channelColor">Channel colour</span> <input name="color" type="color" value="#2f7d5b" /></label>
+    <p id="account-errors" class="errors"></p>
     <menu>
-      <!-- formnovalidate: bez tego walidacja pustego pola "Nazwa" blokuje anulowanie -->
-      <button value="anuluj" formnovalidate data-i18n="anuluj">Cancel</button>
-      <button id="zapisz-konto" value="zapisz" class="glowna" data-i18n="zapisz">Save</button>
+      <!-- formnovalidate: without it, validating the empty "Name" field blocks cancelling -->
+      <button value="cancel" formnovalidate data-i18n="cancel">Cancel</button>
+      <button id="save-account" value="save" class="primary" data-i18n="save">Save</button>
     </menu>
   </form>
 </dialog>
 
-<dialog id="okno-ustawien">
-  <h2 data-i18n="konta">Accounts</h2>
-  <ul id="lista-kont"></ul>
-  <p class="podpowiedz" data-i18n="kolejnoscPodpowiedz">The order on this list is the order of the channels.</p>
-  <label class="wiersz-jezyka"><span data-i18n="jezyk">Language</span>
-    <select id="wybor-jezyka"></select>
+<dialog id="settings-dialog">
+  <h2 data-i18n="accounts">Accounts</h2>
+  <ul id="account-list"></ul>
+  <p class="hint" data-i18n="orderHint">The order on this list is the order of the channels.</p>
+  <label class="language-row"><span data-i18n="language">Language</span>
+    <select id="language-select"></select>
   </label>
   <menu>
-    <button type="button" id="dodaj-konto-ustawienia" data-i18n="dodajKonto">Add account</button>
-    <button id="zamknij-ustawienia" value="zamknij" class="glowna" data-i18n="zamknij">Close</button>
+    <button type="button" id="add-account-from-settings" data-i18n="addAccount">Add account</button>
+    <button id="close-settings" value="close" class="primary" data-i18n="close">Close</button>
   </menu>
 </dialog>
 
-<dialog id="okno-usuwania">
-  <h2 data-i18n="usunacKonto">Remove this account?</h2>
-  <p id="tresc-usuwania"></p>
-  <p class="ostrzezenie" data-i18n="ostrzezenieUsuniecia">Removing an account also deletes its sign-in.</p>
+<dialog id="remove-account-dialog">
+  <h2 data-i18n="removeAccountQuestion">Remove this account?</h2>
+  <p id="remove-account-text"></p>
+  <p class="warning" data-i18n="removalWarning">Removing an account also deletes its sign-in.</p>
   <menu>
-    <button id="anuluj-usuniecie" value="anuluj" data-i18n="anuluj">Cancel</button>
-    <button id="potwierdz-usuniecie" value="usun" class="grozny" data-i18n="usunKontoPrzycisk">Remove account</button>
+    <button id="cancel-remove-account" value="cancel" data-i18n="cancel">Cancel</button>
+    <button id="confirm-remove-account" value="remove" class="danger" data-i18n="removeAccountButton">Remove account</button>
   </menu>
 </dialog>
 
-<dialog id="okno-makr">
-  <div class="okno-glowa">
-    <h2 data-i18n="makra">Macros</h2>
-    <span class="cel"><span data-i18n="wstawDo">insert into</span> <i id="cel-chip" class="chip"></i><b id="cel-nazwa"></b></span>
+<dialog id="macros-dialog">
+  <div class="dialog-head">
+    <h2 data-i18n="macros">Macros</h2>
+    <span class="target"><span data-i18n="insertInto">insert into</span> <i id="target-chip" class="chip"></i><b id="target-name"></b></span>
   </div>
-  <input id="szukaj-makro" data-i18n-placeholder="szukajMakro" autocomplete="off" />
-  <ul id="lista-makr"></ul>
+  <input id="macro-search" data-i18n-placeholder="searchMacros" autocomplete="off" />
+  <ul id="macro-list"></ul>
   <menu>
-    <span class="podpowiedz"><span class="skrot">&#8593;&#8595;</span> <span data-i18n="wybor">select</span> <span class="skrot">Enter</span> <span data-i18n="wstaw">insert</span> <span class="skrot">Esc</span> <span data-i18n="zamknijSkrot">close</span></span>
-    <button id="zamknij-makra" value="zamknij" data-i18n="zamknij">Close</button>
-    <button id="nowe-makro" value="nowe" class="glowna" data-i18n="noweMakro">New macro</button>
+    <span class="hint"><span class="shortcut">&#8593;&#8595;</span> <span data-i18n="select">select</span> <span class="shortcut">Enter</span> <span data-i18n="insert">insert</span> <span class="shortcut">Esc</span> <span data-i18n="closeHint">close</span></span>
+    <button id="close-macros" value="close" data-i18n="close">Close</button>
+    <button id="new-macro" value="new" class="primary" data-i18n="newMacro">New macro</button>
   </menu>
 </dialog>
 
-<dialog id="okno-usuwania-makra">
-  <h2 data-i18n="usunacMakro">Remove this macro?</h2>
-  <p id="tresc-usuwania-makra"></p>
+<dialog id="remove-macro-dialog">
+  <h2 data-i18n="removeMacroQuestion">Remove this macro?</h2>
+  <p id="remove-macro-text"></p>
   <menu>
-    <button id="anuluj-usuniecie-makra" value="anuluj" data-i18n="anuluj">Cancel</button>
-    <button id="potwierdz-usuniecie-makra" value="usun" class="grozny" data-i18n="usunMakroPrzycisk">Remove macro</button>
+    <button id="cancel-remove-macro" value="cancel" data-i18n="cancel">Cancel</button>
+    <button id="confirm-remove-macro" value="remove" class="danger" data-i18n="removeMacroButton">Remove macro</button>
   </menu>
 </dialog>
 
-<dialog id="okno-edytora">
-  <h2 id="tytul-edytora">Macro</h2>
-  <div class="edytor">
-    <div class="edytor-kolumna">
-      <label><span data-i18n="nazwa">Name</span> <input id="edytor-nazwa" /></label>
-      <div id="pasek-formatowania">
-        <button type="button" data-znacznik="*" data-i18n="pogrubienie">Bold</button>
-        <button type="button" data-znacznik="_" data-i18n="kursywa">Italic</button>
-        <button type="button" data-znacznik="~" data-i18n="przekreslenie">Strikethrough</button>
-        <button type="button" data-prefiks="- " data-i18n="lista">Bulleted list</button>
-        <button type="button" data-prefiks="1. " data-i18n="numeracja">Numbered list</button>
-        <button type="button" data-prefiks="&gt; " data-i18n="cytat">Quote</button>
+<dialog id="editor-dialog">
+  <h2 id="editor-title">Macro</h2>
+  <div class="editor">
+    <div class="editor-column">
+      <label><span data-i18n="name">Name</span> <input id="editor-name" /></label>
+      <div id="format-bar">
+        <button type="button" data-marker="*" data-i18n="bold">Bold</button>
+        <button type="button" data-marker="_" data-i18n="italic">Italic</button>
+        <button type="button" data-marker="~" data-i18n="strikethrough">Strikethrough</button>
+        <button type="button" data-prefix="- " data-i18n="bulletedList">Bulleted list</button>
+        <button type="button" data-prefix="1. " data-i18n="numberedList">Numbered list</button>
+        <button type="button" data-prefix="&gt; " data-i18n="quote">Quote</button>
       </div>
-      <label><span data-i18n="tresc">Content</span> <textarea id="edytor-tekst" rows="8"></textarea></label>
+      <label><span data-i18n="content">Content</span> <textarea id="editor-text" rows="8"></textarea></label>
     </div>
-    <div class="edytor-kolumna">
-      <p class="etykieta" data-i18n="podgladWhatsApp">WhatsApp preview</p>
-      <div id="edytor-podglad"></div>
-      <p class="etykieta" data-i18n="zalaczniki">Attachments</p>
-      <ul id="lista-zalacznikow"></ul>
-      <button type="button" id="dodaj-zalacznik" data-i18n="dodajZalacznik">Add attachment</button>
+    <div class="editor-column">
+      <p class="label" data-i18n="whatsappPreview">WhatsApp preview</p>
+      <div id="editor-preview"></div>
+      <p class="label" data-i18n="attachments">Attachments</p>
+      <ul id="attachment-list"></ul>
+      <button type="button" id="add-attachment" data-i18n="addAttachment">Add attachment</button>
     </div>
   </div>
-  <p id="bledy-makra" class="bledy"></p>
+  <p id="macro-errors" class="errors"></p>
   <menu>
-    <span class="podpowiedz" data-i18n="magazynPodpowiedz">The file is copied into the app storage.</span>
-    <button id="anuluj-makro" value="anuluj" data-i18n="anuluj">Cancel</button>
-    <button id="zapisz-makro" value="zapisz" class="glowna" data-i18n="zapiszMakro">Save macro</button>
+    <span class="hint" data-i18n="storageHint">The file is copied into the app storage.</span>
+    <button id="cancel-macro" value="cancel" data-i18n="cancel">Cancel</button>
+    <button id="save-macro" value="save" class="primary" data-i18n="saveMacro">Save macro</button>
   </menu>
 </dialog>
 

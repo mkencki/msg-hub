@@ -20,7 +20,7 @@ Instalator leży w [Releases](https://github.com/mkencki/msg-hub/releases).
 
 > **Instalator nie jest podpisany cyfrowo.** Windows ostrzeże, a na czystej instalacji
 > Windows 11 **Smart App Control zablokuje go całkiem**. Przeczytaj
-> **[docs/uwaga-instalacja.md](docs/uwaga-instalacja.md)** — tłumaczy, którą z dwóch
+> **[docs/installing.md](docs/installing.md)** — tłumaczy, którą z dwóch
 > reakcji właśnie widzisz i co z każdą zrobić.
 
 Uruchomienie ze źródeł działa nawet przy włączonym Smart App Control:
@@ -88,10 +88,8 @@ zapadną się, jeśli ktoś kiedyś doda zakazaną zależność albo ścieżkę 
 
 ## Dokumentacja
 
-- [`docs/superpowers/specs/2026-08-23-msg-hub-design.md`](docs/superpowers/specs/2026-08-23-msg-hub-design.md)
+- [`docs/design.md`](docs/design.md)
   — projekt: audyt, architektura, model danych, granice bezpieczeństwa, odrzucone warianty
-- [`docs/superpowers/plans/2026-08-23-msg-hub.md`](docs/superpowers/plans/2026-08-23-msg-hub.md)
-  — plan wdrożenia z odstępstwami wykonawczymi i pomiarami
 
 ## Testy
 
@@ -103,12 +101,12 @@ npm run dist      # przenośny .exe (buduje się lokalnie)
 
 **Instalator** buduje [CI](.github/workflows/build.yml), nie maszyna lokalna: NSIS generuje
 deinstalator, URUCHAMIAJĄC świeżo zbudowany instalator, a Smart App Control to ubija. Runner
-GitHuba nie ma SAC, więc `npm run dist:instalator` należy do niego.
+GitHuba nie ma SAC, więc `npm run dist:installer` należy do niego.
 
 Test paczki pomija się sam, ale **na zmierzonej próbie uruchomienia**, nie na odczycie rejestru —
 wcześniej milczał zawsze, gdy SAC był włączony, także wtedy, gdy paczka działała.
 
-Teksty interfejsu siedzą w [`src/renderer/jezyki/`](src/renderer/jezyki/) pod kluczami, nie
+Teksty interfejsu siedzą w [`src/shared/locales/`](src/shared/locales/) pod kluczami, nie
 w kodzie. Test jednostkowy czerwieni się, gdy słowniki się rozjadą — inaczej nowy napis trafiłby
 do jednego języka, a drugi pokazywałby goły klucz dopiero u użytkownika.
 
@@ -141,8 +139,13 @@ pliku kosztuje wtedy 15 ms zamiast 668 ms na proces jednorazowy.
 
 ## Stack
 
-Node 26, Electron 43, czysty JavaScript ESM bez bundlera. Vitest, Playwright,
-electron-builder. Nazwy plików, funkcji i kluczy JSON po polsku.
+Node 26, Electron 43, czysty JavaScript ESM bez bundlera. Vitest, Playwright, electron-builder.
+
+**Kod jest po angielsku** — nazwy plików, identyfikatory, komentarze, klucze JSON i opisy testów.
+Nie zawsze tak było: aplikacja zaczęła jako prywatne narzędzie pisane po polsku i wersja 1 formatu
+na dysku nadal ma polskie klucze. Odczyt przyjmuje obie pisownie, a najbliższy zapis odkłada
+wersję 2 — aktualizacja nie kosztuje nikogo kont ani makr. Pilnuje tego
+[`tests/migration.test.js`](tests/migration.test.js).
 
 ## Licencja
 

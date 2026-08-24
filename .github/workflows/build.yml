@@ -1,9 +1,9 @@
 name: build
 
-# Instalator NSIS NIE zbuduje sie na maszynie ze wlaczonym Smart App Control:
-# NSIS generuje deinstalator, URUCHAMIAJAC swiezo zbudowany instalator, a SAC ubija
-# niepodpisany plik bez werdyktu reputacji (zmierzone 2026-08-24, CodeIntegrity 3077).
-# Runner GitHuba nie ma SAC, wiec instalator powstaje tutaj.
+# The NSIS installer will NOT build on a machine with Smart App Control enabled: NSIS
+# generates its uninstaller by RUNNING the freshly built installer, and SAC kills an
+# unsigned file that carries no reputation verdict (measured 2026-08-24, CodeIntegrity
+# event 3077). A GitHub runner has no SAC, so the installer is built here.
 on:
   push:
     branches: [main]
@@ -16,8 +16,8 @@ jobs:
   windows:
     runs-on: windows-latest
 
-    # Domyslny GITHUB_TOKEN bywa tylko do odczytu — bez tego krok tworzacy wydanie
-    # odbija sie o 403 dopiero po pelnym, kilkuminutowym budowaniu.
+    # The default GITHUB_TOKEN is often read-only, and without this the release step
+    # bounces off a 403 only after a full, several-minute build.
     permissions:
       contents: write
 
@@ -38,17 +38,17 @@ jobs:
         run: npm run test:e2e
 
       - name: Build installer
-        run: npm run dist:instalator
+        run: npm run dist:installer
 
       - uses: actions/upload-artifact@v4
         with:
           name: msg-hub-installer
-          path: dist/msg-hub-*-instalator.exe
+          path: dist/msg-hub-*-installer.exe
           if-no-files-found: error
 
       - name: Attach installer to the release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/msg-hub-*-instalator.exe
-          body_path: docs/uwaga-instalacja.md
+          files: dist/msg-hub-*-installer.exe
+          body_path: docs/installing.md

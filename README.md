@@ -24,7 +24,7 @@ Download the installer from [Releases](https://github.com/mkencki/msg-hub/releas
 
 > **The installer is not code-signed.** Windows will warn you, and on a clean Windows 11 install
 > **Smart App Control will block it outright**. Read
-> **[docs/uwaga-instalacja.md](docs/uwaga-instalacja.md)** before you download — it explains
+> **[docs/installing.md](docs/installing.md)** before you download — it explains
 > which of the two you are seeing and what to do about each.
 
 Running from source works even when Smart App Control is enabled:
@@ -96,18 +96,31 @@ npm run dist      # portable .exe (builds locally)
 
 The **installer** is built by [CI](.github/workflows/build.yml), not locally: NSIS generates its
 uninstaller by *running* the freshly built installer, and Smart App Control kills that. The runner
-has no Smart App Control, so `npm run dist:instalator` belongs there.
+has no Smart App Control, so `npm run dist:installer` belongs there.
 
-Source is plain JavaScript ESM, no bundler. **File names, functions and JSON keys are in Polish** —
-the app was written that way and renaming them would buy nothing but churn. UI strings live in
-[`src/renderer/jezyki/`](src/renderer/jezyki/) and are keyed, not hard-coded; a unit test fails if
-the two dictionaries drift apart.
+Source is plain JavaScript ESM, no bundler, and everything — file names, identifiers, comments,
+JSON keys and test descriptions — is in English. It was not always: the app began as a private tool
+written in Polish, and version 1 of the on-disk format still carries Polish keys. Both spellings
+are accepted on read and version 2 is written back on the next save, so upgrading costs nobody
+their accounts or macros. That contract is pinned by [`tests/migration.test.js`](tests/migration.test.js).
+
+Layout:
+
+| Path | What lives there |
+|---|---|
+| `src/main/` | the main process: accounts, macros, views, the IPC bridge, the window shell |
+| `src/renderer/` | the window's own interface — HTML, CSS and the renderer script |
+| `src/shared/` | code both processes need: the translation core and the dictionaries |
+| `src/preload/` | the context bridge (CommonJS — Electron does not load ESM here) |
+
+UI strings live in [`src/shared/locales/`](src/shared/locales/) under keys rather than in the code.
+A unit test fails the moment the two dictionaries drift apart, so a new string cannot land in one
+language and show a bare key in the other.
 
 ## Documentation
 
-- [`docs/uwaga-instalacja.md`](docs/uwaga-instalacja.md) — what Windows does to an unsigned installer, and why
-- [`docs/superpowers/specs/2026-08-23-msg-hub-design.md`](docs/superpowers/specs/2026-08-23-msg-hub-design.md) — the design: audit, architecture, data model, security boundaries, rejected alternatives
-- [`docs/superpowers/plans/2026-08-23-msg-hub.md`](docs/superpowers/plans/2026-08-23-msg-hub.md) — the implementation plan, with the deviations and measurements made along the way
+- [`docs/installing.md`](docs/installing.md) — what Windows does to an unsigned installer, and why
+- [`docs/design.md`](docs/design.md) — the design: audit, architecture, data model, security boundaries, rejected alternatives
 
 ## Stack
 
