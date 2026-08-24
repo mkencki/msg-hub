@@ -26,10 +26,17 @@ projektu. **Nie używaj `npm run dist`** jako drogi codziennej: Smart App Contro
 |---|---|
 | **Konta** | dowolnie wiele, każde w partycji `persist:<id>` — pełna izolacja ciasteczek, `localStorage` i `IndexedDB` |
 | **Zakładki** | przełączanie bez przeładowania strony, kolor per konto, licznik nieprzeczytanych |
-| **Ustawienia** | sekcja zarządzania kontami: dodawanie i usuwanie wraz z czyszczeniem sesji |
-| **Makra** | `Ctrl+;` — panel z wyszukiwarką po nazwie, treści i tagach |
-| **Edytor makra** | pasek formatowania WhatsApp i podgląd na żywo |
-| **Załączniki** | PDF i mp4 w magazynie aplikacji, limit 100 MB na plik |
+| **Ustawienia** | zarządzanie kontami: dodanie, zmiana nazwy i koloru, kolejność zakładek, usunięcie wraz z czyszczeniem sesji |
+| **Makra** | `Ctrl+;` — panel z wyszukiwarką po nazwie, treści i tagach; edycja i usuwanie za potwierdzeniem |
+| **Edytor makra** | pasek formatowania WhatsApp, podgląd na żywo, dodawanie i zdejmowanie załączników |
+| **Załączniki** | PDF i mp4 **kopiowane do magazynu aplikacji** — oryginalny plik przestaje być potrzebny; limit 100 MB |
+
+Makra i załączniki żyją w `%APPDATA%\msg-hub` (`macros.json` oraz katalog `att/`),
+konta w `accounts.json` obok nich. Usunięcie makra albo zdjęcie załącznika sprząta
+magazyn, żeby kilkumegabajtowe wideo nie zostawało na dysku bez właściciela.
+
+Zmiana nazwy konta **nie rusza jego identyfikatora**, bo na identyfikatorze stoi
+partycja sesji (`persist:<id>`) — poprawka literówki nie wylogowuje konta.
 
 ## Czego NIE robi — i nie będzie robić
 

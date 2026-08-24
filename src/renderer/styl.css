@@ -41,6 +41,7 @@ button.grozny { background: #f15c6d; color: #fff; }
 .opis-konta { flex: 1; }
 .platforma-konta { color: #8696a0; font-size: 12px; }
 #lista-kont .usun-konto { padding: 4px 12px; font-size: 12px; opacity: 1; }
+#lista-kont button:not(.grozny), .zdejmij-zalacznik, .edytuj-makro { background: #3b4a54; }
 #lista-kont button { flex: none; padding: 4px 10px; font-size: 12px; }
 .w-gore, .w-dol { min-width: 58px; }
 #lista-kont button:disabled { opacity: 0.3; cursor: default; }
