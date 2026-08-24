@@ -55,6 +55,10 @@ test('zapis po edycji nadpisuje makro zamiast tworzyc drugie', async () => {
   await okno.locator('#lista-makr li .edytuj-makro').click()
   await okno.locator('#edytor-tekst').fill('nowa tresc')
   await okno.locator('#zapisz-makro').click()
+  // Zapis jest asynchroniczny, a odczyt zaraz po kliknieciu scigal sie z nim: lokalnie
+  // wygrywal zapis, na wolniejszym runnerze CI — odczyt, i test widzial stara tresc.
+  // Edytor zamyka sie DOPIERO po udanym zapisie, wiec to on jest sygnalem konca.
+  await expect(okno.locator('#okno-edytora')).toBeHidden()
 
   const makra = await okno.evaluate(() => window.mostHub.listaMakr(''))
   expect(makra).toHaveLength(1)
@@ -70,6 +74,10 @@ test('edycja nie przerzuca makra na koniec listy', async () => {
   await okno.locator('#lista-makr li', { hasText: 'Beta' }).locator('.edytuj-makro').click()
   await okno.locator('#edytor-tekst').fill('b poprawione')
   await okno.locator('#zapisz-makro').click()
+  // Zapis jest asynchroniczny, a odczyt zaraz po kliknieciu scigal sie z nim: lokalnie
+  // wygrywal zapis, na wolniejszym runnerze CI — odczyt, i test widzial stara tresc.
+  // Edytor zamyka sie DOPIERO po udanym zapisie, wiec to on jest sygnalem konca.
+  await expect(okno.locator('#okno-edytora')).toBeHidden()
 
   const makra = await okno.evaluate(() => window.mostHub.listaMakr(''))
   expect(makra.map((m) => m.nazwa)).toEqual(['Alfa', 'Beta', 'Gamma'])
@@ -112,6 +120,10 @@ test('zalacznik da sie zdjac z makra w edytorze', async () => {
 
   await okno.locator('#lista-zalacznikow li .zdejmij-zalacznik').click()
   await okno.locator('#zapisz-makro').click()
+  // Zapis jest asynchroniczny, a odczyt zaraz po kliknieciu scigal sie z nim: lokalnie
+  // wygrywal zapis, na wolniejszym runnerze CI — odczyt, i test widzial stara tresc.
+  // Edytor zamyka sie DOPIERO po udanym zapisie, wiec to on jest sygnalem konca.
+  await expect(okno.locator('#okno-edytora')).toBeHidden()
 
   const makra = await okno.evaluate(() => window.mostHub.listaMakr(''))
   expect(makra[0].zalaczniki).toEqual([])

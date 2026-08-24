@@ -1,5 +1,5 @@
 import { test, expect, _electron as electron } from '@playwright/test'
-import { mkdtemp, rm, mkdir, copyFile } from 'node:fs/promises'
+import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { tmpdir } from 'node:os'
@@ -7,19 +7,34 @@ import path from 'node:path'
 
 const uruchom = promisify(execFile)
 
-const KATALOG_MATERIALOW = path.join(
-  'C:/Users/marek/OneDrive - AS24',
-  '03. AS24 DOCS',
-  'DOKUMENTY AS24',
-  '2. PASSANGO',
-  'DODATKOWE PLIKI',
+// Materialy test generuje SAM. Wczesniej siegal po pliki z prywatnego dysku autora,
+// przez co przechodzil wylacznie na jednej maszynie — na runnerze CI konczyl sie
+// ENOENT-em, a w publicznym repozytorium zdradzalby cudza strukture katalogow.
+//
+// Dla tego testu zawartosc pliku nie ma znaczenia: CF_HDROP niesie SCIEZKE, nie bajty.
+// Mimo to pliki sa prawdziwymi, minimalnymi dokumentami swojego formatu — plik nazwany
+// .pdf, ktory nie jest PDF-em, to pulapka na kogos, kto kiedys dolozy tu walidacje typu.
+const PRZYKLADOWY_PDF = Buffer.from(
+  `%PDF-1.4
+1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj
+2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj
+3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]/Resources<<>>>>endobj
+trailer<</Size 4/Root 1 0 R>>
+%%EOF
+`,
+  'latin1',
 )
 
-// Realne materialy instruktazowe — te same, na ktorych etap 0 specu potwierdzil,
-// ze WhatsApp Web przyjmuje wklejenie pliku ze schowka.
+const PRZYKLADOWY_MP4 = Buffer.from([
+  0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70,
+  0x6d, 0x70, 0x34, 0x32, 0x00, 0x00, 0x00, 0x00,
+  0x6d, 0x70, 0x34, 0x32, 0x69, 0x73, 0x6f, 0x6d,
+  0x00, 0x00, 0x00, 0x08, 0x6d, 0x64, 0x61, 0x74,
+])
+
 const MATERIALY = [
-  { typ: 'PDF', nazwa: 'PASSango - instalacja.pdf' },
-  { typ: 'mp4', nazwa: 'PASSango - przewodnik wideo.mp4' },
+  { typ: 'PDF', nazwa: 'instrukcja instalacji.pdf', bajty: PRZYKLADOWY_PDF },
+  { typ: 'mp4', nazwa: 'przewodnik wideo.mp4', bajty: PRZYKLADOWY_MP4 },
 ]
 
 let katalogDanych
@@ -69,7 +84,7 @@ for (const material of MATERIALY) {
     const att = path.join(katalogDanych, 'att')
     await mkdir(att, { recursive: true })
     const nazwaWMagazynie = `11111111-2222-3333-4444-555555555555-${material.nazwa}`
-    await copyFile(path.join(KATALOG_MATERIALOW, material.nazwa), path.join(att, nazwaWMagazynie))
+    await writeFile(path.join(att, nazwaWMagazynie), material.bajty)
 
     await okno.evaluate(
       (wzgledna) =>
