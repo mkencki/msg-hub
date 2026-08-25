@@ -4,3 +4,4 @@ test-results/
 playwright-report/
 # Assembled from docs/release-notes.md and docs/installing.md while publishing a release.
 release-body.md
+installer-fingerprint.md

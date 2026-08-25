@@ -52,6 +52,49 @@ jobs:
       - name: Packaged application
         run: npx playwright test tests/e2e/package.spec.js
 
+      # Whether Smart App Control will admit this file CANNOT be measured here, and pretending
+      # otherwise would be worse than saying nothing: a GitHub runner has no SAC (the state is
+      # printed below, and it is not 1), and the verdict itself comes from Microsoft's cloud,
+      # which has no public API. It is also per FILE — measured 2026-08-25 on one machine,
+      # minutes apart: 0.4.0 installed without a single CodeIntegrity event, while 0.2.0 was
+      # refused with errno UNKNOWN and events 3033/3077/3118. Same builder, same repository,
+      # both unsigned, Mark of the Web made no difference either way.
+      #
+      # So the release carries what CAN be established here — the exact file — and the command
+      # that turns "will it install?" into a five-second measurement on the machine where the
+      # answer actually matters.
+      - name: Installer fingerprint
+        run: |
+          $exe = Get-ChildItem dist/msg-hub-*-installer.exe | Select-Object -First 1
+          $hash = (Get-FileHash -Algorithm SHA256 $exe.FullName).Hash
+          $sac = (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\CI\Policy' -Name VerifiedAndReputablePolicyState -ErrorAction SilentlyContinue).VerifiedAndReputablePolicyState
+          $sacText = switch ($sac) { 1 { 'enforcing' } 2 { 'evaluation' } 0 { 'off' } default { 'not present' } }
+          Write-Host "installer : $($exe.Name)"
+          Write-Host "sha256    : $hash"
+          Write-Host "runner SAC: $sacText"
+          # Built as an array rather than a here-string: PowerShell demands the closing "@ in
+          # column zero, which no indented YAML block can give it.
+          $probe = 'try { $p = Start-Process .\' + $exe.Name + ' -PassThru -ErrorAction Stop; Start-Sleep 3; Stop-Process -Id $p.Id -Force; ''ALLOWED - the installer started'' } catch { ''BLOCKED - '' + $_.Exception.Message }'
+          $lines = @(
+            '### Before you trust this file'
+            ''
+            '`' + $exe.Name + '`'
+            'SHA256 `' + $hash + '`'
+            ''
+            'It is **not code-signed**. Whether Smart App Control admits it is a per-file verdict from'
+            "Microsoft's cloud: it cannot be read off the file, and it was NOT measured here — this"
+            'runner''s Smart App Control is *' + $sacText + '*. One command answers it on the machine'
+            'where the answer matters, before you rely on it:'
+            ''
+            '```powershell'
+            $probe
+            '```'
+            ''
+            'A refusal also leaves events 3033/3077/3118 in **Microsoft-Windows-CodeIntegrity/Operational**.'
+            'If it is blocked, run from source instead — that path needs no verdict from anybody.'
+          )
+          Set-Content installer-fingerprint.md ($lines -join "`n")
+
       - uses: actions/upload-artifact@v4
         with:
           name: msg-hub-installer
@@ -70,7 +113,8 @@ jobs:
           $notes = Get-Content docs/release-notes.md -Raw
           $section = [regex]::Match($notes, "(?ms)^## $([regex]::Escape($version))\b.*?(?=^## |\z)")
           if (-not $section.Success) { throw "docs/release-notes.md has no section for $version" }
-          Set-Content release-body.md ($section.Value.TrimEnd() + "`n`n---`n`n" + (Get-Content docs/installing.md -Raw))
+          $fingerprint = if (Test-Path installer-fingerprint.md) { "`n`n---`n`n" + (Get-Content installer-fingerprint.md -Raw) } else { '' }
+          Set-Content release-body.md ($section.Value.TrimEnd() + $fingerprint + "`n`n---`n`n" + (Get-Content docs/installing.md -Raw))
 
       - name: Attach installer to the release
         if: startsWith(github.ref, 'refs/tags/')
