@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, globalShortcut, shell } from 'electron'
+import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, globalShortcut, shell, powerMonitor } from 'electron'
 import path from 'node:path'
 import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -98,6 +98,15 @@ async function createWindow() {
         return
       }
 
+      // The same key inside the app's own window would tear down the interface, the rail
+      // and the status bar along with it, so it never means what it usually means: it
+      // always reloads the account being looked at.
+      if (input.control && !input.shift && !input.alt && input.key.toLowerCase() === 'r') {
+        _event.preventDefault()
+        if (manager.activeId) manager.reload(manager.activeId)
+        return
+      }
+
       // Reaching an account without the mouse. The rail's channels are real buttons, but
       // in normal use the keyboard is inside an account page, where Tab never gets to
       // them. The renderer is asked to switch rather than the manager being told directly:
@@ -127,12 +136,18 @@ async function createWindow() {
   // Messages go to the status bar inside the window, not to a modal system dialog.
   // A modal freezes the whole application and demands a click, and one account failing
   // to load should not block the others.
-  const showMessage = (text) => {
-    if (!window.webContents.isDestroyed()) window.webContents.send('message:show', text)
+  // A message may carry an OFFER: something the operator can act on from the status bar. It
+  // is an offer and not an action because the only thing on offer here — reloading — throws
+  // away whatever is half-typed in a composer.
+  const showMessage = (text, offer = null) => {
+    if (!window.webContents.isDestroyed()) window.webContents.send('message:show', { text, offer })
   }
 
   manager = new ViewManager(window, app.userAgentFallback, ({ account, code, description }) => {
-    showMessage(tr('loadAccountFailed', { account: account.name, code, description }))
+    showMessage(tr('loadAccountFailed', { account: account.name, code, description }), {
+      action: 'reload',
+      accountId: account.id,
+    })
   })
 
   let closeToTray = Boolean(layout.closeToTray)
@@ -198,6 +213,8 @@ async function createWindow() {
       language,
     }
   }
+
+  ipcMain.handle('accounts:reload', (_event, accountId) => manager.reload(accountId ?? manager.activeId))
 
   ipcMain.handle('closeToTray:get', () => closeToTray)
 
@@ -331,7 +348,23 @@ async function createWindow() {
     //
     // show() ends by focusing the view it just showed, so answering every focus event
     // would be a loop that never stops. A view that is already current asks for nothing.
-    //
+
+    // A dead renderer shows a blank rectangle and nothing else. Saying so, and saying which
+    // account it happened to, is the difference between a bug report and a restart.
+    view.webContents.on('render-process-gone', (_event, details) => {
+      showMessage(tr('accountCrashed', { account: account.name, reason: details.reason }), {
+        action: 'reload',
+        accountId: account.id,
+      })
+    })
+
+    view.webContents.on('unresponsive', () => {
+      showMessage(tr('accountUnresponsive', { account: account.name }), {
+        action: 'reload',
+        accountId: account.id,
+      })
+    })
+
     // A view also takes the system's focus while it is being created, and that is not a
     // notification click: measured, two accounts produced two such events, both from a
     // webContents still loading with an empty URL, and which account came out current was
@@ -365,6 +398,14 @@ async function createWindow() {
 
   await window.loadFile(path.join(HERE, '..', 'renderer', 'index.html'))
   refreshBadge()
+
+  // A laptop coming back from sleep leaves the services believing the computer is gone.
+  // Reloading by itself would throw away whatever the operator was in the middle of typing
+  // before the lid closed, so waking only says the accounts may need it.
+  powerMonitor.on('resume', () => {
+    if (!manager.activeId) return
+    showMessage(tr('wokeUp'), { action: 'reload', accountId: manager.activeId })
+  })
 
   // The one shortcut that has to work when the app is not in front at all — that is the
   // whole point of a macro palette for someone typing in another program. register()

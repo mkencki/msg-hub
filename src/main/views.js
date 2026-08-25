@@ -93,6 +93,17 @@ export class ViewManager {
     this.views.get(accountId).webContents.focus()
   }
 
+  // The only way back into a view that has gone stale — a laptop waking to find WhatsApp
+  // saying the computer is not connected — used to be restarting the application and taking
+  // every other account down with it. Reloading throws away whatever is half-typed in the
+  // composer, so this is never called on a timer; something has to ask for it.
+  reload(accountId) {
+    const view = this.views.get(accountId)
+    if (!view || view.webContents.isDestroyed()) return false
+    view.webContents.reload()
+    return true
+  }
+
   setGeometry(rect) {
     this.geometry = rect
     if (this.activeId) this.show(this.activeId)

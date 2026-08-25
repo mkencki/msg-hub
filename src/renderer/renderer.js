@@ -387,17 +387,31 @@ window.msgHub.onOpenMacros(() => document.getElementById('open-macros').click())
 // Spec section 8: a failed start must produce a visible message, not an empty status bar.
 // The message MUST be dismissable — otherwise a stale error occupies the bar for the rest
 // of the session and the operator keeps reading it long after the cause is fixed.
-function showMessage(text, tone = 'error') {
+// An OFFER is something the operator can act on from the bar. Reloading is offered rather
+// than done, because it throws away whatever is half-typed in a composer.
+let pendingOffer = null
+
+function showMessage(text, tone = 'error', offer = null) {
   const bar = document.getElementById('message')
   document.getElementById('message-text').textContent = text
   bar.dataset.tone = tone
+  pendingOffer = offer
+  document.getElementById('reload-account').hidden = offer?.action !== 'reload'
   bar.hidden = false
 }
 
 function hideMessage() {
   document.getElementById('message-text').textContent = ''
+  document.getElementById('reload-account').hidden = true
+  pendingOffer = null
   document.getElementById('message').hidden = true
 }
+
+document.getElementById('reload-account').addEventListener('click', async () => {
+  const accountId = pendingOffer?.accountId
+  hideMessage()
+  await window.msgHub.reloadAccount(accountId)
+})
 
 document.getElementById('dismiss-message').addEventListener('click', hideMessage)
 
@@ -497,7 +511,7 @@ window.msgHub.onUnread((data) => {
 
 // Messages from the main process (a failed account load, for instance) land on the status
 // bar rather than in a modal — one sick account must not block the rest.
-window.msgHub.onMessage((text) => showMessage(text))
+window.msgHub.onMessage((payload) => showMessage(payload.text, payload.tone ?? 'error', payload.offer))
 
 const editorDialog = document.getElementById('editor-dialog')
 const editorName = document.getElementById('editor-name')
