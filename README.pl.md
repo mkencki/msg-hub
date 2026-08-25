@@ -87,6 +87,23 @@ Reguły 1 i 2 mają egzekucję w testach — [`tests/insertion.test.js`](tests/i
 i [`tests/boundaries.test.js`](tests/boundaries.test.js) zapadną się, jeśli ktoś kiedyś doda
 zakazaną zależność albo ścieżkę wysyłki.
 
+### Dziennik
+
+Aplikacja zapisuje zwykły tekstowy dziennik w `%APPDATA%\msg-hub\logs\`, dostępny z menu
+w zasobniku. Istnieje po to, żeby pomoc komuś, komu apka nie chce się zalogować, nie wymagała
+siadania przy jego komputerze.
+
+**Zapisuje rodzaje zdarzeń i kody błędów — i nic poza tym.** Żadnej treści wiadomości, żadnej
+treści makr, żadnych nazw załączników, tytułów stron ani nazw rozmów. Konto występuje pod swoim
+identyfikatorem, nigdy pod nazwą, którą mu nadałeś — ta nazwa to bardzo często czyjeś imię.
+To nie jest obietnica co do sposobu pisania kodu: `src/main/log.js` zapisuje wyłącznie pola
+z krótkiej zadeklarowanej listy i po cichu odrzuca całą resztę, a
+[`tests/log.test.js`](tests/log.test.js) padnie, jeśli ta lista urośnie bez czyjejś decyzji.
+
+Plik ma twardy limit rozmiaru i rotację z zachowaniem najwyżej jednej starszej kopii, więc nie
+zapełni dysku. Dziennik, który możesz przeczytać i świadomie wysłać, jest przeciwieństwem
+telemetrii.
+
 ## Dokumentacja
 
 - [`docs/design.md`](docs/design.md)

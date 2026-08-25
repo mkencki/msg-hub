@@ -39,6 +39,7 @@ export const en = {
   accountUnresponsive: '{account} is not responding.',
   wokeUp: 'The computer woke up. Accounts may need reloading.',
   reloadAccount: 'Reload',
+  trayOpenLogs: 'Open log folder',
   close: 'Close',
   noAccountsHint: 'No accounts yet — click "Add account".',
   edit: 'Edit',

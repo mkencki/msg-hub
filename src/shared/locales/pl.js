@@ -44,6 +44,7 @@ export const pl = {
   accountUnresponsive: 'Konto {account} nie odpowiada.',
   wokeUp: 'Komputer się obudził. Konta mogą wymagać przeładowania.',
   reloadAccount: 'Przeładuj',
+  trayOpenLogs: 'Otwórz katalog dziennika',
   close: 'Zamknij',
   noAccountsHint: 'Brak kont — kliknij „Dodaj konto".',
   edit: 'Edytuj',

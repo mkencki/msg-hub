@@ -87,6 +87,22 @@ Rules 1 and 2 are enforced by tests — [`tests/insertion.test.js`](tests/insert
 [`tests/boundaries.test.js`](tests/boundaries.test.js) fail the moment someone adds a forbidden
 dependency or a sending path.
 
+### The log
+
+The app writes a plain-text log to `%APPDATA%\msg-hub\logs\`, reachable from the tray menu.
+It exists so that helping someone whose app will not sign in does not require sitting at their
+computer.
+
+**It records kinds of event and error codes, and nothing else.** No message text, no macro
+content, no attachment names, no page titles and no conversation names. An account appears by
+its identifier, never by the name you gave it — that name is frequently a person. This is not
+a promise about how the logging code is written: `src/main/log.js` writes only the fields on a
+short declared list and silently drops everything else, and
+[`tests/log.test.js`](tests/log.test.js) fails if that list grows without someone meaning it to.
+
+The file is capped and rotated, keeping at most one older copy, so it cannot fill a disk.
+A log you can read, and choose to send, is the opposite of telemetry.
+
 ## Development
 
 ```bash

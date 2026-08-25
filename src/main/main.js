@@ -8,6 +8,7 @@ import { loadAccounts, PLATFORMS } from './accounts.js'
 import { classify } from './navigation.js'
 import { registerAccountChannels, registerMacroChannels } from './bridge.js'
 import { createClipboardSession } from './file-clipboard.js'
+import { createLogger } from './log.js'
 import { t, validLanguage } from '../shared/i18n.js'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
@@ -43,6 +44,8 @@ let window
 let tray
 let manager
 let clipboardSession
+let logger
+let logDir
 // Closing the window hides it; only a deliberate Quit ends the process. Without this flag
 // the close handler could not tell the two apart and Quit would hide the window forever.
 let quitting = false
@@ -55,6 +58,9 @@ const tr = (key, params) => t(language, key, params)
 
 async function createWindow() {
   const dataDir = app.getPath('userData')
+  logDir = path.join(dataDir, 'logs')
+  logger = createLogger(logDir)
+  logger.write('started', { count: 0 })
   const layoutFile = path.join(dataDir, 'layout.json')
   // Schema version 1 kept this file under a Polish name. Reading the old one when the
   // new one is absent keeps the window position, the pinned rail and the chosen
@@ -144,6 +150,9 @@ async function createWindow() {
   }
 
   manager = new ViewManager(window, app.userAgentFallback, ({ account, code, description }) => {
+    // The description comes from Chromium and names a failure, not a page — ERR_NAME_NOT_
+    // RESOLVED and its kin. It is the one string here worth keeping.
+    logger.write('account-load-failed', { account: account.id, platform: account.platform, code, reason: description })
     showMessage(tr('loadAccountFailed', { account: account.name, code, description }), {
       action: 'reload',
       accountId: account.id,
@@ -352,6 +361,7 @@ async function createWindow() {
     // A dead renderer shows a blank rectangle and nothing else. Saying so, and saying which
     // account it happened to, is the difference between a bug report and a restart.
     view.webContents.on('render-process-gone', (_event, details) => {
+      logger.write('account-crashed', { account: account.id, reason: details.reason })
       showMessage(tr('accountCrashed', { account: account.name, reason: details.reason }), {
         action: 'reload',
         accountId: account.id,
@@ -359,6 +369,7 @@ async function createWindow() {
     })
 
     view.webContents.on('unresponsive', () => {
+      logger.write('account-unresponsive', { account: account.id })
       showMessage(tr('accountUnresponsive', { account: account.name }), {
         action: 'reload',
         accountId: account.id,
@@ -403,6 +414,7 @@ async function createWindow() {
   // Reloading by itself would throw away whatever the operator was in the middle of typing
   // before the lid closed, so waking only says the accounts may need it.
   powerMonitor.on('resume', () => {
+    logger.write('woke-up', {})
     if (!manager.activeId) return
     showMessage(tr('wokeUp'), { action: 'reload', accountId: manager.activeId })
   })
@@ -419,7 +431,10 @@ async function createWindow() {
     window.webContents.focus()
     window.webContents.send('macros:open')
   })
-  if (!claimed) showMessage(tr('shortcutTaken', { shortcut: MACRO_SHORTCUT }))
+  if (!claimed) {
+    logger.write('global-shortcut-refused', {})
+    showMessage(tr('shortcutTaken', { shortcut: MACRO_SHORTCUT }))
+  }
 
   // Saving the layout must FINISH before the window closes — otherwise app.quit() cuts
   // the asynchronous write short and the window position does not survive a restart. The
@@ -458,6 +473,14 @@ function buildTray() {
         type: 'checkbox',
         checked: app.getLoginItemSettings().openAtLogin,
         click: (item) => setAutoStart(item.checked, app),
+      },
+      {
+        // The log only earns its keep if the person it is for can find it. Everything in it
+        // is written by this app and is safe to send on — see src/main/log.js.
+        label: tr('trayOpenLogs'),
+        click: () => {
+          if (logDir) shell.openPath(logDir)
+        },
       },
       { type: 'separator' },
       {
