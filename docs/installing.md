@@ -55,3 +55,25 @@ npm start
 
 Potrzebujesz do tego [Node.js](https://nodejs.org/). Stan Smart App Control sprawdzisz w:
 **Zabezpieczenia Windows → Kontrola aplikacji i przeglądarki → Ustawienia Smart App Control**.
+
+---
+
+## Nie instaluj przez `/S` / Do not install with `/S`
+
+**Po polsku.** Instalator jest kreatorem (wybór katalogu, wybór „tylko dla mnie"), a nie
+jednoklikowcem. Uruchomiony z przełącznikiem ciszy `/S` **skopiuje pliki i założy skróty, ale
+nie zapisze niczego w rejestrze** — aplikacja nie pojawi się wtedy w *Ustawienia → Aplikacje*,
+a sam instalator przy następnym uruchomieniu uzna instalację za świeżą. Zmierzone 2026-08-26:
+po `/S` zero nowych kluczy w `HKCU\Software` i w `…\CurrentVersion\Uninstall`; po przejściu
+kreatora normalnie — `DisplayName = msg-hub 0.4.0` i `UninstallString` na miejscu. Klikaj
+instalator normalnie. Odinstalowanie zawsze działa przez `Uninstall msg-hub.exe` w katalogu
+instalacji, niezależnie od rejestru.
+
+**English.** This is a wizard installer (it asks for a directory and for per-user vs all-users),
+not a one-click one. Run with the silent switch `/S` it **copies the files and creates the
+shortcuts but writes nothing to the registry** — the application then does not appear in
+*Settings → Installed apps*, and the installer treats the next run as a fresh install. Measured
+2026-08-26: after `/S`, zero new keys under `HKCU\Software` and under
+`…\CurrentVersion\Uninstall`; after clicking through the wizard, `DisplayName = msg-hub 0.4.0`
+and an `UninstallString` are both there. Click the installer normally. Uninstalling always works
+through `Uninstall msg-hub.exe` in the installation folder, registry or no registry.
