@@ -66,7 +66,7 @@ describe('validateAccount', () => {
   })
 
   test('an empty name is an error', () => {
-    expect(validateAccount({ ...valid, name: '  ' }).map((blad) => blad.code)).toContain('validationName')
+    expect(validateAccount({ ...valid, name: '  ' }).map((error) => error.code)).toContain('validationName')
   })
 
   test('an unknown platform is an error', () => {
@@ -77,7 +77,7 @@ describe('validateAccount', () => {
   })
 
   test('an address that is not https is an error', () => {
-    expect(validateAccount({ ...valid, url: 'http://web.whatsapp.com/' }).map((blad) => blad.code)).toContain(
+    expect(validateAccount({ ...valid, url: 'http://web.whatsapp.com/' }).map((error) => error.code)).toContain(
       'validationUrl',
     )
   })
@@ -85,7 +85,7 @@ describe('validateAccount', () => {
 
 describe('makeAccountId', () => {
   test('builds an id out of safe characters', () => {
-    expect(makeAccountId('WhatsApp sluzbowy', [])).toMatch(/^acc-[a-z0-9-]+$/)
+    expect(makeAccountId('WhatsApp work', [])).toMatch(/^acc-[a-z0-9-]+$/)
   })
 
   test('avoids colliding with an existing id', () => {
@@ -143,7 +143,7 @@ describe('updateAccount', () => {
     const result = updateAccount(accounts, 'acc-messenger', { name: '   ', color: '#6586ec' })
 
     expect(result.ok).toBe(false)
-    expect(result.errors.map((blad) => blad.code)).toContain('validationName')
+    expect(result.errors.map((error) => error.code)).toContain('validationName')
     expect(accounts[0].name).toBe('Messenger')
   })
 
@@ -151,15 +151,15 @@ describe('updateAccount', () => {
   // finished sentences: Polish ones would leak into an English interface. It hands back
   // a code and parameters, and t() assembles the text.
   test('validation errors come back as codes with parameters, not finished sentences', () => {
-    const errors = validateAccount({ id: 'acc-x', name: '', platform: 'nieznana', url: 'http://x', color: 'zielony' })
+    const errors = validateAccount({ id: 'acc-x', name: '', platform: 'unknown', url: 'http://x', color: 'green' })
 
-    expect(errors.map((blad) => blad.code)).toEqual([
+    expect(errors.map((error) => error.code)).toEqual([
       'validationName',
       'validationPlatform',
       'validationUrl',
       'validationColor',
     ])
-    expect(errors.find((blad) => blad.code === 'validationPlatform').params).toEqual({ platform: 'nieznana' })
+    expect(errors.find((error) => error.code === 'validationPlatform').params).toEqual({ platform: 'unknown' })
   })
 
   test('an unknown id yields an error, not an exception', () => {

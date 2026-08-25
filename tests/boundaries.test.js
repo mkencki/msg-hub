@@ -2,7 +2,7 @@ import { describe, test, expect } from 'vitest'
 import { readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 
-const ZAKAZANE_PAKIETY = [
+const FORBIDDEN_PACKAGES = [
   '@wppconnect/wa-js',
   'wppconnect',
   'whatsapp-web.js',
@@ -13,15 +13,15 @@ const ZAKAZANE_PAKIETY = [
 
 // A comment describing the prohibition is not a breach of it — only a call in the code
 // counts. The scan therefore skips whole-line and block comments.
-function bezKomentarzy(content) {
-  const bezBlokowych = content.replace(/\/\*[\s\S]*?\*\//g, '')
-  return bezBlokowych
+function withoutComments(content) {
+  const withoutBlocks = content.replace(/\/\*[\s\S]*?\*\//g, '')
+  return withoutBlocks
     .split('\n')
-    .filter((linia) => !/^\s*\/\//.test(linia))
+    .filter((line) => !/^\s*\/\//.test(line))
     .join('\n')
 }
 
-function plikiZrodlowe(dir) {
+function sourceFiles(dir) {
   return readdirSync(dir, { recursive: true, encoding: 'utf8' })
     .filter((relative) => relative.endsWith('.js') || relative.endsWith('.cjs'))
     .map((relative) => path.join(dir, relative))
@@ -29,25 +29,25 @@ function plikiZrodlowe(dir) {
 
 describe('rule 7.2, no interference with the pages Meta serves', () => {
   test('package.json carries no library that reaches into WhatsApp Web', () => {
-    const pakiet = JSON.parse(readFileSync('package.json', 'utf8'))
-    const zaleznosci = Object.keys({ ...pakiet.dependencies, ...pakiet.devDependencies })
-    for (const zakazany of ZAKAZANE_PAKIETY) {
-      expect(zaleznosci).not.toContain(zakazany)
+    const manifest = JSON.parse(readFileSync('package.json', 'utf8'))
+    const dependencies = Object.keys({ ...manifest.dependencies, ...manifest.devDependencies })
+    for (const forbidden of FORBIDDEN_PACKAGES) {
+      expect(dependencies).not.toContain(forbidden)
     }
   })
 
   test('the source injects neither scripts nor styles into account views', () => {
     const offenders = []
-    for (const file of plikiZrodlowe('src')) {
-      const content = bezKomentarzy(readFileSync(file, 'utf8'))
+    for (const file of sourceFiles('src')) {
+      const content = withoutComments(readFileSync(file, 'utf8'))
       if (/executeJavaScript|insertCSS|wppconnect|WPP\./.test(content)) offenders.push(file)
     }
     expect(offenders).toEqual([])
   })
 
   test('the scan really catches a forbidden call, not merely a comment', () => {
-    const probka = "// executeJavaScript w komentarzu\nwidok.webContents.insertCSS('x')"
-    expect(/executeJavaScript|insertCSS/.test(bezKomentarzy(probka))).toBe(true)
-    expect(/executeJavaScript/.test(bezKomentarzy('// executeJavaScript\nconst a = 1'))).toBe(false)
+    const sample = "// executeJavaScript inside a comment\nview.webContents.insertCSS('x')"
+    expect(/executeJavaScript|insertCSS/.test(withoutComments(sample))).toBe(true)
+    expect(/executeJavaScript/.test(withoutComments('// executeJavaScript\nconst a = 1'))).toBe(false)
   })
 })

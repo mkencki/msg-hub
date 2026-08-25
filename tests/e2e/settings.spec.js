@@ -12,7 +12,7 @@ async function savedAccounts() {
   return JSON.parse(content).accounts
 }
 
-async function wypelnijFormularzKonta(name, platform) {
+async function fillAccountForm(name, platform) {
   await page.locator('#account-dialog input[name="name"]').fill(name)
   await page.locator('#account-dialog select[name="platform"]').selectOption(platform)
   await page.locator('#save-account').click()
@@ -20,15 +20,15 @@ async function wypelnijFormularzKonta(name, platform) {
 }
 
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-ustawienia-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-settings-'))
   electronApp = await electron.launch({ args: ['.', `--user-data-dir=${dataDir}`] })
   page = await electronApp.firstWindow()
   await page.waitForSelector('body[data-ready="1"]')
 
   await page.locator('#add-account').click()
-  await wypelnijFormularzKonta('WhatsApp prywatny', 'whatsapp')
+  await fillAccountForm('WhatsApp personal', 'whatsapp')
   await page.locator('#add-account').click()
-  await wypelnijFormularzKonta('WhatsApp sluzbowy', 'whatsapp')
+  await fillAccountForm('WhatsApp work', 'whatsapp')
   await expect(page.locator('.channel')).toHaveCount(2)
 })
 
@@ -47,43 +47,43 @@ test('settings list every account with its platform', async () => {
 
   await expect(page.locator('#settings-dialog')).toBeVisible()
   await expect(page.locator('#account-list li')).toHaveCount(2)
-  await expect(page.locator('#account-list li').first()).toContainText('WhatsApp prywatny')
+  await expect(page.locator('#account-list li').first()).toContainText('WhatsApp personal')
   await expect(page.locator('#account-list li').first()).toContainText('whatsapp')
 })
 
 test('removing an account from settings takes away the entry, the channel and the session', async () => {
-  const idUsuwanego = (await savedAccounts())[1].id
+  const removedId = (await savedAccounts())[1].id
   await electronApp.evaluate(async ({ session }, id) => {
     await session
       .fromPartition(`persist:${id}`)
-      .cookies.set({ url: 'https://przyklad.test', name: 'session', value: 'zalogowany' })
-  }, idUsuwanego)
+      .cookies.set({ url: 'https://example.test', name: 'session', value: 'signed-in' })
+  }, removedId)
 
   await page.locator('#open-settings').click()
-  await page.locator('#account-list li', { hasText: 'WhatsApp sluzbowy' }).locator('.remove-account').click()
+  await page.locator('#account-list li', { hasText: 'WhatsApp work' }).locator('.remove-account').click()
 
   await expect(page.locator('#remove-account-dialog')).toBeVisible()
-  await expect(page.locator('#remove-account-dialog')).toContainText('WhatsApp sluzbowy')
+  await expect(page.locator('#remove-account-dialog')).toContainText('WhatsApp work')
   await page.locator('#confirm-remove-account').click()
 
   // After the removal the operator stays in settings, with the list refreshed.
   await expect(page.locator('#settings-dialog')).toBeVisible()
   await expect(page.locator('#account-list li')).toHaveCount(1)
 
-  expect((await savedAccounts()).map((k) => k.name)).toEqual(['WhatsApp prywatny'])
+  expect((await savedAccounts()).map((a) => a.name)).toEqual(['WhatsApp personal'])
   await page.locator('#close-settings').click()
   await expect(page.locator('.channel')).toHaveCount(1)
 
-  const ciasteczka = await electronApp.evaluate(
+  const cookies = await electronApp.evaluate(
     ({ session }, id) => session.fromPartition(`persist:${id}`).cookies.get({ name: 'session' }),
-    idUsuwanego,
+    removedId,
   )
-  expect(ciasteczka).toEqual([])
+  expect(cookies).toEqual([])
 })
 
 test('cancelling a removal touches nothing', async () => {
   await page.locator('#open-settings').click()
-  await page.locator('#account-list li', { hasText: 'WhatsApp sluzbowy' }).locator('.remove-account').click()
+  await page.locator('#account-list li', { hasText: 'WhatsApp work' }).locator('.remove-account').click()
   await page.locator('#remove-account-dialog button[value="cancel"]').click()
 
   await expect(page.locator('#account-list li')).toHaveCount(2)
@@ -94,17 +94,17 @@ test('an account can be added both from settings and from the + button on the ra
   await page.locator('#open-settings').click()
   await page.locator('#add-account-from-settings').click()
   await expect(page.locator('#account-dialog')).toBeVisible()
-  await wypelnijFormularzKonta('Messenger', 'messenger')
+  await fillAccountForm('Messenger', 'messenger')
   await expect(page.locator('.channel')).toHaveCount(3)
 
   await page.locator('#add-account').click()
-  await wypelnijFormularzKonta('Messenger firmowy', 'messenger')
+  await fillAccountForm('Messenger firmowy', 'messenger')
   await expect(page.locator('.channel')).toHaveCount(4)
 })
 
 test('removing the last account leaves an empty rail without an error', async () => {
   await page.locator('#open-settings').click()
-  for (const name of ['WhatsApp sluzbowy', 'WhatsApp prywatny']) {
+  for (const name of ['WhatsApp work', 'WhatsApp personal']) {
     await page.locator('#account-list li', { hasText: name }).locator('.remove-account').click()
     await page.locator('#confirm-remove-account').click()
   }
@@ -119,16 +119,16 @@ test('removing an account and closing the app raises no exception in the main pr
   // Regression from 2026-08-24: an account view emitted page-title-updated while being
   // destroyed, and refreshBadge reached for a window that was already gone. Electron then
   // raised a modal "Object has been destroyed" that blocked the process from exiting.
-  const wyjscieBledow = []
-  electronApp.process().stderr.on('data', (kawalek) => wyjscieBledow.push(String(kawalek)))
+  const stderrOutput = []
+  electronApp.process().stderr.on('data', (chunk) => stderrOutput.push(String(chunk)))
 
   await page.locator('#open-settings').click()
-  await page.locator('#account-list li', { hasText: 'WhatsApp sluzbowy' }).locator('.remove-account').click()
+  await page.locator('#account-list li', { hasText: 'WhatsApp work' }).locator('.remove-account').click()
   await page.locator('#confirm-remove-account').click()
   await expect(page.locator('#account-list li')).toHaveCount(1)
   await page.locator('#close-settings').click()
 
   await electronApp.close()
 
-  expect(wyjscieBledow.join('')).not.toMatch(/Object has been destroyed|Uncaught Exception/)
+  expect(stderrOutput.join('')).not.toMatch(/Object has been destroyed|Uncaught Exception/)
 })

@@ -83,8 +83,9 @@ Trzy granice z sekcji 7 specu. Wynikają z audytu i są nienaruszalne:
    są takie, jakie serwuje Meta.
 3. **Wstawia wyłącznie przez schowek.** Bez manipulacji DOM stron, także przy załącznikach.
 
-Reguły 1 i 2 mają egzekucję w testach — `tests/wstawianie.test.js` i `tests/granice.test.js`
-zapadną się, jeśli ktoś kiedyś doda zakazaną zależność albo ścieżkę wysyłki.
+Reguły 1 i 2 mają egzekucję w testach — [`tests/insertion.test.js`](tests/insertion.test.js)
+i [`tests/boundaries.test.js`](tests/boundaries.test.js) zapadną się, jeśli ktoś kiedyś doda
+zakazaną zależność albo ścieżkę wysyłki.
 
 ## Dokumentacja
 

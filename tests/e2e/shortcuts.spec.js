@@ -8,7 +8,7 @@ let electronApp
 let page
 
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-skroty-e2e-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-shortcuts-e2e-'))
   electronApp = await electron.launch({ args: ['.', `--user-data-dir=${dataDir}`] })
   page = await electronApp.firstWindow()
   await page.waitForSelector('body[data-ready="1"]')
@@ -23,9 +23,9 @@ test.afterEach(async () => {
 // An account view is a native layer ABOVE the renderer — while it holds focus the
 // keyboard never reaches the main window. Without routing the key out of the view the
 // shortcut is dead for most of the working time, because focus sits in the conversation.
-async function fokusNaWidokKonta() {
+async function focusAccountView() {
   await page.locator('#add-account').click()
-  await page.locator('#account-dialog input[name="name"]').fill('WhatsApp testowy')
+  await page.locator('#account-dialog input[name="name"]').fill('WhatsApp test')
   await page.locator('#save-account').click()
   await expect(page.locator('.channel')).toHaveCount(1)
 
@@ -42,31 +42,31 @@ async function fokusNaWidokKonta() {
   })
 }
 
-async function wcisnijWWidoku(klawisz) {
+async function pressInView(key) {
   await electronApp.evaluate(({ BrowserWindow }, code) => {
-    const widok = BrowserWindow.getAllWindows()[0].contentView.children[0]
-    widok.webContents.sendInputEvent({ type: 'keyDown', keyCode: code, modifiers: ['control'] })
-    widok.webContents.sendInputEvent({ type: 'keyUp', keyCode: code, modifiers: ['control'] })
-  }, klawisz)
+    const view = BrowserWindow.getAllWindows()[0].contentView.children[0]
+    view.webContents.sendInputEvent({ type: 'keyDown', keyCode: code, modifiers: ['control'] })
+    view.webContents.sendInputEvent({ type: 'keyUp', keyCode: code, modifiers: ['control'] })
+  }, key)
 }
 
 test('Ctrl+; opens the macro panel while an account view holds focus', async () => {
-  await fokusNaWidokKonta()
-  await wcisnijWWidoku(';')
+  await focusAccountView()
+  await pressInView(';')
 
   await expect(page.locator('#macros-dialog')).toBeVisible()
 })
 
 test('a macro panel opened from an account view accepts typing in the search box', async () => {
-  await page.evaluate(() => window.msgHub.saveMacro({ name: 'Passango', text: 'instalacja' }))
-  await page.evaluate(() => window.msgHub.saveMacro({ name: 'Strefa Klienta', text: 'logowanie' }))
-  await fokusNaWidokKonta()
-  await wcisnijWWidoku(';')
+  await page.evaluate(() => window.msgHub.saveMacro({ name: 'Passango', text: 'installation' }))
+  await page.evaluate(() => window.msgHub.saveMacro({ name: 'Client Zone', text: 'sign-in' }))
+  await focusAccountView()
+  await pressInView(';')
   await expect(page.locator('#macros-dialog')).toBeVisible()
 
   // Focus has to return to the main window, or the operator opens the panel and cannot type.
-  await page.keyboard.type('strefa')
+  await page.keyboard.type('client')
 
-  await expect(page.locator('#macro-search')).toHaveValue('strefa')
+  await expect(page.locator('#macro-search')).toHaveValue('client')
   await expect(page.locator('#macro-list li')).toHaveCount(1)
 })

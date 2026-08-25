@@ -19,7 +19,7 @@ async function visibleViews() {
 }
 
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-dialogi-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-dialogs-'))
   electronApp = await electron.launch({ args: ['.', `--user-data-dir=${dataDir}`] })
   page = await electronApp.firstWindow()
   await page.waitForSelector('body[data-ready="1"]')
@@ -51,7 +51,7 @@ test('the add-account dialog is visible even with an account loaded', async () =
 
 test('a second account can be added after the first', async () => {
   await page.locator('#add-account').click()
-  await page.locator('#account-dialog input[name="name"]').fill('WhatsApp prywatny')
+  await page.locator('#account-dialog input[name="name"]').fill('WhatsApp personal')
   await page.locator('#save-account').click()
 
   await expect(page.locator('.channel')).toHaveCount(2)

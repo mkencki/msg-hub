@@ -30,37 +30,37 @@ test('Ctrl+; opens the macro panel, which starts out empty', async () => {
 test('a saved macro appears on the list and can be found by its content', async () => {
   await page.evaluate(() =>
     window.msgHub.saveMacro({
-      name: 'Instrukcja Strefa Klienta',
-      text: '*Jak dodac kierowce:*\n- Zaloguj sie\n- Wejdz w Kierowcy',
+      name: 'Client Zone manual',
+      text: '*How to add a driver:*\n- Sign in\n- Open Drivers',
     }),
   )
   await page.evaluate(() =>
-    window.msgHub.saveMacro({ name: 'Passango', text: 'instalacja urzadzenia' }),
+    window.msgHub.saveMacro({ name: 'Passango', text: 'device installation' }),
   )
 
   await page.keyboard.press('Control+Semicolon')
   await expect(page.locator('#macro-list li')).toHaveCount(2)
 
   // Search has to reach the content, not just the name — the phrase appears only in the content.
-  await page.locator('#macro-search').fill('kierowce')
+  await page.locator('#macro-search').fill('driver')
   await expect(page.locator('#macro-list li')).toHaveCount(1)
-  await expect(page.locator('#macro-list li')).toHaveText(/Strefa Klienta/)
+  await expect(page.locator('#macro-list li')).toHaveText(/Client Zone/)
 })
 
 test('choosing a macro puts the text on the clipboard and sends no message', async () => {
   // The account is created through the same form the operator uses.
   await page.locator('#add-account').click()
-  await page.locator('#account-dialog input[name="name"]').fill('WhatsApp testowy')
+  await page.locator('#account-dialog input[name="name"]').fill('WhatsApp test')
   await page.locator('#save-account').click()
   await expect(page.locator('.channel')).toHaveCount(1)
 
-  const content = '*Jak dodac kierowce:*\n- Zaloguj sie'
+  const content = '*How to add a driver:*\n- Sign in'
   await page.evaluate(
-    (text) => window.msgHub.saveMacro({ name: 'Strefa', text }),
+    (text) => window.msgHub.saveMacro({ name: 'Client Zone', text }),
     content,
   )
 
-  await electronApp.evaluate(({ clipboard }) => clipboard.writeText('wartosc-sprzed-wstawienia'))
+  await electronApp.evaluate(({ clipboard }) => clipboard.writeText('whatever was on the clipboard before'))
 
   await page.keyboard.press('Control+Semicolon')
   await page.locator('#macro-list li').first().click()
@@ -83,39 +83,39 @@ test('the editor formats text, shows a preview and saves the macro', async () =>
   await page.locator('#new-macro').click()
   await expect(page.locator('#editor-dialog')).toBeVisible()
 
-  await page.locator('#editor-name').fill('Instrukcja Strefa Klienta')
-  await page.locator('#editor-text').fill('Jak dodac kierowce:\nZaloguj sie')
+  await page.locator('#editor-name').fill('Client Zone manual')
+  await page.locator('#editor-text').fill('How to add a driver:\nSign in')
 
   // The formatting bar acts on the line the caret sits in.
   await page.locator('#editor-text').click()
   await page.keyboard.press('Control+Home')
   await page.locator('#format-bar button[data-prefix="- "]').click()
 
-  await expect(page.locator('#editor-text')).toHaveValue('- Jak dodac kierowce:\nZaloguj sie')
+  await expect(page.locator('#editor-text')).toHaveValue('- How to add a driver:\nSign in')
 
   // The preview has to show a list bullet, not a raw dash.
-  await expect(page.locator('#editor-preview li')).toHaveText('Jak dodac kierowce:')
+  await expect(page.locator('#editor-preview li')).toHaveText('How to add a driver:')
 
   await page.locator('#save-macro').click()
   await expect(page.locator('#editor-dialog')).toBeHidden()
 
   await page.keyboard.press('Control+Semicolon')
-  await expect(page.locator('#macro-list li')).toHaveText(/Instrukcja Strefa Klienta/)
+  await expect(page.locator('#macro-list li')).toHaveText(/Client Zone manual/)
 })
 
 test('the preview does not execute HTML pasted into the macro content', async () => {
   await page.keyboard.press('Control+Semicolon')
   await page.locator('#new-macro').click()
-  await page.locator('#editor-text').fill('<img src=x onerror="window.zlamane=1">')
+  await page.locator('#editor-text').fill('<img src=x onerror="window.broken=1">')
 
   await expect(page.locator('#editor-preview img')).toHaveCount(0)
-  expect(await page.evaluate(() => window.zlamane)).toBeUndefined()
+  expect(await page.evaluate(() => window.broken)).toBeUndefined()
 })
 
 test('a macro without a name is refused, with a message', async () => {
   await page.keyboard.press('Control+Semicolon')
   await page.locator('#new-macro').click()
-  await page.locator('#editor-text').fill('content bez nazwy')
+  await page.locator('#editor-text').fill('content without a name')
   await page.locator('#save-macro').click()
 
   // The error stays in the editor — the bar above lies outside the modal and would be

@@ -20,19 +20,19 @@ async function addAccount(name, platform) {
   await expect(page.locator('#account-dialog')).toBeHidden()
 }
 
-function wierszKonta(name) {
+function accountRow(name) {
   return page.locator('#account-list li', { hasText: name })
 }
 
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-accounts-edycja-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-accounts-editing-'))
   electronApp = await electron.launch({ args: ['.', `--user-data-dir=${dataDir}`] })
   page = await electronApp.firstWindow()
   await page.waitForSelector('body[data-ready="1"]')
 
   await addAccount('Messenger', 'messenger')
-  await addAccount('WhatsApp prywatny', 'whatsapp')
-  await addAccount('WhatsApp sluzbowy', 'whatsapp')
+  await addAccount('WhatsApp personal', 'whatsapp')
+  await addAccount('WhatsApp work', 'whatsapp')
   await expect(page.locator('.channel')).toHaveCount(3)
 })
 
@@ -44,82 +44,82 @@ test.afterEach(async () => {
 
 test('Edit opens the form filled with the account data', async () => {
   await page.locator('#open-settings').click()
-  await wierszKonta('WhatsApp prywatny').locator('.edit-account').click()
+  await accountRow('WhatsApp personal').locator('.edit-account').click()
 
   await expect(page.locator('#account-dialog')).toBeVisible()
-  await expect(page.locator('#account-dialog input[name="name"]')).toHaveValue('WhatsApp prywatny')
+  await expect(page.locator('#account-dialog input[name="name"]')).toHaveValue('WhatsApp personal')
 })
 
 test('a rename fixes the channel and does not create a second account', async () => {
   await page.locator('#open-settings').click()
-  await wierszKonta('WhatsApp prywatny').locator('.edit-account').click()
-  await page.locator('#account-dialog input[name="name"]').fill('WhatsApp dom')
+  await accountRow('WhatsApp personal').locator('.edit-account').click()
+  await page.locator('#account-dialog input[name="name"]').fill('WhatsApp home')
   await page.locator('#save-account').click()
 
   await expect(page.locator('.channel')).toHaveCount(3)
-  await expect(page.locator('.channel').nth(1).locator('.channel-name')).toHaveText('WhatsApp dom')
+  await expect(page.locator('.channel').nth(1).locator('.channel-name')).toHaveText('WhatsApp home')
 })
 
 test('a rename does not touch the account id, so the sign-in stays', async () => {
-  const przed = (await savedAccounts())[1].id
+  const idBefore = (await savedAccounts())[1].id
 
   await page.locator('#open-settings').click()
-  await wierszKonta('WhatsApp prywatny').locator('.edit-account').click()
-  await page.locator('#account-dialog input[name="name"]').fill('WhatsApp dom')
+  await accountRow('WhatsApp personal').locator('.edit-account').click()
+  await page.locator('#account-dialog input[name="name"]').fill('WhatsApp home')
   await page.locator('#save-account').click()
-  await expect(page.locator('.channel').nth(1).locator('.channel-name')).toHaveText('WhatsApp dom')
+  await expect(page.locator('.channel').nth(1).locator('.channel-name')).toHaveText('WhatsApp home')
 
-  const po = await savedAccounts()
-  expect(po[1].id).toBe(przed)
-  expect(po[1].name).toBe('WhatsApp dom')
+  const after = await savedAccounts()
+  expect(after[1].id).toBe(idBefore)
+  expect(after[1].name).toBe('WhatsApp home')
 })
 
 test('editing cannot swap the platform, because that means a different session and a different address', async () => {
   await page.locator('#open-settings').click()
-  await wierszKonta('WhatsApp prywatny').locator('.edit-account').click()
+  await accountRow('WhatsApp personal').locator('.edit-account').click()
 
   await expect(page.locator('#account-dialog select[name="platform"]')).toBeDisabled()
 })
 
 test('an empty name is refused when editing, with a message', async () => {
   await page.locator('#open-settings').click()
-  await wierszKonta('WhatsApp prywatny').locator('.edit-account').click()
+  await accountRow('WhatsApp personal').locator('.edit-account').click()
   await page.locator('#account-dialog input[name="name"]').fill('   ')
   await page.locator('#save-account').click()
 
   await expect(page.locator('#account-errors')).toHaveText(/name is required/)
-  expect((await savedAccounts())[1].name).toBe('WhatsApp prywatny')
+  expect((await savedAccounts())[1].name).toBe('WhatsApp personal')
 })
 
 test('the up button changes the channel order and saves it', async () => {
   await page.locator('#open-settings').click()
-  await wierszKonta('WhatsApp sluzbowy').locator('.move-up').click()
+  await accountRow('WhatsApp work').locator('.move-up').click()
 
-  await expect(page.locator('.channel').nth(1).locator('.channel-name')).toHaveText('WhatsApp sluzbowy')
-  expect((await savedAccounts()).map((k) => k.name)).toEqual([
+  await expect(page.locator('.channel').nth(1).locator('.channel-name')).toHaveText('WhatsApp work')
+  expect((await savedAccounts()).map((a) => a.name)).toEqual([
     'Messenger',
-    'WhatsApp sluzbowy',
-    'WhatsApp prywatny',
+    'WhatsApp work',
+    'WhatsApp personal',
   ])
 })
 
 test('the down button changes the channel order', async () => {
   await page.locator('#open-settings').click()
-  await wierszKonta('Messenger').locator('.move-down').click()
+  await accountRow('Messenger').locator('.move-down').click()
 
-  await expect(page.locator('.channel').first().locator('.channel-name')).toHaveText('WhatsApp prywatny')
-  expect((await savedAccounts()).map((k) => k.name)).toEqual([
-    'WhatsApp prywatny',
+  await expect(page.locator('.channel').first().locator('.channel-name')).toHaveText('WhatsApp personal')
+  expect((await savedAccounts()).map((a) => a.name)).toEqual([
+    'WhatsApp personal',
     'Messenger',
-    'WhatsApp sluzbowy',
+    'WhatsApp work',
   ])
 })
 
 test('the ends of the list have their move buttons disabled', async () => {
   await page.locator('#open-settings').click()
 
-  await expect(wierszKonta('Messenger').locator('.move-up')).toBeDisabled()
-  await expect(wierszKonta('WhatsApp sluzbowy').locator('.move-down')).toBeDisabled()
+  await expect(accountRow('Messenger').locator('.move-up')).toBeDisabled()
+  await expect(accountRow('WhatsApp work').locator('.move-down')).toBeDisabled()
 })
 
 test('moving an account does not throw the operator back to the first channel', async () => {
@@ -128,7 +128,7 @@ test('moving an account does not throw the operator back to the first channel', 
   await expect(page.locator('.channel').nth(2)).toHaveAttribute('aria-selected', 'true')
 
   await page.locator('#open-settings').click()
-  await wierszKonta('Messenger').locator('.move-down').click()
+  await accountRow('Messenger').locator('.move-down').click()
 
-  await expect(page.locator('.channel[aria-selected="true"] .channel-name')).toHaveText('WhatsApp sluzbowy')
+  await expect(page.locator('.channel[aria-selected="true"] .channel-name')).toHaveText('WhatsApp work')
 })

@@ -14,17 +14,17 @@ try {
   built = false
 }
 
-const OPIS_BLOKADY =
-  'Smart App Control zablokowal te paczke. Zmierzone 2026-08-24: SAC przepuszcza file ' +
-  'niepodpisany wylacznie na werdykt reputacji z chmury Defendera, a SWIEZO ZBUDOWANY zadnego ' +
-  'nie ma — blokada nie potrzebuje znacznika MotW. Instalator powstaje na runnerze CI, gdzie ' +
-  'SAC nie dziala; lokalnie uruchamiaj zrodla przez npm start.'
+const BLOCKED_BY_SAC =
+  'Smart App Control blocked this package. Measured 2026-08-24: SAC lets an unsigned file ' +
+  'through only on a reputation verdict from the Defender cloud, and a FRESHLY BUILT one has ' +
+  'none — the block needs no Mark of the Web. The installer is built on a CI runner, where ' +
+  'SAC is not active; locally, run the sources with npm start.'
 
 // The probe has to run BEFORE electron.launch: Playwright reports every failed attempt as
 // a bare "Process failed to launch!" with no reason from the system, and test.skip() called
 // from a catch block does NOT mark the test skipped — measured, it ends up red.
 // On a Code Integrity refusal, a Node spawn returns errno UNKNOWN (not ENOENT, not EACCES).
-function zablokowanePrzezCodeIntegrity(dataDir) {
+function blockedByCodeIntegrity(dataDir) {
   const probe = spawnSync(EXE, [`--user-data-dir=${dataDir}`], { timeout: 2500 })
   return /UNKNOWN/i.test(String(probe.error?.code ?? ''))
 }
@@ -32,13 +32,13 @@ function zablokowanePrzezCodeIntegrity(dataDir) {
 test('the packaged application starts with a working renderer and IPC bridge', async () => {
   // The skip condition has to sit INSIDE the test — at file level Playwright reads
   // test.skip(condition, description) as a declaration of a skipped test, not as a condition.
-  test.skip(!built, 'brak dist/win-unpacked — uruchom najpierw npm run dist')
+  test.skip(!built, 'no dist/win-unpacked — run npm run dist first')
 
-  const dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-paczka-'))
+  const dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-package-'))
 
   // This test used to skip on a REGISTRY READ ALONE ("SAC is on, so it will surely block"),
   // which is a guess. It now skips on a MEASURED attempt to launch.
-  test.skip(zablokowanePrzezCodeIntegrity(dataDir), OPIS_BLOKADY)
+  test.skip(blockedByCodeIntegrity(dataDir), BLOCKED_BY_SAC)
 
   const electronApp = await electron.launch({
     executablePath: EXE,

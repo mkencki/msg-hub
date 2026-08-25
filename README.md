@@ -83,8 +83,9 @@ Three boundaries. They come from the audit and are not negotiable:
 3. **It inserts through the clipboard only.** No DOM manipulation of the loaded pages, attachments
    included.
 
-Rules 1 and 2 are enforced by tests — `tests/wstawianie.test.js` and `tests/granice.test.js` fail
-the moment someone adds a forbidden dependency or a sending path.
+Rules 1 and 2 are enforced by tests — [`tests/insertion.test.js`](tests/insertion.test.js) and
+[`tests/boundaries.test.js`](tests/boundaries.test.js) fail the moment someone adds a forbidden
+dependency or a sending path.
 
 ## Development
 

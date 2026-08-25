@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest'
 import { insertText } from '../src/main/insertion.js'
 
-function atrapaWebContents() {
+function fakeWebContents() {
   const calls = []
   return {
     calls,
@@ -12,39 +12,39 @@ function atrapaWebContents() {
   }
 }
 
-function atrapaSchowka() {
-  const zapisy = []
-  return { zapisy, writeText: (t) => zapisy.push(t) }
+function fakeClipboard() {
+  const writes = []
+  return { writes, writeText: (text) => writes.push(text) }
 }
 
 describe('insertText', () => {
   test('puts the text on the clipboard and triggers a paste', () => {
-    const wc = atrapaWebContents()
-    const schowek = atrapaSchowka()
+    const webContents = fakeWebContents()
+    const clipboard = fakeClipboard()
 
-    insertText(wc, '*Test*', schowek)
+    insertText(webContents, '*Test*', clipboard)
 
-    expect(schowek.zapisy).toEqual(['*Test*'])
-    expect(wc.calls).toContain('paste')
+    expect(clipboard.writes).toEqual(['*Test*'])
+    expect(webContents.calls).toContain('paste')
   })
 
   test('does NOT send a message: no Enter, no script on the page', () => {
-    const wc = atrapaWebContents()
-    insertText(wc, 'dowolna content', atrapaSchowka())
+    const webContents = fakeWebContents()
+    insertText(webContents, 'any content', fakeClipboard())
 
-    const zakazane = wc.calls.filter(
-      (w) => w.startsWith('sendInputEvent') || w.startsWith('executeJavaScript'),
+    const forbidden = webContents.calls.filter(
+      (call) => call.startsWith('sendInputEvent') || call.startsWith('executeJavaScript'),
     )
-    expect(zakazane).toEqual([])
+    expect(forbidden).toEqual([])
   })
 
   test('empty text touches neither the clipboard nor the view', () => {
-    const wc = atrapaWebContents()
-    const schowek = atrapaSchowka()
+    const webContents = fakeWebContents()
+    const clipboard = fakeClipboard()
 
-    insertText(wc, '', schowek)
+    insertText(webContents, '', clipboard)
 
-    expect(schowek.zapisy).toEqual([])
-    expect(wc.calls).toEqual([])
+    expect(clipboard.writes).toEqual([])
+    expect(webContents.calls).toEqual([])
   })
 })
