@@ -60,6 +60,40 @@ so a multi-megabyte video never lingers on disk without an owner.
 Renaming an account **does not touch its identifier**, because the session partition is built from
 it (`persist:<id>`) — fixing a typo will not sign you out.
 
+## The services
+
+| | |
+|---|---|
+| **WhatsApp** | as many accounts as you like, each its own sign-in |
+| **Messenger** | messenger.com |
+| **LinkedIn** | the whole service — feed, jobs, learning, messaging — not only the message box |
+| **Facebook** | the whole service |
+
+Facebook and Messenger are **separate accounts with separate sign-ins**, even for one Meta
+identity, because each account is its own session. Signing in to both means two sign-ins and,
+on a Meta account, possibly two security reviews.
+
+**Counts are only shown where the service puts one in its page title**, and only where that
+number means what a count next to a channel is read to mean: waiting conversations. WhatsApp
+and Messenger do. LinkedIn's number is the sum of eight different badges — feed, jobs,
+notifications, messaging — so it shows none; Facebook's format could not be confirmed, so it
+shows none either. Nothing here reads the contents of a page to find out.
+
+**Notifications are per account.** Messengers may interrupt straight away; LinkedIn and
+Facebook stay quiet until you allow them in that account's settings, because a whole service
+notifies about reactions, groups, pages and birthdays, not only about somebody writing to
+you. You can silence a messenger the same way.
+
+**Every account is loaded and stays loaded**, which costs about 250 MB each once its page is
+up — measured at 754 MB for one account, 1266 MB for three and 1760 MB for five. That is
+deliberate: an account that is not loaded cannot notify you or count anything, which is the
+whole point. Five accounts want about two gigabytes; decide accordingly.
+
+> **Going back a version deletes new accounts.** A build that predates LinkedIn and Facebook
+> does not recognise them, silently drops them when it reads `accounts.json`, and the next
+> save writes the shortened list. If you downgrade, those accounts and their sign-ins are
+> gone.
+
 ## The interface
 
 The app wraps someone else's UI, so its own chrome is deliberately desaturated: the only saturated

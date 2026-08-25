@@ -95,11 +95,23 @@ existing infrastructure.
 ```
 main window (BrowserWindow)
 ├── channel rail + macro panel          ← renderer, plain HTML/CSS
-└── content area
-    ├── WebContentsView  session persist:acc-messenger  → messenger.com
-    ├── WebContentsView  session persist:acc-wa-priv    → web.whatsapp.com
-    └── WebContentsView  session persist:acc-wa-work    → web.whatsapp.com
+├── content area
+│   ├── WebContentsView  session persist:acc-messenger  → messenger.com
+│   ├── WebContentsView  session persist:acc-wa-priv    → web.whatsapp.com
+│   ├── WebContentsView  session persist:acc-wa-work    → web.whatsapp.com
+│   ├── WebContentsView  session persist:acc-linkedin   → linkedin.com/feed/
+│   └── WebContentsView  session persist:acc-facebook   → facebook.com
+└── child window, on demand             ← a sign-in the service opens for itself,
+                                          in the SAME session, titled by its origin,
+                                          sandboxed, and gone when its opener is
 ```
+
+Each view costs about 250 MB once its page has loaded — measured 2026-08-25 at 754 MB for
+one account, 1266 for three and 1760 for five, on a machine with 16 GB. Every account is
+loaded at startup and stays loaded, deliberately: an account that is not loaded delivers no
+notification and reports no count, which is the entire reason this application exists.
+Whether five accounts are worth two gigabytes is the operator's decision, so the number is in
+the README rather than hidden behind a lazy-loading switch.
 
 Isolation comes from a separate session partition per account. The two WhatsApp accounts
 see each other as two independent browsers — they share no cookies, no `localStorage` and
@@ -377,6 +389,36 @@ Two things the plan expected to build turned out to be there already, and are no
 tests rather than rebuilt: the keyboard DOES return to the account after an insertion —
 closing a `<dialog>` restores focus to the native view that held it — and the palette header
 has named the destination account since stage 2.
+
+**Stage 7 — whole services. DONE 2026-08-25**, except Telegram, which stays out.
+
+LinkedIn and Facebook can be added like any other account, and stand entirely on the
+navigation contract from 5.6: a full service is a few hundred outgoing links, each of which
+would otherwise open a bare window carrying the account's signed-in session.
+
+- **LinkedIn is entered at `/feed/` on the www host**, never at the apex — measured twice
+  with curl, the apex answers "Checking your browser - reCAPTCHA". Its sign-in hosts are
+  declared, because they genuinely leave the service: Apple's opens a window and answers
+  through `postMessage` to its opener, so it can neither go to the system browser nor be
+  denied.
+- **Neither service shows a count.** `unreadFromTitle` now reads "(99+)" correctly — it used
+  to return zero, so the badge vanished exactly when an account was busiest — but LinkedIn's
+  number is the sum of eight badge sources, and Facebook's 2026 format could not be confirmed
+  at all. Both are one word from being turned on and the reason sits on the entry.
+- **Notifications are controlled per account**, which was the condition for shipping
+  Facebook. Messengers may interrupt out of the box, whole services stay quiet until asked,
+  and the account overrides its platform in either direction.
+
+**A one-way door.** An `accounts.json` holding a `linkedin` or `facebook` account, opened by
+a build that predates them, is silently dropped by the validation filter in `loadAccounts` —
+and the next save writes the shortened list. Going back a version deletes those accounts and
+their sign-ins. This is in both READMEs and belongs in the release notes.
+
+**Telegram is not here.** It works, its session stands on its own, and its client is GPLv3 —
+but its title says "3 notifications" only while the tab is idle, blinking once a second, and
+one of the two clients reports a delta rather than a total. It was optional in the plan, it
+needs an account to verify, and a closed platform list is only worth anything while every
+entry on it has been seen working.
 
 ## 10. Tests
 

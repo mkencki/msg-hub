@@ -56,6 +56,39 @@ magazyn, żeby kilkumegabajtowe wideo nie zostawało na dysku bez właściciela.
 Zmiana nazwy konta **nie rusza jego identyfikatora**, bo na identyfikatorze stoi
 partycja sesji (`persist:<id>`) — poprawka literówki nie wylogowuje konta.
 
+## Serwisy
+
+| | |
+|---|---|
+| **WhatsApp** | dowolnie wiele kont, każde z własnym logowaniem |
+| **Messenger** | messenger.com |
+| **LinkedIn** | cały serwis — feed, oferty, learning, wiadomości — a nie sama skrzynka |
+| **Facebook** | cały serwis |
+
+Facebook i Messenger to **osobne konta z osobnym logowaniem**, nawet dla jednej tożsamości
+Mety, bo każde konto ma własną sesję. Zalogowanie się do obu oznacza dwa logowania i — na
+koncie Mety — możliwe dwa przeglądy bezpieczeństwa.
+
+**Licznik pokazujemy tylko tam, gdzie serwis podaje go w tytule strony** i tylko tam, gdzie
+ta liczba znaczy to, co licznik przy kanale ma znaczyć: czekające rozmowy. WhatsApp
+i Messenger tak mają. Liczba LinkedIna to suma ośmiu różnych odznak — feed, oferty,
+powiadomienia, wiadomości — więc nie pokazuje żadnej; formatu Facebooka nie udało się
+potwierdzić, więc też nie. Nic tutaj nie czyta zawartości stron, żeby to ustalić.
+
+**Powiadomienia są per konto.** Komunikatory mogą przerywać od razu; LinkedIn i Facebook
+milczą, dopóki im nie pozwolisz w ustawieniach tego konta — bo cały serwis powiadamia
+o reakcjach, grupach, stronach i urodzinach, a nie tylko o tym, że ktoś do Ciebie pisze.
+Komunikator możesz uciszyć tak samo.
+
+**Każde konto jest wczytane i pozostaje wczytane**, co kosztuje około 250 MB, gdy strona już
+wstanie — zmierzone: 754 MB przy jednym koncie, 1266 MB przy trzech, 1760 MB przy pięciu. To
+jest celowe: konto niewczytane nie powiadomi i niczego nie policzy, a po to ta apka istnieje.
+Pięć kont chce około dwóch gigabajtów; decyduj świadomie.
+
+> **Cofnięcie wersji kasuje nowe konta.** Build starszy niż LinkedIn i Facebook ich nie zna,
+> po cichu je pomija przy czytaniu `accounts.json`, a najbliższy zapis utrwala skróconą listę.
+> Po cofnięciu wersji te konta i ich logowania przepadają.
+
 ## Interfejs: konsola operatora
 
 Aplikacja obudowuje cudzy interfejs, więc jej własne chrome jest celowo odbarwione —
