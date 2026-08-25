@@ -14,6 +14,7 @@
   "private": true,
   "scripts": {
     "start": "electron .",
+    "icon": "node build/make-icon.mjs",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "dist": "electron-builder --win portable --publish never",

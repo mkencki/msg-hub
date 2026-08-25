@@ -25,7 +25,12 @@ const RAIL_COLLAPSED = 48
 const RAIL_EXPANDED = 162
 const STATUS_BAR_HEIGHT = 30
 const WELL_MARGIN = 10
-const ICON_PATH = path.join(HERE, '..', 'renderer', 'icon.png')
+// The window icon is an .ico rather than a PNG on purpose: Windows draws it at 16, 24 or 32
+// pixels depending on where it appears, and the shell scaling one 256 px bitmap down is
+// visibly worse than a frame drawn for that size. The tray takes the 32 and halves it — an
+// exact division, unlike 256 into 16.
+const ICON_PATH = path.join(HERE, '..', 'renderer', 'icons', 'app.ico')
+const TRAY_ICON_PATH = path.join(HERE, '..', 'renderer', 'icons', 'icon-32.png')
 const MACRO_SHORTCUT = 'Control+Shift+Space'
 
 app.userAgentFallback = cleanUserAgent(app.userAgentFallback)
@@ -467,7 +472,7 @@ async function createWindow() {
 function buildTray() {
   if (!tray) {
     // An empty tray icon is INVISIBLE on Windows — it has to be a real image.
-    tray = new Tray(nativeImage.createFromPath(ICON_PATH).resize({ width: 16, height: 16 }))
+    tray = new Tray(nativeImage.createFromPath(TRAY_ICON_PATH).resize({ width: 16, height: 16 }))
     tray.setToolTip('msg-hub')
     tray.on('click', () => (window?.isVisible() ? window.hide() : window?.show()))
   }
