@@ -54,6 +54,8 @@ let logDir
 // Closing the window hides it; only a deliberate Quit ends the process. Without this flag
 // the close handler could not tell the two apart and Quit would hide the window forever.
 let quitting = false
+// Armed only while an account's zero is being held — see refreshBadge.
+let badgeTimer = null
 
 // Interface language. The main process owns the stored value, while the list of
 // languages lives in src/shared/i18n.js. The tray menu and load errors are main-process
@@ -269,6 +271,15 @@ async function createWindow() {
     tray?.setToolTip(total ? tr('trayUnread', { n: total }) : 'msg-hub')
     // The renderer also gets the per-account breakdown — the rail shows a count on each.
     if (!window.webContents.isDestroyed()) window.webContents.send('unread:changed', { total, byAccount })
+
+    // A count being held at its last non-zero value has nothing to wake it: the page that
+    // stopped blinking stopped sending titles too. One timer, rearmed on every pass, and
+    // never more than one — the fifty milliseconds are there so the deadline has actually
+    // passed by the time the badge is worked out again, rather than being reached exactly.
+    if (badgeTimer) clearTimeout(badgeTimer)
+    badgeTimer = null
+    const due = manager.pendingBadgeAt()
+    if (due !== null) badgeTimer = setTimeout(refreshBadge, Math.max(0, due - Date.now()) + 50)
   }
 
   ipcMain.handle('unread:overlay', (_event, image) => {
@@ -532,6 +543,9 @@ app.on('before-quit', () => {
   quitting = true
   globalShortcut.unregisterAll()
   clipboardSession?.close()
+  // A pending badge recheck would reach for a window that is on its way out.
+  if (badgeTimer) clearTimeout(badgeTimer)
+  badgeTimer = null
 })
 
 app.on('window-all-closed', () => app.quit())

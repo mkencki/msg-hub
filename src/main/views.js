@@ -1,5 +1,6 @@
 import { WebContentsView } from 'electron'
 import { PLATFORMS } from './accounts.js'
+import { UnreadLatch } from './unread.js'
 
 export function cleanUserAgent(defaultUA) {
   return String(defaultUA)
@@ -52,10 +53,16 @@ export function createView(account, defaultUA, onError = () => {}, View = WebCon
 }
 
 export class ViewManager {
-  constructor(window, defaultUA, onError = () => {}) {
+  // The clock is a parameter for the same reason createView takes its view class: the rule
+  // the latch enforces is about elapsed time, and it has to be examinable without waiting.
+  constructor(window, defaultUA, onError = () => {}, { now = () => Date.now() } = {}) {
     this.window = window
     this.defaultUA = defaultUA
     this.onError = onError
+    this.now = now
+    // What a page CLAIMS is not what the rail shows: a page with something waiting blinks its
+    // own title, and the count has to survive the half of that blink which says zero.
+    this.latch = new UnreadLatch()
     this.views = new Map()
     // Whether an account's page title carries a count worth showing. Declared per platform
     // in accounts.js and kept here, because this is where the badge is worked out and a
@@ -88,6 +95,7 @@ export class ViewManager {
     view.webContents.close()
     this.views.delete(accountId)
     this.countsUnread.delete(accountId)
+    this.latch.forget(accountId)
     if (this.activeId === accountId) {
       this.activeId = null
       const next = this.views.keys().next()
@@ -139,13 +147,23 @@ export class ViewManager {
   // The channel rail shows a count next to EVERY account, so a bare total is not enough.
   unreadByAccount() {
     const result = {}
+    const now = this.now()
     for (const [id, view] of this.views) {
       if (view.webContents.isDestroyed()) continue
       // A service that does not count messages shows nothing rather than something that
       // looks like a message count and is not one.
-      result[id] = this.countsUnread.get(id) === false ? 0 : unreadFromTitle(view.webContents.getTitle())
+      const claimed = this.countsUnread.get(id) === false ? 0 : unreadFromTitle(view.webContents.getTitle())
+      this.latch.report(id, claimed, now)
+      result[id] = this.latch.value(id, now)
     }
     return result
+  }
+
+  // When a held zero falls due, or null when nothing is being held. Main arms a timer for
+  // this moment: a page that has stopped blinking has stopped sending titles too, and without
+  // it the last count would stay on the badge for good.
+  pendingBadgeAt() {
+    return this.latch.dueAt()
   }
 
   unreadTotal() {

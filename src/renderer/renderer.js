@@ -591,10 +591,17 @@ export function drawUnreadBadge(total) {
 
 // The main process sends the total and the per-account breakdown — the rail shows a count
 // on each channel, and the taskbar overlay still needs the total on its own.
+let overlayTotal = null
+
 window.msgHub.onUnread((data) => {
   const total = typeof data === 'number' ? data : (data?.total ?? 0)
   unreadByAccount = typeof data === 'number' ? {} : (data?.byAccount ?? {})
   refreshUnread()
+  // Redrawing the same badge is not free and it is not nothing: setOverlayIcon replaces the
+  // image on the taskbar button every time it is called, and this used to be called on every
+  // title event a page produced.
+  if (total === overlayTotal) return
+  overlayTotal = total
   window.msgHub.setOverlay(drawUnreadBadge(total))
 })
 
