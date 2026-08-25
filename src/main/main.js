@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain } from 'electron'
+import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, globalShortcut } from 'electron'
 import path from 'node:path'
 import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -24,6 +24,7 @@ const RAIL_EXPANDED = 162
 const STATUS_BAR_HEIGHT = 30
 const WELL_MARGIN = 10
 const ICON_PATH = path.join(HERE, '..', 'renderer', 'icon.png')
+const MACRO_SHORTCUT = 'Control+Shift+Space'
 
 app.userAgentFallback = cleanUserAgent(app.userAgentFallback)
 
@@ -87,6 +88,18 @@ async function createWindow() {
       if (input.key === 'F12' || (input.control && input.shift && input.key.toLowerCase() === 'i')) {
         const target = manager?.active()?.webContents ?? window.webContents
         target.toggleDevTools()
+        return
+      }
+
+      // Reaching an account without the mouse. The rail's channels are real buttons, but
+      // in normal use the keyboard is inside an account page, where Tab never gets to
+      // them. The renderer is asked to switch rather than the manager being told directly:
+      // it already owns switching, and going round it would leave the rail highlighting
+      // the account the operator just left. Services grab Ctrl+digit for themselves —
+      // Discord does — so the key is taken out of the page's reach.
+      if (input.control && !input.shift && !input.alt && /^[1-9]$/.test(input.key)) {
+        _event.preventDefault()
+        window.webContents.send('accounts:select', Number(input.key) - 1)
         return
       }
 
@@ -251,6 +264,20 @@ async function createWindow() {
   await window.loadFile(path.join(HERE, '..', 'renderer', 'index.html'))
   refreshBadge()
 
+  // The one shortcut that has to work when the app is not in front at all — that is the
+  // whole point of a macro palette for someone typing in another program. register()
+  // answers with a boolean and says nothing when another program already owns the
+  // combination, and silence would look exactly like a shortcut that works.
+  const claimed = globalShortcut.register(MACRO_SHORTCUT, () => {
+    if (!window || window.isDestroyed()) return
+    if (!window.isVisible()) window.show()
+    if (window.isMinimized()) window.restore()
+    window.focus()
+    window.webContents.focus()
+    window.webContents.send('macros:open')
+  })
+  if (!claimed) showMessage(tr('shortcutTaken', { shortcut: MACRO_SHORTCUT }))
+
   // Saving the layout must FINISH before the window closes — otherwise app.quit() cuts
   // the asynchronous write short and the window position does not survive a restart. The
   // same write has to happen on the way to the tray, because from there the process may
@@ -326,6 +353,7 @@ if (!app.requestSingleInstanceLock()) {
 // arrives here first, and from here on a close means a close.
 app.on('before-quit', () => {
   quitting = true
+  globalShortcut.unregisterAll()
   clipboardSession?.close()
 })
 

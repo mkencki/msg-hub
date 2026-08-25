@@ -121,6 +121,14 @@ document.getElementById('pin-rail').addEventListener('click', () => {
 
 window.msgHub.onRailChange(applyRailState)
 
+// Ctrl+1..9 arrives from the main process as a POSITION, because that is all a digit means.
+// Which account sits at that position is the rail's business, and past the end of a short
+// rail the answer is simply nobody.
+window.msgHub.onSelectAccount((index) => {
+  const account = railAccounts[index]
+  if (account) switchTo(account.id)
+})
+
 // The main process holds back a leave that arrived while the window was in the background,
 // and asks again once the window is back. :hover is Chromium's own answer to "is the
 // pointer over this element", which is exactly the question, and the only one worth

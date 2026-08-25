@@ -23,6 +23,7 @@ contextBridge.exposeInMainWorld('msgHub', {
   onUnread: (listener) => ipcRenderer.on('unread:changed', (_event, data) => listener(data)),
   setOverlay: (image) => ipcRenderer.invoke('unread:overlay', image),
   onOpenMacros: (listener) => ipcRenderer.on('macros:open', () => listener()),
+  onSelectAccount: (listener) => ipcRenderer.on('accounts:select', (_event, index) => listener(index)),
   listMacros: (phrase) => ipcRenderer.invoke('macros:list', phrase),
   saveMacro: (macro) => ipcRenderer.invoke('macros:save', macro),
   removeMacro: (macroId) => ipcRenderer.invoke('macros:remove', macroId),
