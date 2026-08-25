@@ -43,6 +43,10 @@ Skrót w menu Start wskazuje `node_modules/electron/dist/electron.exe` z katalog
 | **Edytor makra** | pasek formatowania WhatsApp, podgląd na żywo, dodawanie i zdejmowanie załączników |
 | **Załączniki** | PDF i mp4 **kopiowane do magazynu aplikacji** — oryginalny plik przestaje być potrzebny; limit 100 MB |
 | **Język** | angielski i polski, przełączany w Ustawieniach bez restartu; wybór przeżywa restart |
+| **Klawiatura** | `Ctrl+1`..`Ctrl+9` skaczą do kanału, `Ctrl+;` otwiera makra, `Ctrl+Shift+Space` robi to z dowolnego programu, `Ctrl+R` przeładowuje oglądane konto |
+| **Zasobnik** | zamknięcie okna zostawia apkę żywą i czuwającą; można to wyłączyć w Ustawieniach. Autostart naprawdę startuje ukryty |
+| **Odzyskiwanie** | konto, które padło, zawisło albo się zdezaktualizowało, proponuje przeładowanie w pasku statusu — nic nie przeładowuje się samo, bo to skasowałoby na wpół napisaną wiadomość |
+| **Linki** | link z rozmowy otwiera się w twojej przeglądarce, a nie w oknie bez paska adresu, niosącym twoją zalogowaną sesję |
 
 Makra i załączniki żyją w `%APPDATA%\msg-hub` (`macros.json` oraz katalog `att/`),
 konta w `accounts.json` obok nich. Usunięcie makra albo zdjęcie załącznika sprząta

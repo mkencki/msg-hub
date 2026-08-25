@@ -47,6 +47,10 @@ npm start
 | **Macro editor** | WhatsApp formatting bar, live preview, attachments added and removed in place |
 | **Attachments** | PDF and mp4 **copied into the app's own storage** — you no longer need the original file; 100 MB limit |
 | **Language** | English and Polish, switched in Settings without restarting; the choice survives a restart |
+| **Keyboard** | `Ctrl+1`..`Ctrl+9` jump to a channel, `Ctrl+;` opens macros, `Ctrl+Shift+Space` does it from any program, `Ctrl+R` reloads the account you are looking at |
+| **Tray** | closing the window keeps the app running and noticing; switch it off in Settings. Autostart really does start hidden |
+| **Recovery** | a crashed, hung or stale account offers a reload in the status bar — nothing reloads by itself, because that would throw away a half-typed message |
+| **Links** | a link out of a conversation opens in your own browser, not in a window without an address bar carrying your signed-in session |
 
 Macros and attachments live in `%APPDATA%\msg-hub` (`macros.json` and the `att/` directory),
 accounts in `accounts.json` next to them. Deleting a macro or detaching a file cleans the storage,

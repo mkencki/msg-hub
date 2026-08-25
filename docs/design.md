@@ -316,6 +316,48 @@ formatting bar and a preview, the `Ctrl+;` shortcut.
 
 **Stage 4 — distribution.** `electron-builder`, a single installer, autostart.
 
+**Stage 5 — staying alive. DONE 2026-08-25.**
+
+The app is asked to sit in the tray all day and notice things. Everything here serves that,
+and each item below was measured before it was changed rather than assumed.
+
+- **The rail no longer closes under the operator's own cursor** when another window takes the
+  foreground. Chromium reports that as a mouseleave carrying the position the pointer had all
+  along; `acceptHoverReport` in `shell.js` weighs the report, and returning to the foreground
+  asks the renderer where the pointer is now, because holding a report back loses it.
+- **Accounts in the background run at full speed.** `backgroundThrottling` was unset, so a
+  100 ms timer ticked 10 times in ten seconds in a hidden view instead of 100 — and hiding the
+  window to the tray put the ACTIVE account in that state too.
+- **A second copy over the same profile gives up** instead of fighting the first over the
+  cookie stores, where the loser loses its sign-in.
+- **The window button puts the app in the tray**, on by default, switchable in Settings.
+  Autostart passes `--hidden` on the command line and the window is built unshown;
+  `openAsHidden` is macOS-only and did nothing here.
+- **Ctrl+1..9 selects a channel by position** and **Ctrl+Shift+Space** raises the window and
+  opens the macro palette from anywhere. A refused global shortcut is reported rather than
+  left silent.
+- **Clicking a notification lands on the account it came from.** A view taking focus asks the
+  renderer to switch — but not until its first load has settled, because a view takes focus
+  while it is being created and the app would otherwise start on whichever account happened
+  to finish last.
+- **A stale or dead account can be reloaded** without restarting the others: Ctrl+R, and a
+  button in the status bar offered after a crash, a hang, a failed load or waking from sleep.
+  Nothing reloads on its own, because reloading throws away a half-typed message.
+- **A local log** in `%APPDATA%\msg-hub\logs\`, reachable from the tray. It writes only the
+  fields on a declared list and drops everything else, so it can be sent to somebody. Page
+  titles are excluded precisely because they carry contact names.
+- **The clipboard session survives a bad day**: stderr is drained, a timed-out process is put
+  down rather than reused, and a clipboard that refuses a file is reported instead of
+  escaping the handler.
+
+**Stage 5.6 — the navigation contract** is called out separately because stage 7 depends on
+it. Every address now has a declared place to open: the account view, a controlled child
+window, the system browser, or nowhere. The decision rests on host lists a platform declares,
+never on how a window was asked for — a sign-in popup and a link to an article cannot be told
+apart by disposition or features. Host matching is a suffix comparison on a dot boundary, the
+external list is consulted first because link shims live on the service's own domain, and only
+`http:` and `https:` are ever handed to the system.
+
 ## 10. Tests
 
 Behaviour is tested, not implementation detail.
