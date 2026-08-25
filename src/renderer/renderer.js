@@ -98,13 +98,34 @@ function applyRailState({ pinned, expanded }) {
 }
 
 rail.addEventListener('mouseenter', () => window.msgHub.hoverRail(true))
-rail.addEventListener('mouseleave', () => window.msgHub.hoverRail(false))
+
+// A mouseleave does not always mean the pointer left. Chromium fires one when the window
+// stops being the foreground window, carrying the position the pointer had all along —
+// measured 2026-08-25 at clientX 24 inside a rail box of 0..162, with the cursor never
+// moved. Whether that is worth acting on is the main process's call, because only it knows
+// whether the window is still focused; the renderer's job is to report WHERE the pointer
+// was when the event arrived, which is the one thing the event actually knows.
+rail.addEventListener('mouseleave', (event) => {
+  const box = rail.getBoundingClientRect()
+  const pointerStillInside =
+    event.clientX >= box.left &&
+    event.clientX < box.right &&
+    event.clientY >= box.top &&
+    event.clientY < box.bottom
+  window.msgHub.hoverRail(false, pointerStillInside)
+})
 
 document.getElementById('pin-rail').addEventListener('click', () => {
   window.msgHub.pinRail(!railPinned)
 })
 
 window.msgHub.onRailChange(applyRailState)
+
+// The main process holds back a leave that arrived while the window was in the background,
+// and asks again once the window is back. :hover is Chromium's own answer to "is the
+// pointer over this element", which is exactly the question, and the only one worth
+// trusting after a spell in which our mouse events were not being delivered.
+window.msgHub.onRailRecheck(() => window.msgHub.hoverRail(rail.matches(':hover'), false))
 
 async function refreshRail() {
   railAccounts = await window.msgHub.listAccounts()

@@ -3,7 +3,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { loadLayout, saveLayout, DEFAULT_LAYOUT } from '../src/main/shell.js'
+import { loadLayout, saveLayout, acceptHoverReport, DEFAULT_LAYOUT } from '../src/main/shell.js'
 
 let file, dir
 
@@ -90,5 +90,40 @@ describe('the pinned rail inside the layout', () => {
     await saveLayout(file, { ...DEFAULT_LAYOUT, railPinned: 'tak' })
 
     expect((await loadLayout(file)).railPinned).toBe(true)
+  })
+})
+
+describe('acceptHoverReport', () => {
+  const report = (overrides) => ({
+    hovered: false,
+    pointerStillInside: false,
+    windowFocused: true,
+    ...overrides,
+  })
+
+  test('the pointer entering the rail is always worth acting on', () => {
+    expect(acceptHoverReport(report({ hovered: true, windowFocused: false }))).toBe(true)
+  })
+
+  test('the pointer leaving while the window is focused collapses the rail', () => {
+    expect(acceptHoverReport(report({ pointerStillInside: false }))).toBe(true)
+  })
+
+  // The artefact this exists for: another window took the foreground, the pointer never
+  // moved, and Chromium reported a leave from a position still inside the rail.
+  test('a leave reported from inside the rail by an unfocused window is ignored', () => {
+    expect(acceptHoverReport(report({ pointerStillInside: true, windowFocused: false }))).toBe(false)
+  })
+
+  // Opening a modal dialog also produces a leave from inside the rail. That one is real —
+  // the window still has the foreground — and swallowing it would leave the rail stuck open.
+  test('a leave reported from inside the rail by the focused window still counts', () => {
+    expect(acceptHoverReport(report({ pointerStillInside: true, windowFocused: true }))).toBe(true)
+  })
+
+  // The pointer genuinely left while the window was in the background: nothing spurious
+  // about it, and the rail must not be left open on a stale hover.
+  test('a leave from outside the rail counts even with the window in the background', () => {
+    expect(acceptHoverReport(report({ pointerStillInside: false, windowFocused: false }))).toBe(true)
   })
 })

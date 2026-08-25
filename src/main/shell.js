@@ -56,3 +56,20 @@ export async function saveLayout(filePath, layout, legacyPath = null) {
 export function setAutoStart(enabled, app) {
   app.setLoginItemSettings({ openAtLogin: Boolean(enabled), openAsHidden: true })
 }
+
+// A mouseleave on the channel rail does not always mean the pointer left it. Chromium fires
+// one when the window stops being the foreground window, and it carries the position the
+// pointer had all along — measured 2026-08-25 at clientX 24 inside a rail box of 0..162,
+// with the cursor never moved. Acting on that shuts the rail under the cursor of someone
+// who did nothing, and it stays shut when they come back, because coming back produces no
+// fresh mouseenter.
+//
+// BOTH halves of the condition below are needed, and each covers the other's mistake.
+// Position alone also swallows the genuine leave that opening a modal dialog produces,
+// which fires with the pointer inside the rail too — and then the rail never closes again.
+// Focus alone swallows every leave that arrives while another window happens to be in
+// front, which on a busy machine is most of them.
+export function acceptHoverReport({ hovered, pointerStillInside, windowFocused }) {
+  if (hovered) return true
+  return !(pointerStillInside && !windowFocused)
+}

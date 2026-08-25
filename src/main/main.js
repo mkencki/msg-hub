@@ -3,7 +3,7 @@ import path from 'node:path'
 import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { cleanUserAgent, ViewManager } from './views.js'
-import { loadLayout, saveLayout, setAutoStart } from './shell.js'
+import { loadLayout, saveLayout, setAutoStart, acceptHoverReport } from './shell.js'
 import { loadAccounts } from './accounts.js'
 import { registerAccountChannels, registerMacroChannels } from './bridge.js'
 import { createClipboardSession } from './file-clipboard.js'
@@ -132,7 +132,10 @@ async function createWindow() {
   // the views, so the renderer only reports events and receives a finished decision.
   ipcMain.handle('rail:state', () => railState())
 
-  ipcMain.handle('rail:hover', (_event, hovered) => {
+  // Not every mouseleave the renderer reports means the pointer left — see
+  // acceptHoverReport in shell.js, where the rule and the measurement behind it live.
+  ipcMain.handle('rail:hover', (_event, hovered, pointerStillInside) => {
+    if (!acceptHoverReport({ hovered, pointerStillInside, windowFocused: window.isFocused() })) return
     railHovered = Boolean(hovered)
     fitViews()
     broadcastRailState()
@@ -144,6 +147,14 @@ async function createWindow() {
     broadcastRailState()
   })
   window.on('resize', fitViews)
+
+  // acceptHoverReport holds back a leave reported from inside the rail while the window was
+  // in the background — but holding one back loses it, and Chromium sends no second one
+  // once it considers the pointer gone. So the moment the window is back in front, ask the
+  // renderer where the pointer actually is now instead of living on the stale answer.
+  window.on('focus', () => {
+    if (!window.webContents.isDestroyed()) window.webContents.send('rail:recheck')
+  })
 
   const currentLayout = () => {
     const rect = window.getNormalBounds()
