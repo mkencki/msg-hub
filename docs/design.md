@@ -427,6 +427,54 @@ entry on it has been seen working.
 
 **Stage 8 — four things the operator found in a day of use. DONE 2026-08-25.**
 
+**0.3.0 had no release because it had no tag.** The workflow publishes on `refs/tags/` and
+nothing else, and the version in `package.json` was raised without one being pushed. Not a
+failure of the pipeline — a step nobody took. A release now also says what the version changes:
+the body is the section for that tag cut out of `docs/release-notes.md`, followed by the
+installation caveats, and a tag with no section fails the step instead of publishing an empty
+body.
+
+**A pinned button takes its icon from the shortcut, never from the running window.** Measured
+2026-08-25: the pinned `Electron.lnk` targeted `node_modules\electron\dist\electron.exe` with
+`IconLocation ",0"` — the atom, straight out of the target — and the `msg-hub.lnk` already in
+the Start menu pointed at `build\ikona.ico`, a file gone since the repository was anglicised.
+Installing the packaged build is the usual answer and is not available on a machine with Smart
+App Control, where running from source is the supported path. So `npm run shortcut` writes the
+shortcut instead, with the icon and — through the shell property store, because `WScript.Shell`
+has no idea it exists — the same AppUserModelID the application sets at startup. Without the
+identity the live window will not merge into the pinned button, and the taskbar carries two.
+
+**The icon carries nine frames.** It had one, 256 square, and Windows draws it at 16, 24 or 32
+everywhere that matters. `build/ico.mjs` assembles the `.ico` from the PNG set in
+`src/renderer/icons`, which is the one place the artwork lives; `build/icon.ico` is generated
+from the same bytes for electron-builder, and a test fails if the two drift apart. The set is
+under `src/` because `package.json` packs `src/**/*` and nothing else — an icon in `build/`
+reaches the installer and never reaches the installed application.
+
+**The badge stopped following the page's blink.** A page with something waiting alternates its
+own title — "(1) Messenger", "Messenger", about once a second — and the count read that
+literally, so the overlay appeared for a second and vanished for the next. Nothing in the path
+from a title to the badge has a clock, which left the page as the only candidate; the same
+behaviour is recorded above as one of the reasons Telegram is out. The latch in
+`src/main/unread.js` is one-sided: a count going UP is shown at once, a zero is believed only
+after three seconds of zeros. Measured after: 40 of 40 samples over ten seconds kept the count
+while the page blinked every 0.9 s, and a page that genuinely went quiet cleared it in 2583 ms.
+The timer in `refreshBadge` is the part that is easy to omit — a page that stops blinking stops
+sending titles, so a held zero has nothing coming to release it.
+
+**A download says how it ended.** The handling was one line announcing the start, and nothing
+ever asked the item how it went, so "Downloading …" stayed on the bar with the file already on
+the disk. It now ends: saved, with a button to the folder it landed in; or cancelled or
+interrupted, with which. A success takes itself away after eight seconds, a failure does not.
+The identity carried by a message is what makes that safe — a timer hides only the message it
+put there, never the crash report that took the bar over in the meantime. Settings gained the
+folder and the "ask every time" switch, which starts ON because asking is what Electron already
+does when no path is set. Turning it off means the application sets the path, and from that
+moment Chromium stops numbering repeated names — hence `uniquePath`, or the same attachment
+downloaded twice would land on top of itself. "Show in folder" is given the id of a download
+this process recorded, never a path: `showItemInFolder` with an argument a page could choose
+would point Explorer at anything on the disk.
+
 **What Explorer does with a folder it is handed.** "Show in folder" was asked to open a tab in
 an Explorer window that is already up, and a new window only when none is in front. That
 decision belongs to the shell, not to this application: `shell.showItemInFolder` calls

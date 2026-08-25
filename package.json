@@ -1,6 +1,6 @@
 {
   "name": "msg-hub",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Messenger and two WhatsApp accounts in one window, each in an isolated session, with text macros and attachments",
   "author": "Marek Kencki",
   "license": "MIT",

@@ -1,5 +1,38 @@
 # Release notes
 
+## 0.4.0 — the mark, a badge that stays put, and downloads that finish
+
+Four things found in the first day of using 0.3.0.
+
+**The taskbar shows msg-hub.** The application has a new mark — three isolated account modules
+in one tile, the active one amber — and it now carries nine frames, from 16 to 256 pixels,
+instead of one 256 that Windows had to scale down everywhere it actually draws an icon.
+
+If you run from source, `npm run shortcut` writes a Start menu shortcut carrying that icon and
+the application's identity; pin **msg-hub** from there and unpin any older "Electron" button.
+Windows takes a pinned button's icon from the shortcut, never from the running window, so
+pinning a source run without this pins `electron.exe` — Electron's own logo included. An
+installed build needs none of it.
+
+**The unread badge stops blinking.** A page with something waiting alternates its own title —
+"(1) Messenger", then "Messenger", about once a second — and the badge was following it, on for
+a second and off for the next. A count going up is still shown at once; a count dropping to zero
+is now believed only after three seconds of zeros. Reading your last conversation clears the
+badge a moment later; a blinking page never clears it at all.
+
+**A download says how it ended.** The banner used to say "Downloading…" for the rest of the
+session, with the file already on the disk. It now becomes "Saved …", with a button that opens
+the folder the file landed in, and it takes itself away after a few seconds. A download that
+failed or was cancelled says so and stays.
+
+**Settings gained a download folder** and a "ask where to save every file" switch, which starts
+on — that is what the application already did, it just had no way to say so or to stop. Turn it
+off and files go straight to the folder you named, numbered rather than overwritten when a name
+repeats.
+
+Nothing in this version changes `accounts.json`, `macros.json` or the attachment store, and
+nothing about it is one-way.
+
 ## 0.3.0 — staying alive, macros 2.0, whole services
 
 **Accounts stay awake.** Chromium treats a view of zero height as a hidden tab and slows its
