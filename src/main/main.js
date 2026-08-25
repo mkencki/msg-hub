@@ -268,10 +268,26 @@ function buildTray() {
   )
 }
 
-app.whenReady().then(async () => {
-  await createWindow()
-  buildTray()
-})
+// Two copies over one profile is not a tidiness problem: each keeps its own picture of the
+// cookie stores, and whichever loses the write loses its sign-in. On WhatsApp that means
+// scanning a QR code again, and which copy loses is not predictable. The lock has to be
+// taken BEFORE whenReady, or the second copy gets far enough to build a window first.
+if (!app.requestSingleInstanceLock()) {
+  app.quit()
+} else {
+  // Launching again is someone asking to see the app, and usually it is in the tray.
+  app.on('second-instance', () => {
+    if (!window || window.isDestroyed()) return
+    if (!window.isVisible()) window.show()
+    if (window.isMinimized()) window.restore()
+    window.focus()
+  })
+
+  app.whenReady().then(async () => {
+    await createWindow()
+    buildTray()
+  })
+}
 
 app.on('before-quit', () => clipboardSession?.close())
 
