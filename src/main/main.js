@@ -33,6 +33,11 @@ const WELL_MARGIN = 10
 const ICON_PATH = path.join(HERE, '..', 'renderer', 'icons', 'app.ico')
 const TRAY_ICON_PATH = path.join(HERE, '..', 'renderer', 'icons', 'icon-32.png')
 const MACRO_SHORTCUT = 'Control+Shift+Space'
+// How long a finished download stays on the status bar. Long enough to read it and reach the
+// button beside it; short enough that a success does not have to be dismissed by hand, which
+// is the complaint this whole path exists to answer. A FAILED download does not disappear —
+// that one the operator has to notice.
+const DOWNLOAD_MESSAGE_MS = 8000
 
 app.userAgentFallback = cleanUserAgent(app.userAgentFallback)
 
@@ -153,8 +158,17 @@ async function createWindow() {
   // A message may carry an OFFER: something the operator can act on from the status bar. It
   // is an offer and not an action because the only thing on offer here — reloading — throws
   // away whatever is half-typed in a composer.
-  const showMessage = (text, offer = null) => {
-    if (!window.webContents.isDestroyed()) window.webContents.send('message:show', { text, offer })
+  // A message also carries a TONE, an IDENTITY and, sometimes, a request to disappear on its
+  // own. The identity is what makes the last of those safe: a message that asked to be hidden
+  // in eight seconds must not take down whatever more important thing arrived in the meantime.
+  // Passing an id in replaces a message already on the bar rather than queueing behind it,
+  // which is how a download's "saved" takes over from its own "downloading".
+  let messageCounter = 0
+  const showMessage = (text, { tone = 'error', offer = null, autoHideMs = 0, id = null } = {}) => {
+    if (window.webContents.isDestroyed()) return null
+    const messageId = id ?? `msg-${(messageCounter += 1)}`
+    window.webContents.send('message:show', { text, tone, offer, autoHideMs, id: messageId })
+    return messageId
   }
 
   manager = new ViewManager(window, app.userAgentFallback, ({ account, code, description }) => {
@@ -162,14 +176,17 @@ async function createWindow() {
     // RESOLVED and its kin. It is the one string here worth keeping.
     logger.write('account-load-failed', { account: account.id, platform: account.platform, code, reason: description })
     showMessage(tr('loadAccountFailed', { account: account.name, code, description }), {
-      action: 'reload',
-      accountId: account.id,
+      offer: { action: 'reload', accountId: account.id },
     })
   })
 
   let closeToTray = Boolean(layout.closeToTray)
   let downloadDir = String(layout.downloadDir ?? '')
   let askWhereToSave = layout.askWhereToSave !== false
+  // Message id -> where the file landed. The renderer asks for a folder by the id of a
+  // download this process recorded, never by handing back a path: showItemInFolder with an
+  // argument a page could choose would be a way to point Explorer at anything on the disk.
+  const downloads = new Map()
   let railPinned = Boolean(layout.railPinned)
   let railHovered = false
   const railExpanded = () => railPinned || railHovered
@@ -257,6 +274,20 @@ async function createWindow() {
   })
 
   ipcMain.handle('downloads:settings', () => downloadSettings())
+
+  // Explorer is handed a path this process recorded under that id — see the note on the map.
+  ipcMain.handle('downloads:show', (_event, downloadId) => {
+    const savedAs = downloads.get(downloadId)
+    if (!savedAs) return false
+    // Moved, renamed, or emptied out of the bin between the download and the click. Saying so
+    // beats opening a folder and leaving the operator to wonder which file was meant.
+    if (!existsSync(savedAs)) {
+      showMessage(tr('downloadGone', { file: path.basename(savedAs) }))
+      return false
+    }
+    shell.showItemInFolder(savedAs)
+    return true
+  })
 
   ipcMain.handle('downloads:settings-set', async (_event, changes) => {
     if (changes?.dir !== undefined) downloadDir = String(changes.dir ?? '')
@@ -387,9 +418,43 @@ async function createWindow() {
     })
 
     // Registered on the account's own partition rather than on the default session, because
-    // on the default session there is no way to tell whose file is arriving.
+    // on the default session there is no way to tell whose file is arriving. Nothing here
+    // reads or touches the page: this is the browser's own download path, which section 7 of
+    // the design leaves alone.
     view.webContents.session.on('will-download', (_event, item) => {
-      showMessage(tr('downloadStarted', { account: account.name, file: item.getFilename() }))
+      const target = resolveDownloadDir(downloadDir, app.getPath('downloads'))
+      const filename = item.getFilename()
+
+      if (askWhereToSave) {
+        // Electron opens its own save dialog when no path is set. The setting still has a say
+        // in where that dialog starts.
+        item.setSaveDialogOptions({ defaultPath: path.join(target, filename) })
+      } else {
+        item.setSavePath(uniquePath(target, filename, existsSync))
+      }
+
+      const id = showMessage(tr('downloadStarted', { account: account.name, file: filename }), { tone: 'info' })
+
+      // The banner used to say "downloading" for the rest of the session, because nothing
+      // ever asked the download how it went.
+      item.once('done', (_doneEvent, state) => {
+        if (state !== 'completed') {
+          logger.write('download-failed', { account: account.id, reason: state })
+          showMessage(tr(state === 'cancelled' ? 'downloadCancelled' : 'downloadFailed', { file: filename }), {
+            id,
+            tone: 'error',
+          })
+          return
+        }
+        const savedAs = item.getSavePath()
+        downloads.set(id, savedAs)
+        showMessage(tr('downloadSaved', { file: path.basename(savedAs) }), {
+          id,
+          tone: 'info',
+          autoHideMs: DOWNLOAD_MESSAGE_MS,
+          offer: { action: 'show-download', downloadId: id },
+        })
+      })
     })
   }
 
@@ -421,16 +486,14 @@ async function createWindow() {
     view.webContents.on('render-process-gone', (_event, details) => {
       logger.write('account-crashed', { account: account.id, reason: details.reason })
       showMessage(tr('accountCrashed', { account: account.name, reason: details.reason }), {
-        action: 'reload',
-        accountId: account.id,
+        offer: { action: 'reload', accountId: account.id },
       })
     })
 
     view.webContents.on('unresponsive', () => {
       logger.write('account-unresponsive', { account: account.id })
       showMessage(tr('accountUnresponsive', { account: account.name }), {
-        action: 'reload',
-        accountId: account.id,
+        offer: { action: 'reload', accountId: account.id },
       })
     })
 
@@ -474,7 +537,7 @@ async function createWindow() {
   powerMonitor.on('resume', () => {
     logger.write('woke-up', {})
     if (!manager.activeId) return
-    showMessage(tr('wokeUp'), { action: 'reload', accountId: manager.activeId })
+    showMessage(tr('wokeUp'), { offer: { action: 'reload', accountId: manager.activeId } })
   })
 
   // The one shortcut that has to work when the app is not in front at all — that is the

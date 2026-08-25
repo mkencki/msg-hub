@@ -479,19 +479,38 @@ window.msgHub.onOpenMacros(() => document.getElementById('open-macros').click())
 // An OFFER is something the operator can act on from the bar. Reloading is offered rather
 // than done, because it throws away whatever is half-typed in a composer.
 let pendingOffer = null
+// Which message is on the bar, and the timer that message armed. Both exist for one reason: a
+// message may now ask to disappear on its own, and by the time that timer fires the bar can be
+// carrying something newer and more important. A timer that cannot prove the message is still
+// its own does nothing.
+let shownMessageId = null
+let hideTimer = null
 
-function showMessage(text, tone = 'error', offer = null) {
+function showMessage(text, tone = 'error', offer = null, { id = null, autoHideMs = 0 } = {}) {
   const bar = document.getElementById('message')
+  if (hideTimer) clearTimeout(hideTimer)
+  hideTimer = null
   document.getElementById('message-text').textContent = text
   bar.dataset.tone = tone
   pendingOffer = offer
+  shownMessageId = id
   document.getElementById('reload-account').hidden = offer?.action !== 'reload'
+  document.getElementById('show-download').hidden = offer?.action !== 'show-download'
   bar.hidden = false
+  if (autoHideMs) {
+    hideTimer = setTimeout(() => {
+      if (shownMessageId === id) hideMessage()
+    }, autoHideMs)
+  }
 }
 
 function hideMessage() {
+  if (hideTimer) clearTimeout(hideTimer)
+  hideTimer = null
+  shownMessageId = null
   document.getElementById('message-text').textContent = ''
   document.getElementById('reload-account').hidden = true
+  document.getElementById('show-download').hidden = true
   pendingOffer = null
   document.getElementById('message').hidden = true
 }
@@ -500,6 +519,14 @@ document.getElementById('reload-account').addEventListener('click', async () => 
   const accountId = pendingOffer?.accountId
   hideMessage()
   await window.msgHub.reloadAccount(accountId)
+})
+
+// The id of a download this process recorded, never a path — main looks up where the file
+// actually landed. A page that could name the path could point Explorer anywhere.
+document.getElementById('show-download').addEventListener('click', async () => {
+  const downloadId = pendingOffer?.downloadId
+  hideMessage()
+  await window.msgHub.showDownload(downloadId)
 })
 
 document.getElementById('dismiss-message').addEventListener('click', hideMessage)
@@ -629,7 +656,12 @@ window.msgHub.onUnread((data) => {
 
 // Messages from the main process (a failed account load, for instance) land on the status
 // bar rather than in a modal — one sick account must not block the rest.
-window.msgHub.onMessage((payload) => showMessage(payload.text, payload.tone ?? 'error', payload.offer))
+window.msgHub.onMessage((payload) =>
+  showMessage(payload.text, payload.tone ?? 'error', payload.offer, {
+    id: payload.id ?? null,
+    autoHideMs: payload.autoHideMs ?? 0,
+  }),
+)
 
 const editorDialog = document.getElementById('editor-dialog')
 const editorName = document.getElementById('editor-name')

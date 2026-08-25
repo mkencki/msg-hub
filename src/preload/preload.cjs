@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('msgHub', {
   getCloseToTray: () => ipcRenderer.invoke('closeToTray:get'),
   setCloseToTray: (enabled) => ipcRenderer.invoke('closeToTray:set', enabled),
   downloadSettings: () => ipcRenderer.invoke('downloads:settings'),
+  showDownload: (downloadId) => ipcRenderer.invoke('downloads:show', downloadId),
   setDownloadSettings: (changes) => ipcRenderer.invoke('downloads:settings-set', changes),
   pickDownloadDir: () => ipcRenderer.invoke('downloads:pick-dir'),
   getLanguage: () => ipcRenderer.invoke('language:get'),
