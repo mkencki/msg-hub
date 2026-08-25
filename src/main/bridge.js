@@ -47,7 +47,7 @@ export function registerAccountChannels({
     await saveAccounts(accountsFile, [...accounts, account])
     // An account added while the app is running gets the same treatment as accounts
     // present at startup: notification permission and unread-count tracking.
-    prepareView(manager.add(account))
+    prepareView(manager.add(account), account)
     onAccountsChanged()
     return { ok: true }
   })

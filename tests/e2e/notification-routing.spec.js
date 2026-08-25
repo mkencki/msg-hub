@@ -1,0 +1,99 @@
+import { test, expect, _electron as electron } from '@playwright/test'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
+
+let dataDir
+let electronApp
+let page
+
+const account = (n, color) => ({
+  id: `acc-${n}`,
+  name: `Account ${n}`,
+  platform: 'whatsapp',
+  url: 'https://web.whatsapp.com/',
+  color,
+})
+
+test.beforeEach(async () => {
+  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-toast-'))
+  await writeFile(
+    path.join(dataDir, 'accounts.json'),
+    JSON.stringify({ version: 2, accounts: [account('one', '#2f7d5b'), account('two', '#6586ec')] }),
+    'utf8',
+  )
+  electronApp = await electron.launch({ args: ['.', `--user-data-dir=${dataDir}`] })
+  page = await electronApp.firstWindow()
+  await page.waitForSelector('body[data-ready="1"]')
+  await expect(page.locator('.channel')).toHaveCount(2)
+  await expect
+    .poll(() =>
+      electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].contentView.children.length),
+    )
+    .toBe(2)
+
+  // Routing deliberately ignores focus until a view's first load has finished, because a
+  // view takes the system's focus while it is being created and that is not a notification
+  // click. The service pages are not reachable from a test machine, so the load is stopped
+  // instead — which settles it exactly the way finishing or failing would.
+  await electronApp.evaluate(({ BrowserWindow }) => {
+    for (const view of BrowserWindow.getAllWindows()[0].contentView.children) view.webContents.stop()
+  })
+  await expect
+    .poll(() =>
+      electronApp.evaluate(({ BrowserWindow }) =>
+        BrowserWindow.getAllWindows()[0].contentView.children.every((v) => !v.webContents.isLoading()),
+      ),
+    )
+    .toBe(true)
+})
+
+test.afterEach(async () => {
+  await electronApp.close().catch(() => {})
+  const cleanup = rm(dataDir, { recursive: true, force: true, maxRetries: 3 }).catch(() => {})
+  await Promise.race([cleanup, new Promise((done) => setTimeout(done, 3000))])
+})
+
+const selectedChannel = () =>
+  page.locator('.channel[aria-selected="true"]').getAttribute('data-account-id')
+
+const viewHeights = () =>
+  electronApp.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0].contentView.children.map((v) => v.getBounds().height),
+  )
+
+// Clicking a Windows toast hands focus to the view the toast came from. Everything else —
+// which channel the rail shows as current, which view has any height, what the status bar
+// says — was left pointing at the account the operator had walked away from, so the
+// conversation they were sent to opened inside a view zero pixels tall.
+const focusView = (index) =>
+  electronApp.evaluate(({ BrowserWindow }, i) => {
+    BrowserWindow.getAllWindows()[0].contentView.children[i].webContents.focus()
+  }, index)
+
+test('a view taking focus makes its account the current one', async () => {
+  expect(await selectedChannel()).toBe('acc-one')
+  expect(await viewHeights()).toEqual([expect.any(Number), 0])
+
+  await focusView(1)
+
+  await expect.poll(selectedChannel).toBe('acc-two')
+  const heights = await viewHeights()
+  expect(heights[0]).toBe(0)
+  expect(heights[1]).toBeGreaterThan(0)
+})
+
+// show() ends by focusing the view it just showed, so answering a focus event with a switch
+// is one careless line away from a loop that never stops.
+test('a view that is already current asks for nothing', async () => {
+  await page.evaluate(() => {
+    window.__switches = []
+    window.msgHub.onSelectAccountId((id) => window.__switches.push(id))
+  })
+
+  await focusView(0)
+  await focusView(0)
+  await page.waitForTimeout(400)
+
+  expect(await page.evaluate(() => window.__switches)).toEqual([])
+})

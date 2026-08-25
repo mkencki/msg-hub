@@ -129,6 +129,12 @@ window.msgHub.onSelectAccount((index) => {
   if (account) switchTo(account.id)
 })
 
+// A view took the system's focus on its own — a clicked notification, most likely. The rail
+// has to follow it rather than the other way round.
+window.msgHub.onSelectAccountId((accountId) => {
+  if (railAccounts.some((a) => a.id === accountId)) switchTo(accountId)
+})
+
 // The main process holds back a leave that arrived while the window was in the background,
 // and asks again once the window is back. :hover is Chromium's own answer to "is the
 // pointer over this element", which is exactly the question, and the only one worth

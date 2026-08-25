@@ -28,6 +28,12 @@ const MACRO_SHORTCUT = 'Control+Shift+Space'
 
 app.userAgentFallback = cleanUserAgent(app.userAgentFallback)
 
+// Windows attributes a toast to an application by this identifier, and until now it lived
+// only in the electron-builder configuration — that is, in the installer, not in the running
+// process. Electron exposes a setter and no getter, so this one is verified by reading it
+// rather than by a test.
+app.setAppUserModelId('pl.kencki.msghub')
+
 // Electron's default menu (File/Edit/View/Window) does not belong to this app and on
 // Windows it eats a strip inside the client area.
 Menu.setApplicationMenu(null)
@@ -240,19 +246,45 @@ async function createWindow() {
     )
   })
 
-  const prepareView = (view) => {
+  const prepareView = (view, account) => {
     view.webContents.session.setPermissionRequestHandler((_wc, permission, grant) => {
       grant(permission === 'notifications')
     })
     view.webContents.on('page-title-updated', refreshBadge)
     attachShortcuts(view.webContents)
+
+    // Clicking a Windows toast hands focus to the view the toast came from, and nothing
+    // else moved with it: the rail went on showing the account the operator had walked
+    // away from, and the conversation they were sent to opened inside a view zero pixels
+    // tall. The renderer is asked to switch, for the same reason as Ctrl+1..9 — it owns
+    // switching, and going round it desynchronises the rail.
+    //
+    // show() ends by focusing the view it just showed, so answering every focus event
+    // would be a loop that never stops. A view that is already current asks for nothing.
+    //
+    // A view also takes the system's focus while it is being created, and that is not a
+    // notification click: measured, two accounts produced two such events, both from a
+    // webContents still loading with an empty URL, and which account came out current was
+    // left to whichever landed last. A toast cannot come from a page that has never
+    // loaded, so nothing is routed until the first load has finished, one way or the other.
+    let loadSettled = false
+    view.webContents.once('did-stop-loading', () => {
+      loadSettled = true
+    })
+
+    view.webContents.on('focus', () => {
+      if (!loadSettled) return
+      if (manager.activeId === account.id) return
+      if (!window || window.isDestroyed() || window.webContents.isDestroyed()) return
+      window.webContents.send('accounts:select-id', account.id)
+    })
   }
 
   // ORDER MATTERS: the renderer calls accounts:list the moment it loads, so the views
   // and the IPC channels must stand BEFORE loadFile. The other way round yields
   // "No handler registered for 'accounts:list'" and an empty rail.
   const { accounts } = await loadAccounts(path.join(dataDir, 'accounts.json'))
-  for (const account of accounts) prepareView(manager.add(account))
+  for (const account of accounts) prepareView(manager.add(account), account)
   fitViews()
   if (accounts.length) manager.show(accounts[0].id)
 
