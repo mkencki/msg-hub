@@ -2,6 +2,7 @@ import { test, expect, _electron as electron } from '@playwright/test'
 import { mkdtemp, rm, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { clearStatusBar } from './helpers.js'
 
 let dataDir
 let electronApp
@@ -24,6 +25,7 @@ test.beforeEach(async () => {
   electronApp = await electron.launch({ args: ['.', `--user-data-dir=${dataDir}`] })
   page = await electronApp.firstWindow()
   await page.waitForSelector('body[data-ready="1"]')
+  await clearStatusBar(page)
 
   await page.locator('#add-account').click()
   await fillAccountForm('WhatsApp personal', 'whatsapp')

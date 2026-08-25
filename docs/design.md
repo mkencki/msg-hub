@@ -385,10 +385,15 @@ because it would change the LETTER of rule 7.3, and 6.7, which waits for stage 7
   said "Inserted". Finding out for certain would mean reading the page, which rule 7.3
   forbids, so the sentence says what is known and asks the operator to check the box.
 
-Two things the plan expected to build turned out to be there already, and are now pinned by
-tests rather than rebuilt: the keyboard DOES return to the account after an insertion —
-closing a `<dialog>` restores focus to the native view that held it — and the palette header
-has named the destination account since stage 2.
+One thing the plan expected to build turned out to be there already and is now pinned by a
+test rather than rebuilt: the palette header has named the destination account since stage 2.
+
+The other, the keyboard returning to the account after an insertion, was first written up as
+already working and that was **wrong** — measured in a state nobody is ever in, with the app's
+window not in front. A window that is not in front has no keyboard to hand anybody. Measured
+properly it returns in one of the two states and not the other, depending on which
+`webContents` held focus when the palette opened, so the application now asks for it instead
+of relying on what closing a `<dialog>` happens to do.
 
 **Stage 7 — whole services. DONE 2026-08-25**, except Telegram, which stays out.
 

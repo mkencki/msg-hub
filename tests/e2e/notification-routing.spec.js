@@ -32,17 +32,24 @@ test.beforeEach(async () => {
     )
     .toBe(2)
 
-  // Routing deliberately ignores focus until a view's first load has finished, because a
-  // view takes the system's focus while it is being created and that is not a notification
-  // click. The service pages are not reachable from a test machine, so the load is stopped
-  // instead — which settles it exactly the way finishing or failing would.
-  await electronApp.evaluate(({ BrowserWindow }) => {
-    for (const view of BrowserWindow.getAllWindows()[0].contentView.children) view.webContents.stop()
+  // Routing deliberately ignores focus until a view's first load has finished, because a view
+  // takes the system's focus while it is being created and that is not a notification click.
+  // The views are therefore given a page that certainly finishes: about:blank.
+  //
+  // stop() alone was not enough, and the reason is worth writing down. isLoading() going
+  // false and did-stop-loading firing are not the same signal — a load stopped before it
+  // commits can leave the first without the second, and the app waits for the second. This
+  // spec then failed about one full suite run in three while passing alone every time.
+  await electronApp.evaluate(async ({ BrowserWindow }) => {
+    for (const view of BrowserWindow.getAllWindows()[0].contentView.children) {
+      view.webContents.stop()
+      await view.webContents.loadURL('about:blank').catch(() => {})
+    }
   })
   await expect
     .poll(() =>
       electronApp.evaluate(({ BrowserWindow }) =>
-        BrowserWindow.getAllWindows()[0].contentView.children.every((v) => !v.webContents.isLoading()),
+        BrowserWindow.getAllWindows()[0].contentView.children.every((v) => v.webContents.getURL() === 'about:blank'),
       ),
     )
     .toBe(true)
@@ -72,6 +79,11 @@ const focusView = (index) =>
   }, index)
 
 test('a view taking focus makes its account the current one', async () => {
+  // The precondition, stated rather than hoped for: the account the operator is looking at
+  // holds the keyboard. Loading a page gives that view focus on its own, so without this the
+  // second view may already hold it — and focusing something that is already focused emits
+  // no event at all, which looks exactly like routing that does not work.
+  await focusView(0)
   expect(await selectedChannel()).toBe('acc-one')
   expect(await viewHeights()).toEqual([expect.any(Number), 0])
 

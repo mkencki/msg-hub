@@ -2,16 +2,18 @@ import { test, expect, _electron as electron } from '@playwright/test'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { clearStatusBar } from './helpers.js'
 
 let dataDir
 let electronApp
 let page
 
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-komunikaty-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-messages-'))
   electronApp = await electron.launch({ args: ['.', `--user-data-dir=${dataDir}`] })
   page = await electronApp.firstWindow()
   await page.waitForSelector('body[data-ready="1"]')
+  await clearStatusBar(page)
 })
 
 test.afterEach(async () => {
@@ -23,7 +25,7 @@ test.afterEach(async () => {
 
 async function addAccount() {
   await page.locator('#add-account').click()
-  await page.locator('#account-dialog input[name="name"]').fill('Konto testowe')
+  await page.locator('#account-dialog input[name="name"]').fill('Test account')
   await page.locator('#save-account').click()
   await expect(page.locator('.channel')).toHaveCount(1)
 }
@@ -69,7 +71,7 @@ test('a successful save clears the error shown on the previous attempt', async (
   await page.locator('#save-macro').click()
   await expect(page.locator('#macro-errors')).toHaveText(/name is required/)
 
-  await page.locator('#editor-name').fill('Teraz z name')
+  await page.locator('#editor-name').fill('Now with a name')
   await page.locator('#save-macro').click()
   await expect(page.locator('#editor-dialog')).toBeHidden()
 

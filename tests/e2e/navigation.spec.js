@@ -28,12 +28,25 @@ test.beforeEach(async () => {
     )
     .toBe(1)
 
-  // The service page is not reachable from a test machine, and none of this is about the
-  // service page anyway. about:blank gives the view a real script context to open windows
-  // from, which is the thing under test.
-  await electronApp.evaluate(({ BrowserWindow }) =>
-    BrowserWindow.getAllWindows()[0].contentView.children[0].webContents.loadURL('about:blank'),
-  )
+  // None of this is about the service page. about:blank gives the view a real script context
+  // to open windows from, which is the thing under test.
+  //
+  // The pending load has to be stopped first and the rejection swallowed: on a machine with
+  // a working network the real page is genuinely loading, and replacing a load in flight
+  // comes back as ERR_ABORTED. Measured — this spec passed alone and failed roughly one full
+  // suite run in three, entirely because of that race.
+  await electronApp.evaluate(async ({ BrowserWindow }) => {
+    const view = BrowserWindow.getAllWindows()[0].contentView.children[0]
+    view.webContents.stop()
+    await view.webContents.loadURL('about:blank').catch(() => {})
+  })
+  await expect
+    .poll(() =>
+      electronApp.evaluate(({ BrowserWindow }) =>
+        BrowserWindow.getAllWindows()[0].contentView.children[0].webContents.getURL(),
+      ),
+    )
+    .toBe('about:blank')
 })
 
 test.afterEach(async () => {

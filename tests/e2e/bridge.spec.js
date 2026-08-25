@@ -65,9 +65,11 @@ test('the renderer loads accounts at startup without racing the IPC registration
 
   // The renderer calls accounts:list the moment it loads. If the main process registers its
   // channels later, the call throws and the rail stays empty.
-  await expect(page.locator('#message')).toBeHidden()
-  // Aiming at the text alone: the bar also contains the dismiss button.
-  expect(await page.locator('#message-text').textContent()).toBe('')
+  //
+  // Aimed at THAT failure rather than at an empty bar. Startup has other things it may
+  // legitimately say — a global shortcut another program owns, for one — and a test that
+  // demands silence ends up reporting those instead of the race it was written for.
+  expect(await page.locator('#message-text').textContent()).not.toMatch(/account/i)
 
   await electronApp.close()
 })

@@ -199,6 +199,15 @@ export function registerMacroChannels({ dataDir, manager, clipboardSession }) {
     if (text) insertText(view.webContents, text, clipboard)
 
     const { missing } = await pasteAttachments({ attachments, dataDir, clipboardSession, view })
+
+    // Ctrl+; deliberately moves the keyboard to the renderer, or the palette opens and cannot
+    // be typed in. Getting it back was left to whatever closing a <dialog> happens to do, and
+    // that turns out to depend on which webContents held focus when the dialog opened —
+    // measured 2026-08-25: with the window brought to the front first the view gets it back,
+    // without that the renderer keeps it. The most frequent action in this application cannot
+    // rest on which of those two states the operator happens to be in, so it is asked for.
+    if (!view.webContents.isDestroyed()) view.webContents.focus()
+
     return {
       ok: missing.length === 0,
       reason: missing.length ? 'missing-files' : null,

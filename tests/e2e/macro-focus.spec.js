@@ -50,12 +50,23 @@ const viewHasFocus = () =>
 // "the operator sends the message by pressing Enter", which is the single most frequent
 // thing anyone does here; it currently works by a guarantee this code never asked for.
 test('after inserting a macro the keyboard is back in the account', async () => {
+  // The precondition is established rather than assumed, and asserted before the thing under
+  // test: a window that is not in front has no keyboard to give anybody, and focus() inside
+  // one does nothing at all. Without this the test fails on a busy machine and points at the
+  // wrong thing — measured, once in four full suite runs.
+  await electronApp.evaluate(({ BrowserWindow }) => {
+    const w = BrowserWindow.getAllWindows()[0]
+    w.show()
+    w.focus()
+    w.contentView.children[0].webContents.focus()
+  })
+  await expect.poll(viewHasFocus).toBe(true)
+
   // The real path: the keyboard is inside the account page and Ctrl+; is what opens the
   // palette from there. Clicking the button with a mouse would move focus for a different
   // reason and prove nothing about this one.
   await electronApp.evaluate(({ BrowserWindow }) => {
     const view = BrowserWindow.getAllWindows()[0].contentView.children[0]
-    view.webContents.focus()
     view.webContents.sendInputEvent({ type: 'keyDown', keyCode: ';', modifiers: ['control'] })
     view.webContents.sendInputEvent({ type: 'keyUp', keyCode: ';', modifiers: ['control'] })
   })
