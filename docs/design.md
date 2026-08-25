@@ -425,6 +425,32 @@ one of the two clients reports a delta rather than a total. It was optional in t
 needs an account to verify, and a closed platform list is only worth anything while every
 entry on it has been seen working.
 
+**Stage 8 — four things the operator found in a day of use. DONE 2026-08-25.**
+
+**What Explorer does with a folder it is handed.** "Show in folder" was asked to open a tab in
+an Explorer window that is already up, and a new window only when none is in front. That
+decision belongs to the shell, not to this application: `shell.showItemInFolder` calls
+`SHOpenFolderAndSelectItems`, and what happens next is Explorer's business. So it was measured
+rather than assumed — Windows 11 build 26200, one call per state, counting top-level
+`CabinetWClass` windows and the `Shell.Application` entries beside them:
+
+| Before the call | After |
+|---|---|
+| an Explorer window open, not in front, showing another folder | a NEW window, 1 → 2 |
+| an Explorer window in front, showing another folder | a NEW window, 2 → 3 |
+| a window already showing the target folder | that window, brought forward. 3 → 3 |
+| no Explorer window at all | not measured — it would have meant closing the operator's own |
+
+So the tab never happens: this build opens a window whether or not Explorer is in front, and no
+setting for it exists under `Explorer\Advanced` (`OpenFoldersInNewTab` and `TabsEnabled` are
+both absent, `SeparateProcess` is 0). What the operator asked to avoid, though, does not happen
+either — **windows do not pile up**, because a folder already open is reused and brought
+forward, which is the case that repeats when files keep landing in one download folder.
+
+Automating Explorer through `IShellWindows` to force a tab was considered and refused: several
+dozen lines of COM interop hung on undocumented shell behaviour, to save one window. If it is
+still wanted after the measurement above, it is its own decision and its own stage.
+
 ## 10. Tests
 
 Behaviour is tested, not implementation detail.
