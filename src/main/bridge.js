@@ -99,6 +99,36 @@ export function registerAccountChannels({
   })
 }
 
+
+// Spec section 8: a file missing from the store must not sink the macro — the text has to
+// work, and the interface has to say which attachments are missing.
+//
+// A clipboard that refuses is the same kind of failure and gets the same answer. It used to
+// be neither caught nor reported: the rejection escaped the IPC handler, the operator was
+// told nothing, and the attachments after the failed one were never even attempted. Whether
+// the file is absent from disk or the clipboard would not take it, the operator needs the
+// same sentence — that one did not go in.
+export async function pasteAttachments({ attachments, dataDir, clipboardSession, view, reach = access }) {
+  const missing = []
+  for (const relative of attachments) {
+    const full = path.join(dataDir, relative)
+    try {
+      await reach(full)
+    } catch {
+      missing.push(relative)
+      continue
+    }
+    try {
+      await clipboardSession.setFile(full)
+    } catch {
+      missing.push(relative)
+      continue
+    }
+    view.webContents.paste()
+  }
+  return { missing }
+}
+
 export function registerMacroChannels({ dataDir, manager, clipboardSession }) {
   const macrosFile = path.join(dataDir, 'macros.json')
   const attDir = path.join(dataDir, 'att')
@@ -159,20 +189,7 @@ export function registerMacroChannels({ dataDir, manager, clipboardSession }) {
 
     if (macro.text) insertText(view.webContents, macro.text, clipboard)
 
-    // Spec section 8: a file missing from the store must not sink the macro — the text
-    // has to work, and the interface has to say which attachments are missing.
-    const missing = []
-    for (const relative of attachments) {
-      const full = path.join(dataDir, relative)
-      try {
-        await access(full)
-      } catch {
-        missing.push(relative)
-        continue
-      }
-      await clipboardSession.setFile(full)
-      view.webContents.paste()
-    }
+    const { missing } = await pasteAttachments({ attachments, dataDir, clipboardSession, view })
     return {
       ok: missing.length === 0,
       reason: missing.length ? 'missing-files' : null,

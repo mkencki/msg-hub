@@ -127,3 +127,90 @@ describe('createClipboardSession', () => {
     expect(starts).toBe(0)
   })
 })
+
+describe('createClipboardSession — the session that has to survive a bad day', () => {
+  // A stand-in that answers nothing at all, the way a PowerShell busy with a slow network
+  // path does.
+  function silentProcess() {
+    const stdin = new PassThrough()
+    const stdout = new PassThrough()
+    stdout.setEncoding('utf8')
+    const sent = []
+    let killed = false
+    stdin.on('data', (chunk) => sent.push(String(chunk)))
+    return {
+      stdin,
+      stdout,
+      stderr: new PassThrough(),
+      exitCode: null,
+      get killed() {
+        return killed
+      },
+      kill() {
+        killed = true
+      },
+      on() {},
+      sent,
+    }
+  }
+
+  // stdio is ['pipe','pipe','pipe'], so the child writes its errors into a pipe with a
+  // finite buffer. Nobody was reading it. A PowerShell that says enough on stderr fills that
+  // buffer and then BLOCKS — and every attachment after it waits out the timeout.
+  test('the child’s stderr is drained, or the child eventually blocks on it', () => {
+    const fake = silentProcess()
+
+    createClipboardSession(() => fake).warmUp()
+
+    expect(fake.stderr.listenerCount('data')).toBeGreaterThan(0)
+  })
+
+  // The defect this exists for. A timed-out command was abandoned, but its output was left
+  // in the pipe. The next insertion read the marker belonging to the PREVIOUS file and
+  // reported success for a file it never put on the clipboard — for the rest of the session.
+  test('a timed-out command cannot answer for the next one', async () => {
+    const fakes = []
+    const session = createClipboardSession(
+      () => {
+        const fake = silentProcess()
+        fakes.push(fake)
+        return fake
+      },
+      { timeoutMs: 200 },
+    )
+
+    await expect(session.setFile('C:\slow.pdf')).rejects.toThrow(/did not answer/)
+
+    // The answer arrives late, into the pipe the abandoned command was reading.
+    fakes[0].stdout.write(`${DONE_MARKER}\n`)
+
+    const second = session.setFile('C:\next.pdf')
+    // Comfortably inside the second command's own timeout, so what is being observed is
+    // the answer not arriving rather than the command giving up.
+    await new Promise((done) => setTimeout(done, 40))
+    // Nothing has answered the SECOND command, so it must still be waiting rather than
+    // reporting the first one's success.
+    await expect(Promise.race([second, Promise.resolve('still waiting')])).resolves.toBe('still waiting')
+
+    fakes[1].stdout.write(`${DONE_MARKER}\n`)
+    await expect(second).resolves.toBeUndefined()
+  })
+
+  test('a timed-out session is put down rather than reused', async () => {
+    const fakes = []
+    const session = createClipboardSession(
+      () => {
+        const fake = silentProcess()
+        fakes.push(fake)
+        return fake
+      },
+      { timeoutMs: 20 },
+    )
+
+    await expect(session.setFile('C:\slow.pdf')).rejects.toThrow()
+    session.setFile('C:\next.pdf').catch(() => {})
+
+    expect(fakes).toHaveLength(2)
+    expect(fakes[0].killed).toBe(true)
+  })
+})
