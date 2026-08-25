@@ -13,13 +13,21 @@ export function unreadFromTitle(title) {
   return hit ? Number(hit[1]) : 0
 }
 
-export function createView(account, defaultUA, onError = () => {}) {
-  const view = new WebContentsView({
+// The view class is a parameter so the options can be examined without a running Electron
+// main process, the same way createClipboardSession takes its spawn function.
+export function createView(account, defaultUA, onError = () => {}, View = WebContentsView) {
+  const view = new View({
     webPreferences: {
       partition: `persist:${account.id}`,
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      // Chromium treats a view of zero height as a hidden tab and slows its timers by an
+      // order of magnitude — measured 2026-08-25: 101 ticks of a 100 ms timer in ten
+      // seconds while active, 10 while hidden. Every account but the current one is
+      // exactly that, and once the window goes to the tray so is the current one, which
+      // is the state this application exists to be useful in.
+      backgroundThrottling: false,
     },
   })
   view.webContents.setUserAgent(cleanUserAgent(defaultUA))
