@@ -2,11 +2,22 @@ import { WebContentsView } from 'electron'
 import { PLATFORMS } from './accounts.js'
 import { UnreadLatch } from './unread.js'
 
-export function cleanUserAgent(defaultUA) {
+// Electron assembles the default User-Agent out of the application's own name and version, so
+// whatever this application is called goes out to Meta's servers on every request unless it is
+// taken out here.
+//
+// The name is an ARGUMENT and not a literal. Written into the expression — as `msg-hub` was —
+// it stops matching on the day the application is renamed, and it fails in the quietest way
+// there is: the new name simply starts appearing in the User-Agent, while the test guarding
+// this stays green, because the test was written against the old literal too.
+const isOwnToken = (token, name) =>
+  Boolean(name) && token.toLowerCase().startsWith(String(name).toLowerCase() + '/')
+
+export function cleanUserAgent(defaultUA, appName) {
   return String(defaultUA)
-    .replace(/\s*Electron\/[^\s]+/gi, '')
-    .replace(/\s*msg-hub\/[^\s]+/gi, '')
-    .replace(/\s{2,}/g, ' ')
+    .split(/\s+/)
+    .filter((token) => !isOwnToken(token, 'Electron') && !isOwnToken(token, appName))
+    .join(' ')
     .trim()
 }
 
@@ -37,6 +48,10 @@ export function createView(account, defaultUA, onError = () => {}, View = WebCon
       backgroundThrottling: false,
     },
   })
+  // No name here on purpose: the string this receives has already been through
+  // cleanUserAgent with the application's name, in main.js, before any window exists. This
+  // pass is a guard against a caller that hands over a raw one, and it can still take out
+  // the marker that does not depend on knowing the name.
   view.webContents.setUserAgent(cleanUserAgent(defaultUA))
 
   // Spec section 8: a failed load must produce a visible message, not a blank window.

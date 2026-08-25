@@ -34,7 +34,9 @@ const MACRO_SHORTCUT = 'Control+Shift+Space'
 // that one the operator has to notice.
 const DOWNLOAD_MESSAGE_MS = 8000
 
-app.userAgentFallback = cleanUserAgent(app.userAgentFallback)
+// app.getName() rather than a literal: this is the ONE place that knows what the application
+// is called, and Electron puts that name straight into the default User-Agent.
+app.userAgentFallback = cleanUserAgent(app.userAgentFallback, app.getName())
 
 // Windows attributes a toast to an application by this identifier, and until now it lived
 // only in the electron-builder configuration — that is, in the installer, not in the running

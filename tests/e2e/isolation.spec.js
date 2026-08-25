@@ -39,10 +39,20 @@ test('a cookie from one partition is invisible in the other', async () => {
   expect(result.second).toBe(0)
 })
 
-test('the User-Agent does not give Electron away', async () => {
-  const ua = await electronApp.evaluate(async ({ app }) => app.userAgentFallback)
+test('the User-Agent gives away neither Electron nor this application', async () => {
+  const { ua, name } = await electronApp.evaluate(async ({ app }) => ({
+    ua: app.userAgentFallback,
+    name: app.getName(),
+  }))
 
   expect(ua).not.toMatch(/Electron/i)
-  expect(ua).not.toMatch(/msg-hub/i)
+
+  // The name is ASKED OF THE RUNNING APPLICATION, not written here. This assertion used to
+  // read `not.toMatch(/msg-hub/i)`, which is green whatever the application is called — so
+  // on the day it was renamed it would have gone on passing while the new name went out to
+  // Meta's servers in the User-Agent of every request.
+  expect(name).toBeTruthy()
+  expect(ua.toLowerCase()).not.toContain(name.toLowerCase())
+
   expect(ua).toMatch(/Chrome\/\d+/)
 })

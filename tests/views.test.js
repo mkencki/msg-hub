@@ -8,8 +8,26 @@ describe('cleanUserAgent', () => {
     expect(ua).toContain('Chrome/141.0.0.0')
   })
 
-  test('strips the application name', () => {
-    expect(cleanUserAgent('Mozilla/5.0 msg-hub/0.1.0 Chrome/141.0.0.0')).not.toMatch(/msg-hub/)
+  // Electron builds the default User-Agent out of the application's own name, so this
+  // function had that name written into it as a literal. Rename the application and the
+  // literal stops matching — quietly, with the new name going out to Meta's servers on
+  // every request. The name is a parameter for that reason, and these two cases are the
+  // same string with a different name in it.
+  test('strips the application name it is given', () => {
+    expect(cleanUserAgent('Mozilla/5.0 msg-hub/0.1.0 Chrome/141.0.0.0', 'msg-hub')).not.toMatch(
+      /msg-hub/i,
+    )
+  })
+
+  test('strips a different application name just as well', () => {
+    expect(cleanUserAgent('Mozilla/5.0 M-HUB/0.5.0 Chrome/141.0.0.0', 'M-HUB')).not.toMatch(
+      /M-HUB/i,
+    )
+  })
+
+  test('leaves the rest of the string alone', () => {
+    const ua = cleanUserAgent('Mozilla/5.0 (Windows NT 10.0) M-HUB/0.5.0 Chrome/141.0.0.0', 'M-HUB')
+    expect(ua).toBe('Mozilla/5.0 (Windows NT 10.0) Chrome/141.0.0.0')
   })
 })
 
