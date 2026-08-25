@@ -495,9 +495,29 @@ both absent, `SeparateProcess` is 0). What the operator asked to avoid, though, 
 either — **windows do not pile up**, because a folder already open is reused and brought
 forward, which is the case that repeats when files keep landing in one download folder.
 
-Automating Explorer through `IShellWindows` to force a tab was considered and refused: several
-dozen lines of COM interop hung on undocumented shell behaviour, to save one window. If it is
-still wanted after the measurement above, it is its own decision and its own stage.
+**Forcing the tab anyway: measured, then refused.** The operator asked to see the cost before
+deciding, so a prototype was built and run rather than estimated. Three routes exist and two of
+them do not do what their names suggest:
+
+| Route | What it actually did |
+|---|---|
+| the `opennewtab` verb — it really is registered under `HKCR\Folder\shell` | invoked from outside Explorer it **returns success and does nothing**. The key carries `OnlyInBrowserWindow` and a `DelegateExecute` handler, and `Shell.Application` does not even list the verb among a folder's own |
+| `IShellWindows` → `Navigate2` | **no tab**: it replaces the contents of the window the operator was looking at. Measured, one window went from folder A to folder B, count unchanged |
+| driving Explorer's keyboard — `Ctrl+T`, `Ctrl+L`, the path, Enter | **works**: windows 2 → 2, tabs 3 → 4, on the right folder, with a name containing brackets surviving the escaping |
+
+So a tab is reachable only by typing into somebody else's window, and it costs more than the
+window it saves. The prototype came to 99 lines, 37 of them P/Invoke, plus roughly 50 more to
+wire in with a fallback and a switch — but the line count is the least of it:
+
+- **the file stops being selected.** `showItemInFolder` selects it; the tab route has to reach
+  it by type-ahead in the file list, and the measurement selected TWO items instead of one.
+- **it types on the operator's keyboard.** Guarded — the script sends nothing unless the window
+  it raised really reached the foreground — but that is the nature of the thing, not a detail.
+- **it cannot be covered by the gate.** Playwright cannot see Explorer, and a CI runner has no
+  Explorer window at all, so on CI only the fallback would ever run. Everything else here is
+  tested.
+
+Refused on 2026-08-25 with those numbers in hand. `showItemInFolder` stays.
 
 ## 10. Tests
 
