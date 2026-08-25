@@ -3,7 +3,7 @@ import path from 'node:path'
 import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { cleanUserAgent, ViewManager } from './views.js'
-import { loadLayout, saveLayout, setAutoStart, acceptHoverReport } from './shell.js'
+import { loadLayout, saveLayout, setAutoStart, acceptHoverReport, HIDDEN_FLAG } from './shell.js'
 import { loadAccounts } from './accounts.js'
 import { registerAccountChannels, registerMacroChannels } from './bridge.js'
 import { createClipboardSession } from './file-clipboard.js'
@@ -35,6 +35,9 @@ let window
 let tray
 let manager
 let clipboardSession
+// Closing the window hides it; only a deliberate Quit ends the process. Without this flag
+// the close handler could not tell the two apart and Quit would hide the window forever.
+let quitting = false
 
 // Interface language. The main process owns the stored value, while the list of
 // languages lives in src/shared/i18n.js. The tray menu and load errors are main-process
@@ -52,7 +55,12 @@ async function createWindow() {
   const layout = await loadLayout(existsSync(layoutFile) ? layoutFile : legacyLayoutFile)
   language = validLanguage(layout.language)
 
+  // The login item passes --hidden. The window is therefore built unshown rather than shown
+  // and hidden a moment later, which would flash across the screen at every login.
+  const startHidden = process.argv.includes(HIDDEN_FLAG)
+
   window = new BrowserWindow({
+    show: !startHidden,
     width: layout.width,
     height: layout.height,
     x: layout.x,
@@ -107,6 +115,7 @@ async function createWindow() {
     showMessage(tr('loadAccountFailed', { account: account.name, code, description }))
   })
 
+  let closeToTray = Boolean(layout.closeToTray)
   let railPinned = Boolean(layout.railPinned)
   let railHovered = false
   const railExpanded = () => railPinned || railHovered
@@ -165,9 +174,20 @@ async function createWindow() {
       height: rect.height,
       maximized: window.isMaximized(),
       railPinned,
+      closeToTray,
       language,
     }
   }
+
+  ipcMain.handle('closeToTray:get', () => closeToTray)
+
+  // Written straight away like the language, and for the same reason: a rare deliberate
+  // choice that must not be lost to a killed process.
+  ipcMain.handle('closeToTray:set', async (_event, next) => {
+    closeToTray = Boolean(next)
+    await saveLayout(layoutFile, currentLayout(), legacyLayoutFile).catch(() => {})
+    return closeToTray
+  })
 
   ipcMain.handle('language:get', () => language)
 
@@ -232,12 +252,19 @@ async function createWindow() {
   refreshBadge()
 
   // Saving the layout must FINISH before the window closes — otherwise app.quit() cuts
-  // the asynchronous write short and the window position does not survive a restart.
+  // the asynchronous write short and the window position does not survive a restart. The
+  // same write has to happen on the way to the tray, because from there the process may
+  // well end without another close ever being seen.
   let layoutSaved = false
   window.on('close', (event) => {
     if (layoutSaved) return
     event.preventDefault()
+    const goingToTray = closeToTray && !quitting
     saveLayout(layoutFile, currentLayout(), legacyLayoutFile).finally(() => {
+      if (goingToTray) {
+        window.hide()
+        return
+      }
       layoutSaved = true
       window.destroy()
     })
@@ -263,7 +290,13 @@ function buildTray() {
         click: (item) => setAutoStart(item.checked, app),
       },
       { type: 'separator' },
-      { label: tr('trayQuit'), click: () => app.quit() },
+      {
+        label: tr('trayQuit'),
+        click: () => {
+          quitting = true
+          app.quit()
+        },
+      },
     ]),
   )
 }
@@ -289,6 +322,11 @@ if (!app.requestSingleInstanceLock()) {
   })
 }
 
-app.on('before-quit', () => clipboardSession?.close())
+// Anything that ends the application — the tray menu, a session ending, a task manager —
+// arrives here first, and from here on a close means a close.
+app.on('before-quit', () => {
+  quitting = true
+  clipboardSession?.close()
+})
 
 app.on('window-all-closed', () => app.quit())

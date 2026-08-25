@@ -535,3 +535,8 @@ button:disabled { opacity: .3; cursor: default; }
 @media (prefers-reduced-motion: reduce) {
   * { transition-duration: .01ms !important; }
 }
+
+/* The settings dialog's one checkbox. The label carries the sentence, so the box sits at
+   the start of the line rather than the row being pushed apart like the language row. */
+.switch-row { display: flex; align-items: center; gap: 10px; margin: 14px 0 4px; cursor: pointer; }
+.switch-row input { width: auto; margin: 0; }

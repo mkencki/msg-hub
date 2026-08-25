@@ -3,7 +3,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { loadLayout, saveLayout, acceptHoverReport, DEFAULT_LAYOUT } from '../src/main/shell.js'
+import { loadLayout, saveLayout, setAutoStart, acceptHoverReport, DEFAULT_LAYOUT } from '../src/main/shell.js'
 
 let file, dir
 
@@ -125,5 +125,56 @@ describe('acceptHoverReport', () => {
   // about it, and the rail must not be left open on a stale hover.
   test('a leave from outside the rail counts even with the window in the background', () => {
     expect(acceptHoverReport(report({ pointerStillInside: false, windowFocused: false }))).toBe(true)
+  })
+})
+
+describe('autostart', () => {
+  const calls = []
+  const fakeApp = { setLoginItemSettings: (settings) => calls.push(settings) }
+
+  // openAsHidden is documented by Electron as macOS-only and deprecated. On Windows it does
+  // nothing at all, so the app that was supposed to slip into the tray at login came up in
+  // front of whatever the operator was doing, every morning. The Windows way is to pass a
+  // flag on the command line and honour it at startup.
+  test('a hidden start is asked for the way Windows understands', () => {
+    calls.length = 0
+
+    setAutoStart(true, fakeApp)
+
+    expect(calls).toHaveLength(1)
+    expect(calls[0].openAtLogin).toBe(true)
+    expect(calls[0].args).toEqual(['--hidden'])
+    expect(calls[0]).not.toHaveProperty('openAsHidden')
+  })
+
+  test('turning it off turns it off', () => {
+    calls.length = 0
+
+    setAutoStart(false, fakeApp)
+
+    expect(calls[0].openAtLogin).toBe(false)
+  })
+})
+
+describe('closing to the tray inside the layout', () => {
+  // The app exists to sit in the tray and notice things, so that is the default. The tray
+  // menu keeps a Quit item, and this switch is in Settings for anyone who wants the window
+  // button to mean what it usually means.
+  test('a fresh profile closes to the tray', () => {
+    expect(DEFAULT_LAYOUT.closeToTray).toBe(true)
+  })
+
+  test('the choice survives a restart', async () => {
+    const file = path.join(dir, 'layout.json')
+    await saveLayout(file, { ...DEFAULT_LAYOUT, closeToTray: false })
+
+    expect((await loadLayout(file)).closeToTray).toBe(false)
+  })
+
+  test('a layout file written before this setting existed still closes to the tray', async () => {
+    const file = path.join(dir, 'layout.json')
+    await writeFile(file, JSON.stringify({ width: 1000, height: 700 }), 'utf8')
+
+    expect((await loadLayout(file)).closeToTray).toBe(true)
   })
 })

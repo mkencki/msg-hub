@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld('msgHub', {
   moveAccount: (accountId, offset) => ipcRenderer.invoke('accounts:move', accountId, offset),
   switchAccount: (accountId) => ipcRenderer.invoke('accounts:switch', accountId),
   setViewsVisible: (visible) => ipcRenderer.invoke('views:visibility', visible),
+  getCloseToTray: () => ipcRenderer.invoke('closeToTray:get'),
+  setCloseToTray: (enabled) => ipcRenderer.invoke('closeToTray:set', enabled),
   getLanguage: () => ipcRenderer.invoke('language:get'),
   setLanguage: (code) => ipcRenderer.invoke('language:set', code),
   railState: () => ipcRenderer.invoke('rail:state'),

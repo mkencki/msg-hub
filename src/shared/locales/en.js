@@ -31,6 +31,8 @@ export const en = {
   accounts: 'Accounts',
   orderHint: 'The order on this list is the order of the channels.',
   language: 'Language',
+  closeToTray: 'Closing the window keeps msg-hub in the tray',
+  closeToTrayHint: 'Quit from the tray icon when you really want it gone.',
   close: 'Close',
   noAccountsHint: 'No accounts yet — click "Add account".',
   edit: 'Edit',

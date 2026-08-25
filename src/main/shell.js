@@ -6,11 +6,18 @@ export const DEFAULT_LAYOUT = {
   maximized: false,
   // An unpinned rail collapses to icons and expands when the cursor enters it.
   railPinned: false,
+  // The app exists to sit in the tray and notice things arriving, so the window button
+  // puts it there rather than ending the process. The tray menu keeps a Quit item, and
+  // Settings keeps a switch for anyone who wants the button to mean what it usually means.
+  closeToTray: true,
   // English after installation — the app travels beyond one machine. The list of
   // languages and their validation live in src/renderer/i18n.js; only the stored
   // value lives here, so the main process does not drag the dictionaries with it.
   language: 'en',
 }
+
+// Passed by the login item and read back at startup — see setAutoStart.
+export const HIDDEN_FLAG = '--hidden'
 
 const MIN_WIDTH = 800
 const MIN_HEIGHT = 600
@@ -31,6 +38,9 @@ export async function loadLayout(filePath) {
       height: Math.max(MIN_HEIGHT, height || DEFAULT_LAYOUT.height),
       maximized: Boolean(data.maximized ?? data.zmaksymalizowane),
       railPinned: Boolean(data.railPinned ?? data.szynaPrzypieta),
+      // Absent in every layout file written before this setting existed, and absent is not
+      // the same as off — those profiles get the default like a fresh one.
+      closeToTray: data.closeToTray === undefined ? DEFAULT_LAYOUT.closeToTray : Boolean(data.closeToTray),
       // A string and nothing else. Whether such a language exists is decided by the
       // renderer through validLanguage() — an object or a number out of a damaged
       // file must never reach the interface.
@@ -53,8 +63,12 @@ export async function saveLayout(filePath, layout, legacyPath = null) {
   }
 }
 
+// openAsHidden is documented by Electron as macOS-only and deprecated; on Windows it does
+// nothing, so an app told to start hidden at login came up in front of whatever the operator
+// was doing, every morning. The Windows way is a flag on the command line, honoured when the
+// window is built.
 export function setAutoStart(enabled, app) {
-  app.setLoginItemSettings({ openAtLogin: Boolean(enabled), openAsHidden: true })
+  app.setLoginItemSettings({ openAtLogin: Boolean(enabled), args: [HIDDEN_FLAG] })
 }
 
 // A mouseleave on the channel rail does not always mean the pointer left it. Chromium fires

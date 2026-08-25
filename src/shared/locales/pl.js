@@ -36,6 +36,8 @@ export const pl = {
   accounts: 'Konta',
   orderHint: 'Kolejność na liście jest kolejnością kanałów.',
   language: 'Język',
+  closeToTray: 'Zamknięcie okna zostawia msg-hub w zasobniku',
+  closeToTrayHint: 'Gdy naprawdę chcesz go zamknąć, użyj „Zakończ” z ikony w zasobniku.',
   close: 'Zamknij',
   noAccountsHint: 'Brak kont — kliknij „Dodaj konto".',
   edit: 'Edytuj',

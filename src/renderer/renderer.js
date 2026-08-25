@@ -423,6 +423,12 @@ languageSelect.addEventListener('change', async () => {
   await applyLanguage()
 })
 
+const closeToTrayBox = document.getElementById('close-to-tray')
+
+closeToTrayBox.addEventListener('change', async () => {
+  closeToTrayBox.checked = await window.msgHub.setCloseToTray(closeToTrayBox.checked)
+})
+
 async function start() {
   try {
     // The language must be known BEFORE the first list is drawn, otherwise the first
@@ -430,6 +436,7 @@ async function start() {
     language = validLanguage(await window.msgHub.getLanguage())
     translateDocument()
     buildLanguageSelect()
+    closeToTrayBox.checked = await window.msgHub.getCloseToTray()
     applyRailState(await window.msgHub.railState())
     await refreshRail()
   } catch (error) {
