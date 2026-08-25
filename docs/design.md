@@ -19,6 +19,13 @@ internals of WhatsApp Web. That breaches WhatsApp's terms and risks a permanent 
 phone number. The operator's work number is one of the accounts in question, so avoiding
 that entire category of tooling is an overriding requirement, not a preference.
 
+**Widened 2026-08-25.** An account no longer has to be a messenger. See section 2,
+*Whole services*: the mechanism the audit identified — an isolated browser profile in a
+native view — turns out to be indifferent to what the profile holds, and the operator has
+uses for two sites whose messaging is only one page among many. The purpose above still
+describes what the application is *for*; it no longer describes the limit of what it may
+hold.
+
 ## 2. Scope
 
 ### In scope
@@ -38,6 +45,47 @@ that entire category of tooling is an overriding requirement, not a preference.
 - any automatic sending of messages (forbidden — see section 7)
 - contact export, chatbots, AI replies (the `wa-js` category, forbidden — see section 7)
 - a web version and access from the work laptop (withdrawn by the operator, 2026-08-23)
+
+### Whole services
+
+*Amended 2026-08-25, by the operator's decision.*
+
+An account may host a **whole service**, not only its messaging surface. LinkedIn and
+Facebook enter the design as full sites — `linkedin.com`, `facebook.com` — rather than as
+`/messaging/` and `/messages/`. Messaging on those two is one page inside a site the
+operator reads anyway, and splitting it off would mean keeping the same login open twice.
+
+This is a change of what the product *is*, not a longer list of URLs. A messenger is a
+single screen the user watches; a social network is a place they navigate. Four
+consequences follow, and none of them is optional:
+
+1. **A navigation and child-window contract becomes a precondition, not a nicety.** A whole
+   service is full of outbound links, and its sign-in legitimately crosses origins
+   mid-flow. Without a policy the application is a browser with no address bar, no back
+   button and notifications granted in advance — a worse place to click a stranger's link
+   than the real browser next to it. Each platform therefore declares the hosts it owns
+   and the hosts it authenticates through. Anything else opens in the system browser.
+   Naive rules break this in both directions: blocking every off-origin navigation breaks
+   OAuth, and allowing any host that merely *contains* the service name admits
+   `facebook.com.example.invalid`.
+2. **The unread badge stays honest and therefore stays absent.** `unreadFromTitle` reads a
+   leading `(N)` from the page title, which is a convention of Meta's two messengers, not a
+   general mechanism. Every other wrapper in this category reads the count by injecting a
+   script that scrapes the page; section 7 forbids that, and the prohibition does not bend
+   for a service the operator happens to want. A service whose title carries no count gets
+   **no count**, and relies on the system notification instead. A badge that guesses is
+   worse than a blank one.
+3. **Notifications become a per-account matter.** A messenger notifies when a person writes
+   to you. A social network notifies about reactions, groups, pages, birthdays and things
+   it would like you to look at. Granting the permission once for every account, as the
+   application does today, does not survive contact with a full Facebook.
+4. **Platforms remain a closed list.** The obvious generalisation — an account type that
+   takes any URL — is refused. It would turn a reviewed allowlist into an uncontrolled
+   browser carrying live sessions, and it is a security regression wearing the costume of
+   flexibility. Adding a service stays a deliberate edit to this design.
+
+Section 7 is untouched by any of this. A whole service is still a page loaded exactly as
+its owner serves it, with nothing injected into it.
 
 ## 3. Architecture
 
@@ -204,14 +252,25 @@ Preparing a message is user behaviour; sending it automatically would be the aut
 audit warned about. The boundary is here, not further out.
 
 **7.2 The application does not load `wa-js`, WPPConnect, Baileys or any related library.**
-No access to the internals of WhatsApp Web. Pages load exactly as Meta serves them.
+No access to the internals of any page an account loads. Pages load exactly as their owner
+serves them.
 
 **7.3 Content is inserted through the clipboard.** A clipboard write and a paste are
 indistinguishable from doing it by hand. Stage 0 settled this rule positively and **without
-exceptions** — see section 9. The application does not manipulate elements of the WhatsApp
-page for any purpose, attachments included.
+exceptions** — see section 9. The application does not manipulate elements of a loaded page
+for any purpose, attachments included.
 
 Beyond these rules the application is an ordinary browser with tabs.
+
+> **Generalised 2026-08-25, alongside the *Whole services* amendment in section 2.** Rules
+> 7.2 and 7.3 were written naming WhatsApp, because at the time WhatsApp was the only page
+> whose internals anyone would have been tempted to reach into. Now that an account may
+> host any service on the list, a prohibition that names one site would have left the
+> others outside it — which is the opposite of what these rules are for. The wording is
+> widened to every page an account loads; nothing is relaxed, and the reason is unchanged.
+> The temptation the rules exist to refuse is the same one in every case: reading a page's
+> DOM to obtain an unread count. Section 2 states the consequence plainly — a service whose
+> title carries no count gets no count.
 
 ## 8. Error handling
 
