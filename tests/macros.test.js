@@ -12,6 +12,8 @@ import {
   storageUsage,
   upsert,
   ATTACHMENT_LIMIT_BYTES,
+  parseTags,
+  formatTags,
 } from '../src/main/macros.js'
 
 let file, dir
@@ -165,5 +167,37 @@ describe('cleaning a store that does not exist', () => {
     const missingDir = path.join(dir, 'att-that-does-not-exist')
 
     expect(await removeOrphanAttachments(missingDir, [])).toEqual([])
+  })
+})
+
+describe('tags as the operator types them', () => {
+  test('a comma-separated line becomes a list', () => {
+    expect(parseTags('offer, client zone, pdf')).toEqual(['offer', 'client zone', 'pdf'])
+  })
+
+  // Search lowercases what it looks for, so a tag stored with a capital would be findable
+  // by "Zone" and invisible to "zone" — which is what anyone would actually type.
+  test('case is settled on the way in, because search settles it on the way out', () => {
+    expect(parseTags('Offer, ZONE')).toEqual(['offer', 'zone'])
+  })
+
+  test('empty pieces and stray spaces are dropped rather than stored', () => {
+    expect(parseTags('  offer ,, ,  pdf  ')).toEqual(['offer', 'pdf'])
+  })
+
+  test('the same tag twice is the same tag once', () => {
+    expect(parseTags('offer, Offer,  offer ')).toEqual(['offer'])
+  })
+
+  test('nothing typed is no tags, not a list with a blank in it', () => {
+    expect(parseTags('')).toEqual([])
+    expect(parseTags('   ')).toEqual([])
+    expect(parseTags(undefined)).toEqual([])
+  })
+
+  test('what was stored comes back the way it was typed, ready to edit', () => {
+    expect(formatTags(['offer', 'client zone'])).toBe('offer, client zone')
+    expect(formatTags([])).toBe('')
+    expect(formatTags(undefined)).toBe('')
   })
 })

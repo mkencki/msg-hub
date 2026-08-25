@@ -1,5 +1,6 @@
 import { toHtml } from './preview.js'
 import { t, availableLanguages, validLanguage, DEFAULT_LANGUAGE } from '../shared/i18n.js'
+import { parseTags, formatTags } from '../shared/tags.js'
 
 // Interface language. The value arrives from the main process at startup, so until the
 // answer comes back we hold the default — otherwise the first frame would show bare keys.
@@ -324,7 +325,27 @@ export async function refreshMacros() {
       confirmMacroRemoval(macro)
     })
 
-    row.append(label, edit, remove)
+    // Tags nobody can see are tags nobody uses, and showing them is also the only
+    // explanation the filter needs. Clicking one searches for it, which is exactly what the
+    // search box already does — the tag is a shortcut to typing it.
+    const tags = document.createElement('span')
+    tags.className = 'macro-tags'
+    for (const tag of macro.tags ?? []) {
+      const chip = document.createElement('button')
+      chip.type = 'button'
+      chip.className = 'macro-tag'
+      chip.textContent = tag
+      chip.title = tr('filterByTag', { tag })
+      chip.addEventListener('click', (event) => {
+        event.stopPropagation()
+        macroSearch.value = tag
+        selectedMacro = 0
+        refreshMacros()
+      })
+      tags.append(chip)
+    }
+
+    row.append(label, tags, edit, remove)
     macroList.append(row)
   })
 }
@@ -516,6 +537,7 @@ window.msgHub.onMessage((payload) => showMessage(payload.text, payload.tone ?? '
 const editorDialog = document.getElementById('editor-dialog')
 const editorName = document.getElementById('editor-name')
 const editorText = document.getElementById('editor-text')
+const editorTags = document.getElementById('editor-tags')
 const editorPreview = document.getElementById('editor-preview')
 
 function refreshPreview() {
@@ -556,6 +578,7 @@ function openEditor(macro = null) {
   document.getElementById('editor-title').textContent = tr(macro ? 'editMacro' : 'newMacro')
   editorName.value = macro?.name ?? ''
   editorText.value = macro?.text ?? ''
+  editorTags.value = formatTags(macro?.tags)
   macroAttachments = [...(macro?.attachments ?? [])]
   refreshAttachments()
   refreshPreview()
@@ -580,6 +603,9 @@ document.getElementById('save-macro').addEventListener('click', async (event) =>
     ...(editedMacroId ? { id: editedMacroId } : {}),
     name: editorName.value,
     text: editorText.value,
+    // Sent on every save, including when it is empty. A save is a partial update, so a field
+    // that is never sent can never be cleared — which is how tags used to be lost.
+    tags: parseTags(editorTags.value),
     attachments: macroAttachments,
   })
   if (!result.ok) {

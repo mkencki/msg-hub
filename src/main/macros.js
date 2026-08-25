@@ -2,6 +2,11 @@ import { readFile, writeFile, rename, copyFile, stat, readdir, unlink, mkdir } f
 import path from 'node:path'
 import { randomUUID } from 'node:crypto'
 
+// Re-exported from here because this is where anything about the macro model is looked
+// for. The definition lives in shared/ so the sandboxed renderer can use it too, and
+// putting it in src/main would drag node:fs into that import graph.
+export { parseTags, formatTags } from '../shared/tags.js'
+
 export const SCHEMA_VERSION = 2
 
 export function makeMacroId(name) {
