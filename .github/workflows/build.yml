@@ -46,9 +46,24 @@ jobs:
           path: dist/msg-hub-*-installer.exe
           if-no-files-found: error
 
+      # The body of a release is the notes for THIS version followed by the installation
+      # caveats. The notes file accumulates every version, so the section is cut out by its
+      # heading rather than pasted whole — a release carrying the previous versions' notes as
+      # well would read as though nothing had changed. A tag with no section fails here, loudly,
+      # instead of publishing a release whose body is an empty promise.
+      - name: Assemble the release body
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          $notes = Get-Content docs/release-notes.md -Raw
+          $section = [regex]::Match($notes, "(?ms)^## $([regex]::Escape($version))\b.*?(?=^## |\z)")
+          if (-not $section.Success) { throw "docs/release-notes.md has no section for $version" }
+          Set-Content release-body.md ($section.Value.TrimEnd() + "`n`n---`n`n" + (Get-Content docs/installing.md -Raw))
+
       - name: Attach installer to the release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: dist/msg-hub-*-installer.exe
-          body_path: docs/installing.md
+          body_path: release-body.md
+          generate_release_notes: true
