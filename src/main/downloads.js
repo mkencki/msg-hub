@@ -11,6 +11,19 @@ export function resolveDownloadDir(configured, systemDownloads) {
   return chosen || systemDownloads
 }
 
+// What happens to a file the moment it starts arriving: either the operator is asked, or the
+// application picks the path. It is a function of its arguments and nothing else, because the
+// asking branch ends in a modal save dialog and no end-to-end test can answer a modal — every
+// download test has to turn the question off, which left the DEFAULT behaviour of this
+// application as the one branch nothing exercised.
+//
+// Anything other than an explicit false means asking. A damaged layout file must not turn into
+// silently writing files somewhere the operator never chose.
+export function planSave({ ask, folder, filename, exists }) {
+  if (ask !== false) return { mode: 'dialog', defaultPath: path.join(folder, filename) }
+  return { mode: 'path', savePath: uniquePath(folder, filename, exists) }
+}
+
 // Chromium uniquifies a name only while it is choosing the path itself. Once setSavePath has
 // been called the path is taken literally, so the same attachment downloaded twice would
 // overwrite the first copy without a word.

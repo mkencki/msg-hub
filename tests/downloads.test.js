@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest'
 import path from 'node:path'
-import { resolveDownloadDir, uniquePath } from '../src/main/downloads.js'
+import { resolveDownloadDir, uniquePath, planSave } from '../src/main/downloads.js'
 
 describe('resolveDownloadDir', () => {
   // An unset folder is resolved when a download starts, not written into the layout file: a
@@ -56,5 +56,44 @@ describe('uniquePath', () => {
 
   test('a dotfile is not mistaken for an extension', () => {
     expect(uniquePath(where, '.gitignore', taken('.gitignore'))).toBe(path.join(where, '.gitignore (2)'))
+  })
+})
+
+// What happens to a file the moment it starts arriving. It is a pure function for one reason:
+// the DEFAULT branch opens a modal save dialog, and no end-to-end test can answer a modal — so
+// every download test has to turn the question off, and the branch the operator actually meets
+// was the one branch nothing ever exercised.
+describe('planSave', () => {
+  const where = 'D:\\Praca'
+  const free = () => false
+
+  test('asking hands the dialog a starting point instead of a path', () => {
+    const plan = planSave({ ask: true, folder: where, filename: 'faktura.pdf', exists: free })
+
+    expect(plan.mode).toBe('dialog')
+    expect(plan.defaultPath).toBe(path.join(where, 'faktura.pdf'))
+    expect(plan.savePath).toBeUndefined()
+  })
+
+  test('not asking picks the path itself', () => {
+    const plan = planSave({ ask: false, folder: where, filename: 'faktura.pdf', exists: free })
+
+    expect(plan.mode).toBe('path')
+    expect(plan.savePath).toBe(path.join(where, 'faktura.pdf'))
+  })
+
+  test('not asking still refuses to land on a file that is already there', () => {
+    const taken = (candidate) => candidate === path.join(where, 'faktura.pdf')
+    const plan = planSave({ ask: false, folder: where, filename: 'faktura.pdf', exists: taken })
+
+    expect(plan.savePath).toBe(path.join(where, 'faktura (2).pdf'))
+  })
+
+  // A damaged layout file must not turn into silent writing. Anything that is not an explicit
+  // "no" leaves the operator in charge of where the file goes.
+  test('a setting that is missing or damaged asks rather than writes', () => {
+    for (const ask of [undefined, null, 'nonsense']) {
+      expect(planSave({ ask, folder: where, filename: 'x.pdf', exists: free }).mode).toBe('dialog')
+    }
   })
 })

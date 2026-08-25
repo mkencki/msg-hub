@@ -9,7 +9,7 @@ import { classify } from './navigation.js'
 import { registerAccountChannels, registerMacroChannels } from './bridge.js'
 import { createClipboardSession } from './file-clipboard.js'
 import { createLogger } from './log.js'
-import { resolveDownloadDir, uniquePath } from './downloads.js'
+import { resolveDownloadDir, planSave } from './downloads.js'
 import { WINDOW_ICON, TRAY_ICON } from './assets.js'
 import { t, validLanguage } from '../shared/i18n.js'
 
@@ -420,13 +420,12 @@ async function createWindow() {
       const target = resolveDownloadDir(downloadDir, app.getPath('downloads'))
       const filename = item.getFilename()
 
-      if (askWhereToSave) {
-        // Electron opens its own save dialog when no path is set. The setting still has a say
-        // in where that dialog starts.
-        item.setSaveDialogOptions({ defaultPath: path.join(target, filename) })
-      } else {
-        item.setSavePath(uniquePath(target, filename, existsSync))
-      }
+      // Which of the two happens is decided in downloads.js, where it can be tested: the
+      // asking branch ends in a modal no end-to-end test can answer, so it used to be the one
+      // branch nothing exercised — and it is the default.
+      const plan = planSave({ ask: askWhereToSave, folder: target, filename, exists: existsSync })
+      if (plan.mode === 'dialog') item.setSaveDialogOptions({ defaultPath: plan.defaultPath })
+      else item.setSavePath(plan.savePath)
 
       const id = showMessage(tr('downloadStarted', { account: account.name, file: filename }), { tone: 'info' })
 
