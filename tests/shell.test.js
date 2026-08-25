@@ -178,3 +178,45 @@ describe('closing to the tray inside the layout', () => {
     expect((await loadLayout(file)).closeToTray).toBe(true)
   })
 })
+
+describe('where downloads go, inside the layout', () => {
+  // Asking is what Electron does when no save path is set, so this default changes nothing
+  // about how the application already behaves — it only puts the behaviour somewhere it can
+  // be turned off.
+  test('a fresh profile asks where to save', () => {
+    expect(DEFAULT_LAYOUT.askWhereToSave).toBe(true)
+  })
+
+  // Empty, and resolved to the system Downloads folder when a download starts. Writing the
+  // resolved path here would put a machine-specific path into a file that travels.
+  test('a fresh profile names no folder of its own', () => {
+    expect(DEFAULT_LAYOUT.downloadDir).toBe('')
+  })
+
+  test('both choices survive a restart', async () => {
+    const file = path.join(dir, 'layout.json')
+    await saveLayout(file, { ...DEFAULT_LAYOUT, askWhereToSave: false, downloadDir: 'D:\Praca' })
+
+    const layout = await loadLayout(file)
+    expect(layout.askWhereToSave).toBe(false)
+    expect(layout.downloadDir).toBe('D:\Praca')
+  })
+
+  // Absent is not the same as off — the same rule closeToTray had to learn.
+  test('a layout file written before these settings existed still asks', async () => {
+    const file = path.join(dir, 'layout.json')
+    await writeFile(file, JSON.stringify({ width: 1000, height: 700 }), 'utf8')
+
+    const layout = await loadLayout(file)
+    expect(layout.askWhereToSave).toBe(true)
+    expect(layout.downloadDir).toBe('')
+  })
+
+  // A damaged file must not reach the save dialog as an object or a number.
+  test('a folder that is not a string is no folder at all', async () => {
+    const file = path.join(dir, 'layout.json')
+    await writeFile(file, JSON.stringify({ downloadDir: { where: 'D:\Praca' } }), 'utf8')
+
+    expect((await loadLayout(file)).downloadDir).toBe('')
+  })
+})

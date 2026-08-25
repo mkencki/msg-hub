@@ -10,6 +10,13 @@ export const DEFAULT_LAYOUT = {
   // puts it there rather than ending the process. The tray menu keeps a Quit item, and
   // Settings keeps a switch for anyone who wants the button to mean what it usually means.
   closeToTray: true,
+  // Where files from the accounts go, and whether the operator is asked every time. Asking is
+  // what Electron does when no save path is set, so this default changes nothing about how the
+  // application already behaves — it only puts the behaviour where it can be turned off. The
+  // folder is left empty rather than resolved: the system Downloads folder is worked out when
+  // a download starts, so a layout file copied to another machine carries no path from this one.
+  downloadDir: '',
+  askWhereToSave: true,
   // English after installation — the app travels beyond one machine. The list of
   // languages and their validation live in src/renderer/i18n.js; only the stored
   // value lives here, so the main process does not drag the dictionaries with it.
@@ -41,6 +48,11 @@ export async function loadLayout(filePath) {
       // Absent in every layout file written before this setting existed, and absent is not
       // the same as off — those profiles get the default like a fresh one.
       closeToTray: data.closeToTray === undefined ? DEFAULT_LAYOUT.closeToTray : Boolean(data.closeToTray),
+      // A string and nothing else, for the same reason as the language below: an object out of
+      // a damaged file must never reach a save dialog as a starting folder.
+      downloadDir: typeof data.downloadDir === 'string' ? data.downloadDir : DEFAULT_LAYOUT.downloadDir,
+      askWhereToSave:
+        data.askWhereToSave === undefined ? DEFAULT_LAYOUT.askWhereToSave : Boolean(data.askWhereToSave),
       // A string and nothing else. Whether such a language exists is decided by the
       // renderer through validLanguage() — an object or a number out of a damaged
       // file must never reach the interface.

@@ -546,6 +546,27 @@ closeToTrayBox.addEventListener('change', async () => {
   closeToTrayBox.checked = await window.msgHub.setCloseToTray(closeToTrayBox.checked)
 })
 
+const askWhereToSaveBox = document.getElementById('ask-where-to-save')
+const downloadDirField = document.getElementById('download-dir')
+
+// The field shows the RESOLVED folder, so "the system Downloads folder" appears as a path
+// rather than as a blank space the operator has to interpret.
+function applyDownloadSettings(settings) {
+  if (!settings) return
+  askWhereToSaveBox.checked = settings.ask
+  downloadDirField.textContent = settings.resolved
+  downloadDirField.title = settings.resolved
+}
+
+askWhereToSaveBox.addEventListener('change', async () => {
+  applyDownloadSettings(await window.msgHub.setDownloadSettings({ ask: askWhereToSaveBox.checked }))
+})
+
+document.getElementById('pick-download-dir').addEventListener('click', async () => {
+  // Null means the picker was cancelled, and cancelling is not a decision to change anything.
+  applyDownloadSettings(await window.msgHub.pickDownloadDir())
+})
+
 async function start() {
   try {
     // The language must be known BEFORE the first list is drawn, otherwise the first
@@ -554,6 +575,7 @@ async function start() {
     translateDocument()
     buildLanguageSelect()
     closeToTrayBox.checked = await window.msgHub.getCloseToTray()
+    applyDownloadSettings(await window.msgHub.downloadSettings())
     applyRailState(await window.msgHub.railState())
     await refreshRail()
   } catch (error) {

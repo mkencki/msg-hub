@@ -134,3 +134,36 @@ test('removing an account and closing the app raises no exception in the main pr
 
   expect(stderrOutput.join('')).not.toMatch(/Object has been destroyed|Uncaught Exception/)
 })
+
+// Asking where to save is what Electron does with no save path set, so the switch starts on:
+// the default has to change nothing about how the application already behaves.
+test('a fresh profile asks where to save, and says where files would go', async () => {
+  await page.locator('#open-settings').click()
+
+  await expect(page.locator('#ask-where-to-save')).toBeChecked()
+  // The system Downloads folder is SHOWN as a path, so the field is not a blank the operator
+  // has to interpret.
+  await expect(page.locator('#download-dir')).toHaveText(/^[A-Za-z]:\\/)
+
+  // And it is not STORED as one. Toggling the switch writes the layout file, so this reads
+  // what a profile carrying this setting actually holds: an empty folder, which the next
+  // machine resolves for itself.
+  await page.locator('#ask-where-to-save').uncheck()
+  await expect
+    .poll(async () => JSON.parse(await readFile(path.join(dataDir, 'layout.json'), 'utf8')).downloadDir)
+    .toBe('')
+})
+
+test('turning the question off survives a restart', async () => {
+  await page.locator('#open-settings').click()
+  await page.locator('#ask-where-to-save').uncheck()
+  await page.locator('#close-settings').click()
+
+  await electronApp.close()
+  electronApp = await electron.launch({ args: ['.', `--user-data-dir=${dataDir}`] })
+  page = await electronApp.firstWindow()
+  await page.waitForSelector('body[data-ready="1"]')
+
+  await page.locator('#open-settings').click()
+  await expect(page.locator('#ask-where-to-save')).not.toBeChecked()
+})

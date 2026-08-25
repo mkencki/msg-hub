@@ -551,6 +551,29 @@ button:disabled { opacity: .3; cursor: default; }
 }
 .switch-row input[type="checkbox"] { width: auto; margin: 0; flex: none; }
 
+/* The download folder: a caption, the path it resolves to, and the button that changes it.
+   A path is the one piece of text here that can be arbitrarily long, so it takes the slack
+   and loses its middle rather than pushing the button off the dialog. */
+.path-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 16px 12px;
+  font-size: 12.5px;
+}
+.path-row > span { flex: none; }
+.path-row output {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: 11px;
+  color: var(--muted);
+}
+.path-row button { flex: none; width: auto; }
+
 /* An action inside the status-bar message. It sits next to the text rather than at the end
    of the bar, so the sentence and the thing to do about it read as one. */
 .message-action {

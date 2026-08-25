@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, globalShortcut, shell, powerMonitor } from 'electron'
+import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, globalShortcut, shell, powerMonitor, dialog } from 'electron'
 import path from 'node:path'
 import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -9,6 +9,7 @@ import { classify } from './navigation.js'
 import { registerAccountChannels, registerMacroChannels } from './bridge.js'
 import { createClipboardSession } from './file-clipboard.js'
 import { createLogger } from './log.js'
+import { resolveDownloadDir, uniquePath } from './downloads.js'
 import { t, validLanguage } from '../shared/i18n.js'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
@@ -167,6 +168,8 @@ async function createWindow() {
   })
 
   let closeToTray = Boolean(layout.closeToTray)
+  let downloadDir = String(layout.downloadDir ?? '')
+  let askWhereToSave = layout.askWhereToSave !== false
   let railPinned = Boolean(layout.railPinned)
   let railHovered = false
   const railExpanded = () => railPinned || railHovered
@@ -226,6 +229,8 @@ async function createWindow() {
       maximized: window.isMaximized(),
       railPinned,
       closeToTray,
+      downloadDir,
+      askWhereToSave,
       language,
     }
   }
@@ -240,6 +245,37 @@ async function createWindow() {
     closeToTray = Boolean(next)
     await saveLayout(layoutFile, currentLayout(), legacyLayoutFile).catch(() => {})
     return closeToTray
+  })
+
+  // Downloads. `resolved` is what the operator is shown, so that "the system Downloads folder"
+  // appears as a path rather than as a blank field, while the stored value stays empty and
+  // travels with the profile.
+  const downloadSettings = () => ({
+    dir: downloadDir,
+    resolved: resolveDownloadDir(downloadDir, app.getPath('downloads')),
+    ask: askWhereToSave,
+  })
+
+  ipcMain.handle('downloads:settings', () => downloadSettings())
+
+  ipcMain.handle('downloads:settings-set', async (_event, changes) => {
+    if (changes?.dir !== undefined) downloadDir = String(changes.dir ?? '')
+    if (changes?.ask !== undefined) askWhereToSave = Boolean(changes.ask)
+    await saveLayout(layoutFile, currentLayout(), legacyLayoutFile).catch(() => {})
+    return downloadSettings()
+  })
+
+  // A folder, not a file. Cancelling means "leave it as it was" rather than "clear it" —
+  // backing out of a picker is not a decision to change anything.
+  ipcMain.handle('downloads:pick-dir', async () => {
+    const result = await dialog.showOpenDialog(window, {
+      properties: ['openDirectory', 'createDirectory'],
+      defaultPath: resolveDownloadDir(downloadDir, app.getPath('downloads')),
+    })
+    if (result.canceled || !result.filePaths.length) return null
+    downloadDir = result.filePaths[0]
+    await saveLayout(layoutFile, currentLayout(), legacyLayoutFile).catch(() => {})
+    return downloadSettings()
   })
 
   ipcMain.handle('language:get', () => language)
