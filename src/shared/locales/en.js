@@ -34,6 +34,7 @@ export const en = {
   closeToTray: 'Closing the window keeps msg-hub in the tray',
   closeToTrayHint: 'Quit from the tray icon when you really want it gone.',
   shortcutTaken: 'Another program already owns {shortcut}, so the macro shortcut is off.',
+  downloadStarted: 'Downloading {file} from {account}.',
   close: 'Close',
   noAccountsHint: 'No accounts yet — click "Add account".',
   edit: 'Edit',

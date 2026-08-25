@@ -1,0 +1,93 @@
+import { describe, test, expect } from 'vitest'
+import { classify } from '../src/main/navigation.js'
+
+// The shape a platform declares. The real ones live in accounts.js; these are here so the
+// rules can be read next to the cases that exercise them.
+const messenger = {
+  hosts: ['messenger.com', 'facebook.com', 'meta.com'],
+  authHosts: [],
+  external: ['l.facebook.com', 'lm.facebook.com', 'www.facebook.com/l.php'],
+}
+
+const withApple = { hosts: ['linkedin.com'], authHosts: ['appleid.apple.com'], external: [] }
+
+describe('classify', () => {
+  test('the service itself stays in the account view', () => {
+    expect(classify(messenger, 'https://www.messenger.com/t/12345')).toBe('view')
+    expect(classify(messenger, 'https://messenger.com/')).toBe('view')
+  })
+
+  test('a link out of a conversation goes to the system browser', () => {
+    expect(classify(messenger, 'https://example.org/article')).toBe('external')
+  })
+
+  // eTLD+1 matching gives the opposite of the intended answer here, which is the entire
+  // reason host matching is a suffix comparison ON A DOT BOUNDARY and never a substring.
+  test('a host that merely ends with the service name is a stranger', () => {
+    expect(classify(messenger, 'https://facebook.com.example.invalid/login')).toBe('external')
+    expect(classify(messenger, 'https://notfacebook.com/')).toBe('external')
+  })
+
+  // Meta wraps outgoing links so that every one of them looks like a facebook.com URL. The
+  // external list is therefore consulted BEFORE the host list, or the wrapper would keep
+  // the whole web inside the account view.
+  test('a link shim is a link out, however much it looks like the service', () => {
+    expect(classify(messenger, 'https://l.facebook.com/l.php?u=https%3A%2F%2Fexample.org')).toBe('external')
+    expect(classify(messenger, 'https://lm.facebook.com/l.php?u=x')).toBe('external')
+    expect(classify(messenger, 'https://www.facebook.com/l.php?u=x')).toBe('external')
+  })
+
+  test('the service host is still itself on paths the shim does not own', () => {
+    expect(classify(messenger, 'https://www.facebook.com/marketplace')).toBe('view')
+  })
+
+  // Nothing but a page fetched over http or https is ever handed to the system, because
+  // shell.openExternal will happily launch whatever the operating system associates with a
+  // scheme it does not recognise.
+  test('anything that is not a web page at all is refused outright', () => {
+    expect(classify(messenger, 'javascript:alert(1)')).toBe('block')
+    expect(classify(messenger, 'file:///C:/Windows/System32/calc.exe')).toBe('block')
+    expect(classify(messenger, 'data:text/html,<h1>hi')).toBe('block')
+    expect(classify(messenger, 'ms-msdt:/id')).toBe('block')
+  })
+
+  test('something that is not a URL at all is refused rather than guessed at', () => {
+    expect(classify(messenger, 'not a url')).toBe('block')
+    expect(classify(messenger, '')).toBe('block')
+    expect(classify(messenger, undefined)).toBe('block')
+  })
+
+  // The same address means different things depending on how it was reached. Following a
+  // link keeps it in the view; a page ASKING for a window gets a window, because that is
+  // what sign-in flows do and they talk back to the opener.
+  test('a window the page opens on its own host becomes a controlled child window', () => {
+    expect(classify(messenger, 'https://www.messenger.com/login', { viaWindowOpen: true })).toBe('child')
+  })
+
+  // Apple's sign-in answers through postMessage to whoever opened it, so it cannot be
+  // pushed out to the system browser and cannot be silently denied either.
+  test('a declared sign-in host is allowed a child window', () => {
+    expect(
+      classify(withApple, 'https://appleid.apple.com/auth/authorize?response_mode=web_message', {
+        viaWindowOpen: true,
+      }),
+    ).toBe('child')
+  })
+
+  test('a stranger asking for a window still only gets the system browser', () => {
+    expect(classify(messenger, 'https://example.org/', { viaWindowOpen: true })).toBe('external')
+  })
+
+  test('a link shim asking for a window is still a link out', () => {
+    expect(classify(messenger, 'https://l.facebook.com/l.php?u=x', { viaWindowOpen: true })).toBe('external')
+  })
+
+  test('a sign-in host reached by following a link stays in the view', () => {
+    expect(classify(withApple, 'https://appleid.apple.com/auth/authorize')).toBe('view')
+  })
+
+  test('a platform that declares nothing sends everything to the browser', () => {
+    expect(classify({}, 'https://example.org/')).toBe('external')
+    expect(classify(undefined, 'https://example.org/')).toBe('external')
+  })
+})

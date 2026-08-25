@@ -2,9 +2,30 @@ import { readFile, writeFile, rename } from 'node:fs/promises'
 
 export const SCHEMA_VERSION = 2
 
+// `hosts` is what an account is allowed to show in its own view — matched on a dot
+// boundary, never as a substring. `authHosts` are foreign hosts a sign-in flow legitimately
+// goes through, and they are separate because trusting them is a different decision from
+// trusting the service. `external` is consulted BEFORE `hosts` and exists only for entries
+// that would otherwise match one: the shims Meta wraps outgoing links in live on the
+// service's own domain, so without it every link out would stay inside the account view.
+//
+// An entry that changes no outcome does not belong here. It would teach the next reader
+// that the list was guessed at rather than measured.
 export const PLATFORMS = {
-  whatsapp: { url: 'https://web.whatsapp.com/', defaultName: 'WhatsApp' },
-  messenger: { url: 'https://www.messenger.com/', defaultName: 'Messenger' },
+  whatsapp: {
+    url: 'https://web.whatsapp.com/',
+    defaultName: 'WhatsApp',
+    hosts: ['web.whatsapp.com'],
+    authHosts: [],
+    external: [],
+  },
+  messenger: {
+    url: 'https://www.messenger.com/',
+    defaultName: 'Messenger',
+    hosts: ['messenger.com', 'facebook.com', 'meta.com'],
+    authHosts: [],
+    external: ['l.facebook.com', 'lm.facebook.com', 'www.facebook.com/l.php'],
+  },
 }
 
 // Two accounts sharing a colour cancel out the only identity signal the rail gives.

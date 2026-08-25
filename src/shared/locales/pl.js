@@ -39,6 +39,7 @@ export const pl = {
   closeToTray: 'Zamknięcie okna zostawia msg-hub w zasobniku',
   closeToTrayHint: 'Gdy naprawdę chcesz go zamknąć, użyj „Zakończ” z ikony w zasobniku.',
   shortcutTaken: 'Inny program zajmuje {shortcut}, więc skrót do makr nie działa.',
+  downloadStarted: 'Pobieranie {file} z konta {account}.',
   close: 'Zamknij',
   noAccountsHint: 'Brak kont — kliknij „Dodaj konto".',
   edit: 'Edytuj',

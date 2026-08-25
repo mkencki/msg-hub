@@ -1,10 +1,11 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, globalShortcut } from 'electron'
+import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, globalShortcut, shell } from 'electron'
 import path from 'node:path'
 import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { cleanUserAgent, ViewManager } from './views.js'
 import { loadLayout, saveLayout, setAutoStart, acceptHoverReport, HIDDEN_FLAG } from './shell.js'
-import { loadAccounts } from './accounts.js'
+import { loadAccounts, PLATFORMS } from './accounts.js'
+import { classify } from './navigation.js'
 import { registerAccountChannels, registerMacroChannels } from './bridge.js'
 import { createClipboardSession } from './file-clipboard.js'
 import { t, validLanguage } from '../shared/i18n.js'
@@ -246,12 +247,81 @@ async function createWindow() {
     )
   })
 
+  // Until this existed a link in a conversation opened a BARE Electron window: no address
+  // bar, no back, no reload, and inside the account's signed-in session — measured, the
+  // popup's session was the very same object as the view's. Which decision an address gets
+  // is navigation.js's business; this is only the wiring.
+  const gateNavigation = (view, account) => {
+    const platform = PLATFORMS[account.platform]
+
+    const sendOut = (address) => {
+      shell.openExternal(address).catch(() => {})
+    }
+
+    view.webContents.setWindowOpenHandler((details) => {
+      const verdict = classify(platform, details.url, { viaWindowOpen: true })
+      if (verdict === 'external') sendOut(details.url)
+      if (verdict !== 'child') return { action: 'deny' }
+
+      return {
+        action: 'allow',
+        // The child window must not outlive the page that opened it: sign-in flows answer
+        // back to their opener, and one left behind is a signed-in window with no owner.
+        outlivesOpener: false,
+        overrideBrowserWindowOptions: {
+          parent: window,
+          width: 520,
+          height: 700,
+          autoHideMenuBar: true,
+          webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false },
+        },
+      }
+    })
+
+    view.webContents.on('did-create-window', (child, details) => {
+      // A window with no address bar must not be able to call itself something it is not,
+      // so its title is the origin and the page may not change it. The first argument here
+      // is a BrowserWindow, not a webContents.
+      let origin = 'about:blank'
+      try {
+        origin = new URL(details.url).origin
+      } catch {
+        // Leave the placeholder: an address we cannot parse is exactly the case where a
+        // page-chosen title would be doing the talking.
+      }
+      child.setTitle(origin)
+      // The listener belongs on the WINDOW, not on its webContents: it is the window's
+      // event whose preventDefault stops the native title from being applied. Attached to
+      // the webContents the call is accepted and does nothing, which is how a guard comes
+      // to look like it works.
+      child.on('page-title-updated', (event) => event.preventDefault())
+    })
+
+    // Only will-navigate, deliberately. A redirect is the continuation of a navigation that
+    // was already allowed, and sign-in flows legitimately pass through hosts nobody can
+    // enumerate in advance — gating those would break the sign-in rather than protect it.
+    // The rule is where a navigation CAME FROM, not where it is heading.
+    view.webContents.on('will-navigate', (event, address) => {
+      const verdict = classify(platform, address)
+      if (verdict === 'view') return
+      event.preventDefault()
+      if (verdict === 'external') sendOut(address)
+    })
+
+    // Registered on the account's own partition rather than on the default session, because
+    // on the default session there is no way to tell whose file is arriving.
+    view.webContents.session.on('will-download', (_event, item) => {
+      showMessage(tr('downloadStarted', { account: account.name, file: item.getFilename() }))
+    })
+  }
+
   const prepareView = (view, account) => {
     view.webContents.session.setPermissionRequestHandler((_wc, permission, grant) => {
       grant(permission === 'notifications')
     })
     view.webContents.on('page-title-updated', refreshBadge)
     attachShortcuts(view.webContents)
+    gateNavigation(view, account)
 
     // Clicking a Windows toast hands focus to the view the toast came from, and nothing
     // else moved with it: the rail went on showing the account the operator had walked
