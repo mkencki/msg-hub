@@ -1,6 +1,7 @@
 import { toHtml } from './preview.js'
 import { t, availableLanguages, validLanguage, DEFAULT_LANGUAGE } from '../shared/i18n.js'
 import { parseTags, formatTags } from '../shared/tags.js'
+import { findVariables } from '../shared/variables.js'
 
 // Interface language. The value arrives from the main process at startup, so until the
 // answer comes back we hold the default — otherwise the first frame would show bare keys.
@@ -251,10 +252,62 @@ function describeErrors(errors) {
 
 let selectedMacro = 0
 
+// A macro with placeholders is a question before it is an insertion. Nothing is written
+// anywhere — not the clipboard, not the page — until the question has an answer, because a
+// half-filled message on the clipboard is the one thing that could reach a conversation by
+// accident.
+const variablesDialog = document.getElementById('variables-dialog')
+const variableFields = document.getElementById('variable-fields')
+
+function askForVariables(names) {
+  variableFields.replaceChildren()
+  for (const name of names) {
+    const label = document.createElement('label')
+    const caption = document.createElement('span')
+    caption.textContent = name
+    const input = document.createElement('input')
+    input.dataset.variable = name
+    input.autocomplete = 'off'
+    label.append(caption, input)
+    variableFields.append(label)
+  }
+
+  return new Promise((resolve) => {
+    const finish = (values) => {
+      document.getElementById('fill-variables').removeEventListener('click', onFill)
+      document.getElementById('cancel-variables').removeEventListener('click', onCancel)
+      variablesDialog.removeEventListener('close', onCancel)
+      variablesDialog.close()
+      resolve(values)
+    }
+    const onFill = () => {
+      const values = {}
+      for (const input of variableFields.querySelectorAll('input')) values[input.dataset.variable] = input.value
+      finish(values)
+    }
+    // Escape and the Cancel button mean the same thing, and both mean nothing happened.
+    const onCancel = () => finish(null)
+
+    document.getElementById('fill-variables').addEventListener('click', onFill)
+    document.getElementById('cancel-variables').addEventListener('click', onCancel)
+    variablesDialog.addEventListener('close', onCancel)
+    showDialog(variablesDialog)
+    variableFields.querySelector('input')?.focus()
+  })
+}
+
 async function insertMacro(macro) {
   hideMessage()
   macrosDialog.close()
-  const result = await window.msgHub.insertMacro(macro.id)
+
+  const names = findVariables(macro.text)
+  let values = {}
+  if (names.length) {
+    values = await askForVariables(names)
+    if (!values) return
+  }
+
+  const result = await window.msgHub.insertMacro(macro.id, values)
 
   if (result?.ok) {
     // The product promise, said out loud: this app prepares, it does not send.

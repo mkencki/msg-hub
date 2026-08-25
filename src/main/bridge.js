@@ -21,6 +21,7 @@ import {
   removeOrphanAttachments,
 } from './macros.js'
 import { insertText } from './insertion.js'
+import { fillVariables } from '../shared/variables.js'
 
 export function registerAccountChannels({
   dataDir,
@@ -171,7 +172,7 @@ export function registerMacroChannels({ dataDir, manager, clipboardSession }) {
     return { ok: true }
   })
 
-  ipcMain.handle('macros:insert', async (_event, macroId) => {
+  ipcMain.handle('macros:insert', async (_event, macroId, values) => {
     const { macros } = await loadMacros(macrosFile)
     const macro = macros.find((m) => m.id === macroId)
 
@@ -187,7 +188,12 @@ export function registerMacroChannels({ dataDir, manager, clipboardSession }) {
       return { ok: false, reason: 'empty-macro', missing: [] }
     }
 
-    if (macro.text) insertText(view.webContents, macro.text, clipboard)
+    // Placeholders are filled HERE, on the way to the clipboard, so nothing downstream has
+    // to know about them: insertion.js still writes the string it is handed. A macro with no
+    // placeholders comes through this untouched, which is the path every macro that exists
+    // today takes.
+    const text = fillVariables(macro.text, values ?? {})
+    if (text) insertText(view.webContents, text, clipboard)
 
     const { missing } = await pasteAttachments({ attachments, dataDir, clipboardSession, view })
     return {

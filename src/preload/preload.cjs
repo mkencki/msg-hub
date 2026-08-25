@@ -29,6 +29,6 @@ contextBridge.exposeInMainWorld('msgHub', {
   listMacros: (phrase) => ipcRenderer.invoke('macros:list', phrase),
   saveMacro: (macro) => ipcRenderer.invoke('macros:save', macro),
   removeMacro: (macroId) => ipcRenderer.invoke('macros:remove', macroId),
-  insertMacro: (macroId) => ipcRenderer.invoke('macros:insert', macroId),
+  insertMacro: (macroId, values) => ipcRenderer.invoke('macros:insert', macroId, values),
   pickFile: () => ipcRenderer.invoke('files:pick'),
 })
