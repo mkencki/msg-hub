@@ -101,7 +101,7 @@ export const pl = {
   messageNoMacro: 'Tego makra już nie ma na liście.',
   messageEmptyMacro: 'To makro nie ma ani treści, ani załącznika — nie ma czego wstawić.',
   messageInsertFailed: 'Nie udało się wstawić makra.',
-  messageInserted: 'Wstawiono „{macro}" do {account}. Enter należy do Ciebie.',
+  messageInserted: 'Wklejono „{macro}" do konta {account}. Sprawdź pole wiadomości; Enter należy do Ciebie.',
   messageTheAccount: 'konta',
   messageMissingAttachments: 'Brakuje załączników w magazynie: {list}. Tekst został wstawiony.',
   messageAttachmentFailed: 'Nie można dodać załącznika: {reason}',

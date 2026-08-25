@@ -96,7 +96,10 @@ export const en = {
   messageNoMacro: 'That macro is no longer on the list.',
   messageEmptyMacro: 'This macro has neither content nor an attachment — there is nothing to insert.',
   messageInsertFailed: 'Could not insert the macro.',
-  messageInserted: 'Inserted "{macro}" into {account}. Pressing Enter is up to you.',
+  // Deliberately short of a claim. webContents.paste() with no editable field focused in
+  // the page does nothing and reports nothing, and finding out whether it landed would
+  // mean reading the page — which rule 7.3 forbids. So the sentence says what is known.
+  messageInserted: 'Pasted "{macro}" into {account}. Check the message box; Enter is yours to press.',
   messageTheAccount: 'the account',
   messageMissingAttachments: 'Attachments missing from storage: {list}. The text was inserted anyway.',
   messageAttachmentFailed: 'Could not add the attachment: {reason}',
