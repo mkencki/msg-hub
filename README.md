@@ -44,7 +44,8 @@ npm start
 | **Channel rail** | collapses to bare channel colours, expands on hover, pins open; unread count per account |
 | **Settings** | add an account, rename it, change its colour, reorder the rail, remove it along with its session |
 | **Macros** | `Ctrl+;` opens a searchable palette — arrows to choose, Enter to insert; edit and delete behind a confirmation |
-| **Macro editor** | WhatsApp formatting bar, live preview, attachments added and removed in place |
+| **Macro editor** | WhatsApp formatting bar, live preview, attachments added and removed in place, tags |
+| **Placeholders** | write `{name}` in a macro and it asks you before it inserts; `{date}` fills itself |
 | **Attachments** | PDF and mp4 **copied into the app's own storage** — you no longer need the original file; 100 MB limit |
 | **Language** | English and Polish, switched in Settings without restarting; the choice survives a restart |
 | **Keyboard** | `Ctrl+1`..`Ctrl+9` jump to a channel, `Ctrl+;` opens macros, `Ctrl+Shift+Space` does it from any program, `Ctrl+R` reloads the account you are looking at |

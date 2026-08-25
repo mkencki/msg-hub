@@ -40,7 +40,8 @@ Skrót w menu Start wskazuje `node_modules/electron/dist/electron.exe` z katalog
 | **Szyna kanałów** | zwijana do samych kolorów kanałów, rozwija się na najazd kursora, przypinana na stałe; licznik nowych przy każdym koncie |
 | **Ustawienia** | zarządzanie kontami: dodanie, zmiana nazwy i koloru, kolejność zakładek, usunięcie wraz z czyszczeniem sesji |
 | **Makra** | `Ctrl+;` — paleta z wyszukiwarką, wyborem strzałkami i Enterem; edycja i usuwanie za potwierdzeniem |
-| **Edytor makra** | pasek formatowania WhatsApp, podgląd na żywo, dodawanie i zdejmowanie załączników |
+| **Edytor makra** | pasek formatowania WhatsApp, podgląd na żywo, dodawanie i zdejmowanie załączników, tagi |
+| **Zmienne** | wpisz `{imię}` w makrze, a apka zapyta o wartość przed wstawieniem; `{data}` uzupełnia się sama |
 | **Załączniki** | PDF i mp4 **kopiowane do magazynu aplikacji** — oryginalny plik przestaje być potrzebny; limit 100 MB |
 | **Język** | angielski i polski, przełączany w Ustawieniach bez restartu; wybór przeżywa restart |
 | **Klawiatura** | `Ctrl+1`..`Ctrl+9` skaczą do kanału, `Ctrl+;` otwiera makra, `Ctrl+Shift+Space` robi to z dowolnego programu, `Ctrl+R` przeładowuje oglądane konto |

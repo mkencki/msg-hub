@@ -358,6 +358,26 @@ apart by disposition or features. Host matching is a suffix comparison on a dot 
 external list is consulted first because link shims live on the service's own domain, and only
 `http:` and `https:` are ever handed to the system.
 
+**Stage 6 — macros 2.0. DONE 2026-08-25**, except 6.5, which needs the operator's consent
+because it would change the LETTER of rule 7.3, and 6.7, which waits for stage 7.
+
+- **Tags stop being a field only the file format knew about.** The model has carried them
+  since stage 2 and the search box says "name, content or tag", but no screen ever set one.
+  The editor now has a field, the palette shows them, and clicking one searches for it. Case
+  is settled on the way in, because search settles it on the way out.
+- **Placeholders.** Any `{name}` in a macro becomes a question asked BEFORE anything is
+  written anywhere — cancelling leaves the clipboard untouched. `{date}` and `{data}` fill
+  themselves. A macro without placeholders passes through unchanged.
+- **The status bar stopped claiming an insertion it cannot see.** Measured: with no editable
+  field focused, `webContents.paste()` does nothing and reports nothing, while the message
+  said "Inserted". Finding out for certain would mean reading the page, which rule 7.3
+  forbids, so the sentence says what is known and asks the operator to check the box.
+
+Two things the plan expected to build turned out to be there already, and are now pinned by
+tests rather than rebuilt: the keyboard DOES return to the account after an insertion —
+closing a `<dialog>` restores focus to the native view that held it — and the palette header
+has named the destination account since stage 2.
+
 ## 10. Tests
 
 Behaviour is tested, not implementation detail.
