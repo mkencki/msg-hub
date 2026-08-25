@@ -36,6 +36,21 @@ npm install
 npm start
 ```
 
+### The taskbar icon
+
+Windows takes a pinned button's icon and name from the shortcut it was pinned from, never from
+the running window. Pin an application started with `npm start` and you have pinned
+`electron.exe`, Electron's own logo included. One command writes a Start menu shortcut that
+carries msg-hub's icon and its application identity, so the live window merges into the pinned
+button instead of standing next to it:
+
+```bash
+npm run shortcut
+```
+
+Then pin **msg-hub** from the Start menu and unpin any older "Electron" button beside it. An
+installed build needs none of this: its installer writes the same shortcut.
+
 ## What it does
 
 | | |

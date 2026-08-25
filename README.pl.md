@@ -30,7 +30,19 @@ npm install
 npm start
 ```
 
-Skrót w menu Start wskazuje `node_modules/electron/dist/electron.exe` z katalogiem projektu.
+### Ikona na pasku zadań
+
+Windows bierze ikonę i nazwę przypiętego przycisku ze **skrótu**, a nie z działającego okna.
+Przypięcie aplikacji uruchomionej przez `npm start` przypina `electron.exe` — razem z logo
+Electrona. Jedno polecenie zakłada skrót w menu Start, który niesie ikonę msg-huba i jego
+tożsamość aplikacji, więc żywe okno wchodzi w przypięty przycisk zamiast stawać obok niego:
+
+```bash
+npm run shortcut
+```
+
+Potem przypnij **msg-hub** z menu Start i odepnij starszy przycisk „Electron”. Wersja
+zainstalowana tego nie potrzebuje — jej instalator zakłada taki sam skrót.
 
 ## Co robi
 
