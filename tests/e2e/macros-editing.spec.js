@@ -129,3 +129,30 @@ test('an attachment can be detached from a macro in the editor', async () => {
   expect(macros[0].attachments).toEqual([])
   expect(await readdir(path.join(dataDir, 'att'))).toEqual([])
 })
+
+// The macro palette's search box is labelled "Search by name, content or tag", search()
+// folds tags into its haystack, and normalizeMacro carries them — but no screen sets them,
+// so the editor's payload has no `tags` key at all. That made `macros:save` erase the
+// field on every pass through the editor: a macro saved with tags could no longer be
+// found by them after one unrelated edit. Silent data loss triggered by a normal action.
+test('editing a macro does not erase tags the editor cannot see', async () => {
+  await page.evaluate(() =>
+    window.msgHub.saveMacro({
+      name: 'Client Zone manual',
+      text: 'old content',
+      tags: ['zone', 'guide'],
+    }),
+  )
+  expect(await page.evaluate(() => window.msgHub.listMacros('zone'))).toHaveLength(1)
+
+  await page.keyboard.press('Control+Semicolon')
+  await page.locator('#macro-list li .edit-macro').click()
+  await page.locator('#editor-text').fill('new content')
+  await page.locator('#save-macro').click()
+  await expect(page.locator('#editor-dialog')).toBeHidden()
+
+  const macros = await page.evaluate(() => window.msgHub.listMacros(''))
+  expect(macros[0].text).toBe('new content')
+  expect(macros[0].tags).toEqual(['zone', 'guide'])
+  expect(await page.evaluate(() => window.msgHub.listMacros('guide'))).toHaveLength(1)
+})

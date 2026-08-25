@@ -114,7 +114,15 @@ export function registerMacroChannels({ dataDir, manager, clipboardSession }) {
     }
     const { macros } = await loadMacros(macrosFile)
     const id = macro.id || makeMacroId(macro.name)
-    const saved = upsert(macros, { attachments: [], tags: [], ...macro, id })
+    // A save is a PARTIAL update: whatever the caller does not send falls back to what is
+    // already stored, never to an empty default. The editor sends name, text and
+    // attachments and has never sent `tags`, because no screen sets them — so the bare
+    // `tags: []` default used to win on every save and quietly emptied the field. A macro
+    // saved with tags stopped being findable by them after one unrelated edit, while the
+    // palette's own search box promises "name, content or tag". Clearing a field still
+    // works; it just has to be asked for, by sending it explicitly empty.
+    const stored = macros.find((m) => m.id === id)
+    const saved = upsert(macros, { attachments: [], tags: [], ...stored, ...macro, id })
     await saveMacros(macrosFile, saved)
     // An attachment detached in the editor is no longer used — without this sweep it
     // would sit in the store forever, and that is often several megabytes of video.
