@@ -40,6 +40,18 @@ jobs:
       - name: Build installer
         run: npm run dist:installer
 
+      # The packaged application is the thing people download, and the test that checks it —
+      # asar, ESM in the main process, a CommonJS preload, dialogs above the native view — had
+      # never run anywhere. It skips itself when dist/win-unpacked is absent, and the build
+      # that creates it ran AFTER the end-to-end step; locally it skips too, because Smart App
+      # Control refuses to build the package at all. Measured on the run of 2026-08-25: the
+      # e2e step reported "1 skipped" at 20:24:32 and win-unpacked appeared at 20:24:34.
+      #
+      # It runs here rather than by moving the whole suite after the build, so a broken build
+      # is still reported by fast tests instead of after five minutes of packaging.
+      - name: Packaged application
+        run: npx playwright test tests/e2e/package.spec.js
+
       - uses: actions/upload-artifact@v4
         with:
           name: msg-hub-installer
