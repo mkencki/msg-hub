@@ -12,7 +12,10 @@ import {
   unusedColor,
   CHANNEL_PALETTE,
   SCHEMA_VERSION,
+  PLATFORMS,
+  notificationsAllowed,
 } from '../src/main/accounts.js'
+import { PLATFORM_DEFAULT_NOTIFICATIONS } from '../src/shared/platform-defaults.js'
 
 let dir
 let file
@@ -220,5 +223,128 @@ describe('unusedColor', () => {
     const all = CHANNEL_PALETTE.map((color) => ({ color }))
 
     expect(CHANNEL_PALETTE).toContain(unusedColor(all))
+  })
+})
+
+describe('what a platform declares', () => {
+  test('every platform says whether its title carries a count', () => {
+    for (const [name, platform] of Object.entries(PLATFORMS)) {
+      expect(typeof platform.unreadInTitle, name).toBe('boolean')
+    }
+  })
+
+  // A messenger's "(3)" means three conversations waiting. LinkedIn's number is the SUM of
+  // eight badge sources — feed, jobs, notifications, messaging and more — so next to a
+  // WhatsApp count in the same rail it is a different unit wearing the same clothes.
+  // Facebook's format could not be confirmed for 2026 at all. Both therefore show nothing
+  // rather than something misleading; turning either on is one word.
+  test('the two whole services do not pretend to count messages', () => {
+    expect(PLATFORMS.linkedin.unreadInTitle).toBe(false)
+    expect(PLATFORMS.facebook.unreadInTitle).toBe(false)
+  })
+
+  test('the messengers still count, because their number means what it looks like', () => {
+    expect(PLATFORMS.whatsapp.unreadInTitle).toBe(true)
+    expect(PLATFORMS.messenger.unreadInTitle).toBe(true)
+  })
+
+  // Measured with curl, twice: the apex host answers "Checking your browser - reCAPTCHA".
+  // The entry point has to be the www host and the feed path.
+  test('LinkedIn is entered at www and at the feed, never at the apex', () => {
+    expect(PLATFORMS.linkedin.url).toBe('https://www.linkedin.com/feed/')
+  })
+
+  // Apple's sign-in opens a window and answers back through postMessage to whoever opened
+  // it, so it can neither go to the system browser nor be silently denied. Captured:
+  // appleid.apple.com/auth/authorize?…response_mode=web_message, frameName
+  // AppleAuthentication, disposition new-window.
+  test('LinkedIn declares the sign-in hosts its own flows go through', () => {
+    expect(PLATFORMS.linkedin.authHosts).toContain('appleid.apple.com')
+    expect(PLATFORMS.linkedin.authHosts).toContain('login.microsoftonline.com')
+  })
+
+  // These wrap outgoing links so that every one of them looks like a facebook.com address.
+  test('Facebook declares the shims that make a link out look like a link in', () => {
+    expect(PLATFORMS.facebook.external).toContain('l.facebook.com')
+    expect(PLATFORMS.facebook.external).toContain('www.facebook.com/l.php')
+  })
+
+  test('a new platform is a valid one to build an account on', () => {
+    for (const name of ['linkedin', 'facebook']) {
+      const account = { id: 'acc-x', name: 'X', platform: name, url: PLATFORMS[name].url, color: '#2f7d5b' }
+      expect(validateAccount(account), name).toEqual([])
+    }
+  })
+})
+
+describe('who is allowed to interrupt', () => {
+  // A messenger notifies when somebody writes to you. A whole service notifies about
+  // reactions, groups, pages, birthdays and things it would like you to look at. Granting
+  // both the same permission by default is how an app that was helping becomes an app that
+  // is shouting.
+  test('messengers may interrupt out of the box', () => {
+    expect(notificationsAllowed({ platform: 'whatsapp' })).toBe(true)
+    expect(notificationsAllowed({ platform: 'messenger' })).toBe(true)
+  })
+
+  test('whole services stay quiet until asked', () => {
+    expect(notificationsAllowed({ platform: 'linkedin' })).toBe(false)
+    expect(notificationsAllowed({ platform: 'facebook' })).toBe(false)
+  })
+
+  test('the account has the last word, in both directions', () => {
+    expect(notificationsAllowed({ platform: 'facebook', notifications: true })).toBe(true)
+    expect(notificationsAllowed({ platform: 'whatsapp', notifications: false })).toBe(false)
+  })
+
+  // Every accounts.json written before this setting existed has no such field, and absent
+  // must mean "whatever this platform does by default" rather than "no".
+  test('an account written before the setting existed keeps its platform default', () => {
+    expect(notificationsAllowed({ platform: 'whatsapp', notifications: undefined })).toBe(true)
+    expect(notificationsAllowed({ platform: 'facebook', notifications: undefined })).toBe(false)
+  })
+
+  test('a platform nobody knows does not get to interrupt', () => {
+    expect(notificationsAllowed({ platform: 'unknown' })).toBe(false)
+    expect(notificationsAllowed(undefined)).toBe(false)
+  })
+})
+
+// Mirrored for the renderer, which cannot import this module. A copy is a liability unless
+// something notices when the two disagree.
+test('the renderer’s copy of the notification defaults matches the real ones', () => {
+  for (const [name, platform] of Object.entries(PLATFORMS)) {
+    expect(PLATFORM_DEFAULT_NOTIFICATIONS[name], name).toBe(platform.notifyByDefault === true)
+  }
+  expect(Object.keys(PLATFORM_DEFAULT_NOTIFICATIONS).sort()).toEqual(Object.keys(PLATFORMS).sort())
+})
+
+describe('updating the notification choice', () => {
+  const account = { id: 'acc-fb', name: 'Facebook', platform: 'facebook', url: 'https://www.facebook.com/', color: '#6586ec' }
+
+  test('the choice is stored, not quietly dropped', () => {
+    const result = updateAccount([account], 'acc-fb', { name: 'Facebook', color: '#6586ec', notifications: true })
+
+    expect(result.ok).toBe(true)
+    expect(result.accounts[0].notifications).toBe(true)
+    expect(notificationsAllowed(result.accounts[0])).toBe(true)
+  })
+
+  test('turning it off is stored as off, not as never chosen', () => {
+    const withIt = { ...account, notifications: true }
+
+    const result = updateAccount([withIt], 'acc-fb', { name: 'Facebook', color: '#6586ec', notifications: false })
+
+    expect(result.accounts[0].notifications).toBe(false)
+  })
+
+  // An update that says nothing about it must not silently reset a choice already made,
+  // for the same reason a macro save stopped erasing tags.
+  test('an update that does not mention it leaves it alone', () => {
+    const withIt = { ...account, notifications: true }
+
+    const result = updateAccount([withIt], 'acc-fb', { name: 'Facebook', color: '#6586ec' })
+
+    expect(result.accounts[0].notifications).toBe(true)
   })
 })

@@ -29,6 +29,7 @@ export const pl = {
   name: 'Nazwa',
   platform: 'Platforma',
   channelColor: 'Kolor kanału',
+  allowNotifications: 'Pozwól temu kontu pokazywać powiadomienia',
   cancel: 'Anuluj',
   save: 'Zapisz',
 

@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest'
-import { unreadFromTitle, cleanUserAgent, createView } from '../src/main/views.js'
+import { unreadFromTitle, cleanUserAgent, createView, ViewManager } from '../src/main/views.js'
 
 describe('cleanUserAgent', () => {
   test('strips the Electron marker', () => {
@@ -62,5 +62,58 @@ describe('createView', () => {
     expect(preferences.sandbox).toBe(true)
     expect(preferences.contextIsolation).toBe(true)
     expect(preferences.nodeIntegration).toBe(false)
+  })
+})
+
+describe('unreadFromTitle at the edges', () => {
+  // LinkedIn's own title writer, lifted from its production bundle:
+  //   document.title = r > 99 ? `(99+) ${e}` : r > 0 ? `(${r}) ${e}` : e
+  // The old pattern demanded digits and a closing bracket, so it read "(99+) LinkedIn" as
+  // zero — the badge vanished exactly when the account was busiest.
+  test('a service that says 99+ is not read as nothing', () => {
+    expect(unreadFromTitle('(99+) LinkedIn')).toBe(99)
+  })
+
+  test('an ordinary count still reads as itself', () => {
+    expect(unreadFromTitle('(7) LinkedIn')).toBe(7)
+  })
+
+  test('a plus somewhere else in the title is not a count', () => {
+    expect(unreadFromTitle('Google+ — WhatsApp')).toBe(0)
+    expect(unreadFromTitle('(+) WhatsApp')).toBe(0)
+  })
+})
+
+describe('which accounts the badge believes', () => {
+  const fakeView = (title) => ({
+    webContents: { isDestroyed: () => false, getTitle: () => title },
+    setBounds() {},
+    setVisible() {},
+  })
+
+  const managerWith = (entries) => {
+    const manager = new ViewManager({ contentView: { addChildView() {} } }, 'UA')
+    for (const [id, title, unreadInTitle] of entries) {
+      manager.views.set(id, fakeView(title))
+      manager.countsUnread.set(id, unreadInTitle)
+    }
+    return manager
+  }
+
+  test('a messenger title is counted', () => {
+    expect(managerWith([['acc-w', '(3) WhatsApp', true]]).unreadByAccount()).toEqual({ 'acc-w': 3 })
+  })
+
+  // The declaration has to reach the badge, or it is a comment rather than a switch.
+  test('a service that does not count messages shows nothing, whatever its title says', () => {
+    expect(managerWith([['acc-l', '(12) LinkedIn', false]]).unreadByAccount()).toEqual({ 'acc-l': 0 })
+  })
+
+  test('the total leaves out the accounts that are not counting', () => {
+    const manager = managerWith([
+      ['acc-w', '(3) WhatsApp', true],
+      ['acc-l', '(12) LinkedIn', false],
+    ])
+    expect(manager.unreadTotal()).toBe(3)
   })
 })

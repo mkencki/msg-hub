@@ -64,9 +64,15 @@
       <select name="platform">
         <option value="whatsapp">WhatsApp</option>
         <option value="messenger">Messenger</option>
+        <option value="linkedin">LinkedIn</option>
+        <option value="facebook">Facebook</option>
       </select>
     </label>
     <label><span data-i18n="channelColor">Channel colour</span> <input name="color" type="color" value="#2f7d5b" /></label>
+    <label class="switch-row">
+      <input type="checkbox" name="notifications" />
+      <span data-i18n="allowNotifications">Let this account show notifications</span>
+    </label>
     <p id="account-errors" class="errors"></p>
     <menu>
       <!-- formnovalidate: without it, validating the empty "Name" field blocks cancelling -->

@@ -1,4 +1,5 @@
 import { WebContentsView } from 'electron'
+import { PLATFORMS } from './accounts.js'
 
 export function cleanUserAgent(defaultUA) {
   return String(defaultUA)
@@ -8,8 +9,13 @@ export function cleanUserAgent(defaultUA) {
     .trim()
 }
 
+// LinkedIn's own title writer, lifted from its production bundle:
+//   document.title = r > 99 ? `(99+) ${e}` : r > 0 ? `(${r}) ${e}` : e
+// A pattern demanding digits and then a closing bracket reads "(99+) LinkedIn" as zero, so
+// the badge disappeared exactly when the account was busiest. LinkedIn's own clean-up regex
+// treats the plus as a first-class case — \(\d+\+?\) — and so does this one.
 export function unreadFromTitle(title) {
-  const hit = /^\((\d+)\)/.exec(String(title || '').trim())
+  const hit = /^\((\d+)\+?\)/.exec(String(title || '').trim())
   return hit ? Number(hit[1]) : 0
 }
 
@@ -51,6 +57,10 @@ export class ViewManager {
     this.defaultUA = defaultUA
     this.onError = onError
     this.views = new Map()
+    // Whether an account's page title carries a count worth showing. Declared per platform
+    // in accounts.js and kept here, because this is where the badge is worked out and a
+    // view on its own knows nothing about which service it is.
+    this.countsUnread = new Map()
     this.activeId = null
     this.visible = true
     this.geometry = { x: 0, y: 0, width: 0, height: 0 }
@@ -58,6 +68,7 @@ export class ViewManager {
 
   add(account) {
     if (this.views.has(account.id)) return this.views.get(account.id)
+    this.countsUnread.set(account.id, PLATFORMS[account.platform]?.unreadInTitle !== false)
     const view = createView(account, this.defaultUA, this.onError)
     view.setVisible(this.visible)
     this.window.contentView.addChildView(view)
@@ -76,6 +87,7 @@ export class ViewManager {
     view.webContents.removeAllListeners('did-fail-load')
     view.webContents.close()
     this.views.delete(accountId)
+    this.countsUnread.delete(accountId)
     if (this.activeId === accountId) {
       this.activeId = null
       const next = this.views.keys().next()
@@ -129,7 +141,9 @@ export class ViewManager {
     const result = {}
     for (const [id, view] of this.views) {
       if (view.webContents.isDestroyed()) continue
-      result[id] = unreadFromTitle(view.webContents.getTitle())
+      // A service that does not count messages shows nothing rather than something that
+      // looks like a message count and is not one.
+      result[id] = this.countsUnread.get(id) === false ? 0 : unreadFromTitle(view.webContents.getTitle())
     }
     return result
   }

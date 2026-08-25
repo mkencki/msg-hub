@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { cleanUserAgent, ViewManager } from './views.js'
 import { loadLayout, saveLayout, setAutoStart, acceptHoverReport, HIDDEN_FLAG } from './shell.js'
-import { loadAccounts, PLATFORMS } from './accounts.js'
+import { loadAccounts, PLATFORMS, notificationsAllowed } from './accounts.js'
 import { classify } from './navigation.js'
 import { registerAccountChannels, registerMacroChannels } from './bridge.js'
 import { createClipboardSession } from './file-clipboard.js'
@@ -342,8 +342,14 @@ async function createWindow() {
   }
 
   const prepareView = (view, account) => {
-    view.webContents.session.setPermissionRequestHandler((_wc, permission, grant) => {
-      grant(permission === 'notifications')
+    // The account object is re-read rather than captured, so turning notifications off in
+    // Settings takes effect on the next request instead of on the next restart. A page asks
+    // once and remembers the answer, so a refusal also needs the page reloading — which the
+    // status bar offers anyway.
+    view.webContents.session.setPermissionRequestHandler(async (_wc, permission, grant) => {
+      if (permission !== 'notifications') return grant(false)
+      const { accounts } = await loadAccounts(path.join(dataDir, 'accounts.json'))
+      grant(notificationsAllowed(accounts.find((a) => a.id === account.id) ?? account))
     })
     view.webContents.on('page-title-updated', refreshBadge)
     attachShortcuts(view.webContents)

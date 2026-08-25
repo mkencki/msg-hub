@@ -11,6 +11,11 @@ export const SCHEMA_VERSION = 2
 //
 // An entry that changes no outcome does not belong here. It would teach the next reader
 // that the list was guessed at rather than measured.
+// `unreadInTitle` decides whether the channel badge believes what the page calls itself.
+// A messenger's "(3)" means three conversations waiting, which is what a badge next to a
+// channel is read as. A whole service's number is something else wearing the same clothes,
+// and putting the two in one rail makes both of them lie a little. Turning one on is one
+// word; the reasons are on each entry.
 export const PLATFORMS = {
   whatsapp: {
     url: 'https://web.whatsapp.com/',
@@ -18,6 +23,8 @@ export const PLATFORMS = {
     hosts: ['web.whatsapp.com'],
     authHosts: [],
     external: [],
+    unreadInTitle: true,
+    notifyByDefault: true,
   },
   messenger: {
     url: 'https://www.messenger.com/',
@@ -25,6 +32,44 @@ export const PLATFORMS = {
     hosts: ['messenger.com', 'facebook.com', 'meta.com'],
     authHosts: [],
     external: ['l.facebook.com', 'lm.facebook.com', 'www.facebook.com/l.php'],
+    unreadInTitle: true,
+    notifyByDefault: true,
+  },
+  // The apex host sits behind an anti-bot gate — measured with curl, twice, and both
+  // linkedin.com/ and linkedin.com/feed/ answer "Checking your browser - reCAPTCHA". The www
+  // host and the feed path redirect to sign-in and come back to the feed afterwards, and
+  // every sub-product (/learning/, /jobs/, /sales/) is on the same origin, so one entry
+  // point covers the whole service.
+  linkedin: {
+    url: 'https://www.linkedin.com/feed/',
+    defaultName: 'LinkedIn',
+    hosts: ['linkedin.com'],
+    // Sign-in genuinely leaves the service. Apple's opens a window and answers back through
+    // postMessage to whoever opened it, so it can neither be pushed to the system browser
+    // nor silently denied; Microsoft's navigates the main frame instead of opening anything.
+    authHosts: ['appleid.apple.com', 'login.microsoftonline.com', 'edge-auth.microsoft.com', 'accounts.google.com'],
+    external: [],
+    // The number in LinkedIn's title is the SUM of eight badge sources — feed, jobs,
+    // notifications, messaging and more. In one rail with a WhatsApp "(3)" it would be a
+    // different unit in the same clothes, so the badge stays off until the operator says
+    // otherwise. The count itself is read correctly now, including "(99+)".
+    unreadInTitle: false,
+    notifyByDefault: false,
+  },
+  // Entered at www. The shims below wrap outgoing links so that every one of them LOOKS like
+  // a facebook.com address, which is exactly why the external list is consulted before the
+  // host list. The enumeration is the confirmed part only: l.facebook.com and lm.facebook.com
+  // are attested, and anything further has to be watched happening before it is written here.
+  facebook: {
+    url: 'https://www.facebook.com/',
+    defaultName: 'Facebook',
+    hosts: ['facebook.com', 'meta.com'],
+    authHosts: [],
+    external: ['l.facebook.com', 'lm.facebook.com', 'www.facebook.com/l.php'],
+    // The 2026 title format could not be confirmed: the measured baseline is a bare
+    // "Facebook", and no prefixed form was reproduced. A badge nobody has seen work would be
+    // a promise, so it shows nothing.
+    unreadInTitle: false,
   },
 }
 
@@ -72,7 +117,22 @@ function normalizeAccount(raw) {
     platform: raw?.platform ?? raw?.platforma,
     url: raw?.url,
     color: raw?.color ?? raw?.kolor,
+    // Left undefined when the file does not carry it, so notificationsAllowed can tell
+    // "never chosen" from "chosen as no".
+    ...(raw?.notifications === undefined ? {} : { notifications: Boolean(raw.notifications) }),
   }
+}
+
+// A messenger notifies when somebody writes to you. A whole service notifies about
+// reactions, groups, pages, birthdays and things it would like you to look at, and granting
+// both the same permission by default is how an app that was helping becomes an app that is
+// shouting. The platform sets the default; the account overrides it in either direction.
+//
+// Absent is not the same as off: every accounts.json written before this setting existed has
+// no such field, and those accounts keep behaving as they always did.
+export function notificationsAllowed(account) {
+  if (account?.notifications !== undefined) return Boolean(account.notifications)
+  return PLATFORMS[account?.platform]?.notifyByDefault === true
 }
 
 // An error is returned as a CODE, not as a sentence. Only the renderer knows which
@@ -99,6 +159,9 @@ export function updateAccount(accounts, id, changes) {
     ...accounts[index],
     name: String(changes?.name ?? '').trim(),
     color: changes?.color ?? accounts[index].color,
+    // An update that says nothing about this must not reset a choice already made — the same
+    // rule a macro save had to learn about its tags.
+    ...(changes?.notifications === undefined ? {} : { notifications: Boolean(changes.notifications) }),
   }
   const errors = validateAccount(updated)
   if (errors.length) return { ok: false, errors }

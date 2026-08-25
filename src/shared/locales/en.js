@@ -24,6 +24,7 @@ export const en = {
   name: 'Name',
   platform: 'Platform',
   channelColor: 'Channel colour',
+  allowNotifications: 'Let this account show notifications',
   cancel: 'Cancel',
   save: 'Save',
 

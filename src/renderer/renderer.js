@@ -2,6 +2,7 @@ import { toHtml } from './preview.js'
 import { t, availableLanguages, validLanguage, DEFAULT_LANGUAGE } from '../shared/i18n.js'
 import { parseTags, formatTags } from '../shared/tags.js'
 import { findVariables } from '../shared/variables.js'
+import { PLATFORM_DEFAULT_NOTIFICATIONS } from '../shared/platform-defaults.js'
 
 // Interface language. The value arrives from the main process at startup, so until the
 // answer comes back we hold the default — otherwise the first frame would show bare keys.
@@ -199,13 +200,23 @@ async function openAccountForm(account = null) {
   const platform = form.querySelector('select[name="platform"]')
   platform.disabled = Boolean(account)
 
+  const notifications = form.querySelector('input[name="notifications"]')
+
   if (account) {
     form.querySelector('input[name="name"]').value = account.name
     platform.value = account.platform
     form.querySelector('input[name="color"]').value = account.color
+    notifications.checked = account.notifications ?? PLATFORM_DEFAULT_NOTIFICATIONS[account.platform] ?? false
   } else {
     // Two accounts in one colour cancel out the identity signal — suggest a free one.
     form.querySelector('input[name="color"]').value = await window.msgHub.unusedColor()
+    notifications.checked = PLATFORM_DEFAULT_NOTIFICATIONS[platform.value] ?? false
+  }
+
+  // Picking a service changes what it would do unasked, so the box follows the choice until
+  // the operator touches it.
+  platform.onchange = () => {
+    notifications.checked = PLATFORM_DEFAULT_NOTIFICATIONS[platform.value] ?? false
   }
 
   showDialog(accountDialog)
@@ -222,8 +233,12 @@ document.getElementById('save-account').addEventListener('click', async (event) 
   const data = Object.fromEntries(new FormData(accountDialog.querySelector('form')))
 
   const result = editedAccountId
-    ? await window.msgHub.updateAccount(editedAccountId, { name: data.name, color: data.color })
-    : await window.msgHub.addAccount(data)
+    ? await window.msgHub.updateAccount(editedAccountId, {
+        name: data.name,
+        color: data.color,
+        notifications: Boolean(data.notifications),
+      })
+    : await window.msgHub.addAccount({ ...data, notifications: Boolean(data.notifications) })
 
   if (!result.ok) {
     accountErrors.textContent = describeErrors(result.errors)

@@ -42,6 +42,9 @@ export function registerAccountChannels({
       platform: data.platform,
       url: data.url || platform?.url || '',
       color: data.color || '#2f7d5b',
+      // Only written when the form said something; absent means "whatever this platform does
+      // by default", which is what every account written before the setting existed relies on.
+      ...(data.notifications === undefined ? {} : { notifications: Boolean(data.notifications) }),
     }
     const errors = validateAccount(account)
     if (errors.length) return { ok: false, errors }
