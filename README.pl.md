@@ -1,4 +1,4 @@
-# msg-hub
+# M-HUB
 
 Aplikacja desktopowa na Windows: Messenger i dwa konta WhatsApp w jednym oknie,
 każde w izolowanej sesji, plus makra tekstowe z załącznikami.
@@ -30,18 +30,21 @@ npm install
 npm start
 ```
 
+Repozytorium zostaje pod nazwą, pod którą było publikowane — `msg-hub` — bo przez nią
+prowadzą odnośniki wszystkich dotychczasowych wydań. Zmieniła się nazwa aplikacji.
+
 ### Ikona na pasku zadań
 
 Windows bierze ikonę i nazwę przypiętego przycisku ze **skrótu**, a nie z działającego okna.
 Przypięcie aplikacji uruchomionej przez `npm start` przypina `electron.exe` — razem z logo
-Electrona. Jedno polecenie zakłada skrót w menu Start, który niesie ikonę msg-huba i jego
+Electrona. Jedno polecenie zakłada skrót w menu Start, który niesie ikonę M-HUB-a i jego
 tożsamość aplikacji, więc żywe okno wchodzi w przypięty przycisk zamiast stawać obok niego:
 
 ```bash
 npm run shortcut
 ```
 
-Potem przypnij **msg-hub** z menu Start i odepnij starszy przycisk „Electron”. Wersja
+Potem przypnij **M-HUB** z menu Start i odepnij starszy przycisk „Electron”. Wersja
 zainstalowana tego nie potrzebuje — jej instalator zakłada taki sam skrót.
 
 ## Co robi
@@ -62,7 +65,7 @@ zainstalowana tego nie potrzebuje — jej instalator zakłada taki sam skrót.
 | **Linki** | link z rozmowy otwiera się w twojej przeglądarce, a nie w oknie bez paska adresu, niosącym twoją zalogowaną sesję |
 | **Pobieranie** | plik z rozmowy melduje, że się zapisał, i podaje odnośnik do folderu; w Ustawieniach jest folder pobierania i przełącznik „pytaj za każdym razem” |
 
-Makra i załączniki żyją w `%APPDATA%\msg-hub` (`macros.json` oraz katalog `att/`),
+Makra i załączniki żyją w `%APPDATA%\M-HUB` (`macros.json` oraz katalog `att/`),
 konta w `accounts.json` obok nich. Usunięcie makra albo zdjęcie załącznika sprząta
 magazyn, żeby kilkumegabajtowe wideo nie zostawało na dysku bez właściciela.
 
@@ -140,7 +143,7 @@ zakazaną zależność albo ścieżkę wysyłki.
 
 ### Dziennik
 
-Aplikacja zapisuje zwykły tekstowy dziennik w `%APPDATA%\msg-hub\logs\`, dostępny z menu
+Aplikacja zapisuje zwykły tekstowy dziennik w `%APPDATA%\M-HUB\logs\`, dostępny z menu
 w zasobniku. Istnieje po to, żeby pomoc komuś, komu apka nie chce się zalogować, nie wymagała
 siadania przy jego komputerze.
 

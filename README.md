@@ -1,4 +1,4 @@
-# msg-hub
+# M-HUB
 
 A Windows desktop app that keeps Messenger and two WhatsApp accounts in one window —
 each in a fully isolated session — plus text macros with attachments.
@@ -36,19 +36,22 @@ npm install
 npm start
 ```
 
+The repository keeps the name it was published under, `msg-hub`: every release link so far
+points through it. Only the application was renamed.
+
 ### The taskbar icon
 
 Windows takes a pinned button's icon and name from the shortcut it was pinned from, never from
 the running window. Pin an application started with `npm start` and you have pinned
 `electron.exe`, Electron's own logo included. One command writes a Start menu shortcut that
-carries msg-hub's icon and its application identity, so the live window merges into the pinned
+carries M-HUB's icon and its application identity, so the live window merges into the pinned
 button instead of standing next to it:
 
 ```bash
 npm run shortcut
 ```
 
-Then pin **msg-hub** from the Start menu and unpin any older "Electron" button beside it. An
+Then pin **M-HUB** from the Start menu and unpin any older "Electron" button beside it. An
 installed build needs none of this: its installer writes the same shortcut.
 
 ## What it does
@@ -69,7 +72,7 @@ installed build needs none of this: its installer writes the same shortcut.
 | **Links** | a link out of a conversation opens in your own browser, not in a window without an address bar carrying your signed-in session |
 | **Downloads** | a file from a conversation says when it has landed and offers the folder it landed in; Settings holds the folder and whether you are asked each time |
 
-Macros and attachments live in `%APPDATA%\msg-hub` (`macros.json` and the `att/` directory),
+Macros and attachments live in `%APPDATA%\M-HUB` (`macros.json` and the `att/` directory),
 accounts in `accounts.json` next to them. Deleting a macro or detaching a file cleans the storage,
 so a multi-megabyte video never lingers on disk without an owner.
 
@@ -144,7 +147,7 @@ dependency or a sending path.
 
 ### The log
 
-The app writes a plain-text log to `%APPDATA%\msg-hub\logs\`, reachable from the tray menu.
+The app writes a plain-text log to `%APPDATA%\M-HUB\logs\`, reachable from the tray menu.
 It exists so that helping someone whose app will not sign in does not require sitting at their
 computer.
 

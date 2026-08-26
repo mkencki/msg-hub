@@ -1,5 +1,32 @@
 # Release notes
 
+## 0.5.0 — the name, and a wizard that looks like the application
+
+The application is called **M-HUB**. Everything an operator sees carries the new name: the
+window, the tray, the taskbar button, the installer and the shortcuts it writes.
+
+**It does not carry a 0.4.0 setup over.** Electron derives the profile directory from the
+application's name, so it moves from `%APPDATA%\msg-hub` to `%APPDATA%\M-HUB`, and nothing
+migrates it. 0.5.0 starts with an empty profile: accounts, macros, attachments and signed-in
+sessions are set up again. The old directory is neither read nor deleted — the installer
+leaves it exactly where it is, for you to keep or remove.
+
+**The installer stops wearing NSIS's stock blue wizard.** Its welcome and finish pages — and
+the uninstaller's — now show the application's own mark, and so does the header of every page
+between them. The graphics are drawn from the same four shapes as the icon, so there is one
+source for the mark and no copy to fall out of step.
+
+**The application no longer says its own name to Meta's servers.** Electron builds the default
+User-Agent out of the application's name and version, and the code removing it matched a
+literal `msg-hub/`. Renaming the application would have left `M-HUB/0.5.0` going out with
+every request the account views make, silently, with the test that guards this still green.
+Both the code and the test now ask the running application what it is called.
+
+**Upgrading is an upgrade, not a second installation.** The identifier Windows records the
+installation under is unchanged, so the 0.5.0 installer finds 0.4.0, removes it, and takes its
+place: one entry in Settings, one folder under Programs. The file name is new, though, and a
+Smart App Control verdict is per file — see the fingerprint below and `docs/installing.md`.
+
 ## 0.4.0 — the mark, a badge that stays put, and downloads that finish
 
 Four things found in the first day of using 0.3.0.

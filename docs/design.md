@@ -1,4 +1,4 @@
-# msg-hub — design
+# M-HUB — design
 
 Written: 2026-08-23
 Status: approved, implemented
@@ -355,7 +355,7 @@ and each item below was measured before it was changed rather than assumed.
 - **A stale or dead account can be reloaded** without restarting the others: Ctrl+R, and a
   button in the status bar offered after a crash, a hang, a failed load or waking from sleep.
   Nothing reloads on its own, because reloading throws away a half-typed message.
-- **A local log** in `%APPDATA%\msg-hub\logs\`, reachable from the tray. It writes only the
+- **A local log** in `%APPDATA%\M-HUB\logs\`, reachable from the tray. It writes only the
   fields on a declared list and drops everything else, so it can be sent to somebody. Page
   titles are excluded precisely because they carry contact names.
 - **The clipboard session survives a bad day**: stderr is drained, a timed-out process is put
@@ -518,6 +518,47 @@ wire in with a fallback and a switch — but the line count is the least of it:
   tested.
 
 Refused on 2026-08-25 with those numbers in hand. `showItemInFolder` stays.
+
+**Stage 9 — the name. DONE 2026-08-26.**
+
+The application is called M-HUB. What that costs is not obvious from the field being changed,
+so it was measured first, on a throwaway Electron app rather than on this one: with only
+`name` in package.json, `app.getName()` returns it and the profile sits in `%APPDATA%\<name>`;
+add `productName` and the name, the profile directory AND the token Electron writes into the
+default User-Agent all follow it. One field, three consequences.
+
+| | before | after | why |
+|---|---|---|---|
+| window, tray, shortcut, installer | msg-hub | **M-HUB** | the point of the exercise |
+| profile directory | `%APPDATA%\msg-hub` | `%APPDATA%\M-HUB` | follows `productName`; **not migrated** — see below |
+| User-Agent token | `msg-hub/0.4.0` | removed | it was removed before too, by a literal |
+| `appId` | `pl.kencki.msghub` | unchanged | NSIS derives the installation's GUID from it |
+| repository | `mkencki/msg-hub` | unchanged | every published release links through it |
+
+**No migration, by the operator's decision.** The profile moves with the name, and the 805 MB
+left behind — three signed-in sessions, one macro, its 4.7 MB attachment — were deleted
+outright before the release rather than carried across. A migration was designed and costed
+(a guarded move, a fallback to the old directory, and a guard against `--user-data-dir`, which
+would otherwise have dragged a real profile into a test's temporary directory) and then not
+built, because the operator preferred to configure a clean installation. There is therefore no
+half-migrated state anywhere in the code to reason about later.
+
+**The literal in cleanUserAgent was the sharp edge.** Electron builds the User-Agent out of
+the application's name, and the function that took it back out matched `/msg-hub\//`. After a
+rename that pattern matches nothing, and the failure is silent: the new name simply starts
+going out to Meta's servers. The end-to-end test guarding it — `not.toMatch(/msg-hub/i)` —
+would have stayed green, because it named the old string too. Both now ask the running
+application what it is called. Proved by mutation on 2026-08-26: with the literal restored,
+the test failed with `m-hub/0.4.0 chrome/150...` in the received User-Agent.
+
+**The installer stopped wearing NSIS's blue wizard.** electron-builder passes
+`build/installerSidebar.bmp` to `MUI_WELCOMEFINISHPAGE_BITMAP` and falls back to
+`nsis3-metro.bmp` when it is missing, which is what the finish page showed until now. The two
+bitmaps — 164x314 beside the welcome and finish pages, 150x57 on the header of the rest — are
+drawn from the same four rounded rectangles as the icon, by a rasteriser in `build/mark.mjs`,
+so the mark has one source. A .bmp stores its rows bottom-up and pads each one to four bytes;
+neither mistake fails a build, both produce a garbled wizard, and `tests/bmp.test.js` reads
+them back out of the bytes. The header bitmap is white because MUI paints that bar white.
 
 ## 10. Tests
 

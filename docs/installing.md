@@ -14,7 +14,7 @@ already built a reputation for that exact file, and a freshly built one never ha
 Properties → **Unblock** does *not* help: the block survives it.
 
 Turning Smart App Control off is a **one-way** change — switching it back on requires reinstalling
-Windows. Do not do it for one app. Instead, run msg-hub from source, which works even with Smart
+Windows. Do not do it for one app. Instead, run M-HUB from source, which works even with Smart
 App Control enabled, because Electron's own binary is trusted:
 
 ```
@@ -43,7 +43,7 @@ wtedy, gdy chmura Microsoftu zdążyła wyrobić reputację dokładnie temu plik
 żadnej nie ma. Prawoklik → Właściwości → **Odblokuj** **nie pomaga**: blokada to przeżywa.
 
 Wyłączenie Smart App Control jest **nieodwracalne** — ponowne włączenie wymaga reinstalacji
-Windows. Nie rób tego dla jednej aplikacji. Uruchom msg-hub ze źródeł — to działa nawet przy
+Windows. Nie rób tego dla jednej aplikacji. Uruchom M-HUB ze źródeł — to działa nawet przy
 włączonym Smart App Control, bo binarka Electrona jest zaufana:
 
 ```
@@ -66,7 +66,7 @@ nie zapisze niczego w rejestrze** — aplikacja nie pojawi się wtedy w *Ustawie
 a sam instalator przy następnym uruchomieniu uzna instalację za świeżą. Zmierzone 2026-08-26:
 po `/S` zero nowych kluczy w `HKCU\Software` i w `…\CurrentVersion\Uninstall`; po przejściu
 kreatora normalnie — `DisplayName = msg-hub 0.4.0` i `UninstallString` na miejscu. Klikaj
-instalator normalnie. Odinstalowanie zawsze działa przez `Uninstall msg-hub.exe` w katalogu
+instalator normalnie. Odinstalowanie zawsze działa przez `Uninstall M-HUB.exe` w katalogu
 instalacji, niezależnie od rejestru.
 
 **English.** This is a wizard installer (it asks for a directory and for per-user vs all-users),
@@ -76,4 +76,4 @@ shortcuts but writes nothing to the registry** — the application then does not
 2026-08-26: after `/S`, zero new keys under `HKCU\Software` and under
 `…\CurrentVersion\Uninstall`; after clicking through the wizard, `DisplayName = msg-hub 0.4.0`
 and an `UninstallString` are both there. Click the installer normally. Uninstalling always works
-through `Uninstall msg-hub.exe` in the installation folder, registry or no registry.
+through `Uninstall M-HUB.exe` in the installation folder, registry or no registry.
