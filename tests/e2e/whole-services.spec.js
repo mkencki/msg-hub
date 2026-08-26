@@ -8,7 +8,7 @@ let electronApp
 let page
 
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-services-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'mhub-services-'))
   electronApp = await electron.launch({ args: ['.', `--user-data-dir=${dataDir}`] })
   page = await electronApp.firstWindow()
   await page.waitForSelector('body[data-ready="1"]')

@@ -16,7 +16,7 @@ const account = (n, color) => ({
 })
 
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-toast-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'mhub-toast-'))
   await writeFile(
     path.join(dataDir, 'accounts.json'),
     JSON.stringify({ version: 2, accounts: [account('one', '#2f7d5b'), account('two', '#6586ec')] }),
@@ -100,7 +100,7 @@ test('a view taking focus makes its account the current one', async () => {
 test('a view that is already current asks for nothing', async () => {
   await page.evaluate(() => {
     window.__switches = []
-    window.msgHub.onSelectAccountId((id) => window.__switches.push(id))
+    window.mHub.onSelectAccountId((id) => window.__switches.push(id))
   })
 
   await focusView(0)

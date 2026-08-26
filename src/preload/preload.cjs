@@ -1,7 +1,7 @@
 // The preload of a sandboxed renderer must be CommonJS — Electron does not load ESM here.
 const { contextBridge, ipcRenderer } = require('electron')
 
-contextBridge.exposeInMainWorld('msgHub', {
+contextBridge.exposeInMainWorld('mHub', {
   listAccounts: () => ipcRenderer.invoke('accounts:list'),
   addAccount: (data) => ipcRenderer.invoke('accounts:add', data),
   removeAccount: (accountId) => ipcRenderer.invoke('accounts:remove', accountId),

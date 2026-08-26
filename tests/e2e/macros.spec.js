@@ -8,7 +8,7 @@ let electronApp
 let page
 
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-macros-e2e-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'mhub-macros-e2e-'))
   electronApp = await electron.launch({ args: ['.', `--user-data-dir=${dataDir}`] })
   page = await electronApp.firstWindow()
   await page.waitForSelector('body[data-ready="1"]')
@@ -29,13 +29,13 @@ test('Ctrl+; opens the macro panel, which starts out empty', async () => {
 
 test('a saved macro appears on the list and can be found by its content', async () => {
   await page.evaluate(() =>
-    window.msgHub.saveMacro({
+    window.mHub.saveMacro({
       name: 'Client Zone manual',
       text: '*How to add a driver:*\n- Sign in\n- Open Drivers',
     }),
   )
   await page.evaluate(() =>
-    window.msgHub.saveMacro({ name: 'Passango', text: 'device installation' }),
+    window.mHub.saveMacro({ name: 'Passango', text: 'device installation' }),
   )
 
   await page.keyboard.press('Control+Semicolon')
@@ -56,7 +56,7 @@ test('choosing a macro puts the text on the clipboard and sends no message', asy
 
   const content = '*How to add a driver:*\n- Sign in'
   await page.evaluate(
-    (text) => window.msgHub.saveMacro({ name: 'Client Zone', text }),
+    (text) => window.mHub.saveMacro({ name: 'Client Zone', text }),
     content,
   )
 

@@ -8,7 +8,7 @@ import { loadLayout, saveLayout, setAutoStart, acceptHoverReport, DEFAULT_LAYOUT
 let file, dir
 
 beforeEach(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'msghub-layout-'))
+  dir = await mkdtemp(path.join(tmpdir(), 'mhub-layout-'))
   file = path.join(dir, 'layout.json')
 })
 

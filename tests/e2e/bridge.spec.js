@@ -7,7 +7,7 @@ let dataDir
 
 test.beforeEach(async () => {
   // Its own data directory — the test must not touch the operator's real accounts.json.
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-e2e-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'mhub-e2e-'))
 })
 
 test.afterEach(async () => {
@@ -27,13 +27,13 @@ test('the window renders the channel rail and exposes the bridge to the renderer
   await expect(page.locator('#channels')).toBeAttached()
   await expect(page.locator('#add-account')).toBeVisible()
 
-  const methods = await page.evaluate(() => Object.keys(window.msgHub ?? {}).sort())
+  const methods = await page.evaluate(() => Object.keys(window.mHub ?? {}).sort())
   expect(methods).toEqual(
     expect.arrayContaining(['addAccount', 'listAccounts', 'onMessage', 'onUnread', 'switchAccount', 'setOverlay']),
   )
 
   // A fresh data directory: no accounts, and the IPC channel answers instead of throwing.
-  const accounts = await page.evaluate(() => window.msgHub.listAccounts())
+  const accounts = await page.evaluate(() => window.mHub.listAccounts())
   expect(accounts).toEqual([])
 
   await electronApp.close()
@@ -53,8 +53,8 @@ test('the counter draws a 16x16 overlay and disappears at zero', async () => {
   expect(result.duzo).toMatch(/^data:image\/png;base64,/)
 
   // The main process has to accept the drawn image — setOverlayIcon rejects rubbish.
-  await page.evaluate((obrazek) => window.msgHub.setOverlay(obrazek), result.trzy)
-  await page.evaluate(() => window.msgHub.setOverlay(null))
+  await page.evaluate((obrazek) => window.mHub.setOverlay(obrazek), result.trzy)
+  await page.evaluate(() => window.mHub.setOverlay(null))
 
   await electronApp.close()
 })

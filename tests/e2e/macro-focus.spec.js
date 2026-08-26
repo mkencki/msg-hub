@@ -8,7 +8,7 @@ let electronApp
 let page
 
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-focus-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'mhub-focus-'))
   await writeFile(
     path.join(dataDir, 'accounts.json'),
     JSON.stringify({
@@ -27,7 +27,7 @@ test.beforeEach(async () => {
       electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].contentView.children.length),
     )
     .toBe(1)
-  await page.evaluate(() => window.msgHub.saveMacro({ name: 'Greeting', text: 'Good morning' }))
+  await page.evaluate(() => window.mHub.saveMacro({ name: 'Greeting', text: 'Good morning' }))
 })
 
 test.afterEach(async () => {

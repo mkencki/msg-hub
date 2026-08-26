@@ -12,7 +12,7 @@ let electronApp
 // behind and wrote a cookie into a live profile. A test must never touch the data of the
 // person running it.
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-isolation-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'mhub-isolation-'))
   electronApp = await electron.launch({ args: ['.', `--user-data-dir=${dataDir}`] })
 })
 

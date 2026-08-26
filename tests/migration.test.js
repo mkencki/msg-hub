@@ -16,7 +16,7 @@ import { loadLayout } from '../src/main/shell.js'
 let dir
 
 beforeEach(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'msghub-migration-'))
+  dir = await mkdtemp(path.join(tmpdir(), 'mhub-migration-'))
 })
 
 afterEach(async () => {

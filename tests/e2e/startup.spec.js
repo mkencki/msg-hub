@@ -9,7 +9,7 @@ import path from 'node:path'
 // the second copy quits on purpose, and Playwright reports an application that would not
 // start. Measured 2026-08-25, with the operator's own window open at the time.
 test('the app starts and opens exactly one window', async () => {
-  const dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-startup-'))
+  const dataDir = await mkdtemp(path.join(tmpdir(), 'mhub-startup-'))
   const electronApp = await electron.launch({ args: ['.', `--user-data-dir=${dataDir}`] })
 
   // A window with no content loaded is not a page as far as Playwright is concerned, so

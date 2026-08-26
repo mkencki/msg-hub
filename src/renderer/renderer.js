@@ -66,7 +66,7 @@ function paintChannel(account) {
 
 async function switchTo(accountId) {
   activeAccountId = accountId
-  await window.msgHub.switchAccount(accountId)
+  await window.mHub.switchAccount(accountId)
   for (const channel of channels.children) {
     channel.setAttribute('aria-selected', String(channel.dataset.accountId === accountId))
   }
@@ -100,7 +100,7 @@ function applyRailState({ pinned, expanded }) {
   button.setAttribute('aria-pressed', String(railPinned))
 }
 
-rail.addEventListener('mouseenter', () => window.msgHub.hoverRail(true))
+rail.addEventListener('mouseenter', () => window.mHub.hoverRail(true))
 
 // A mouseleave does not always mean the pointer left. Chromium fires one when the window
 // stops being the foreground window, carrying the position the pointer had all along —
@@ -115,26 +115,26 @@ rail.addEventListener('mouseleave', (event) => {
     event.clientX < box.right &&
     event.clientY >= box.top &&
     event.clientY < box.bottom
-  window.msgHub.hoverRail(false, pointerStillInside)
+  window.mHub.hoverRail(false, pointerStillInside)
 })
 
 document.getElementById('pin-rail').addEventListener('click', () => {
-  window.msgHub.pinRail(!railPinned)
+  window.mHub.pinRail(!railPinned)
 })
 
-window.msgHub.onRailChange(applyRailState)
+window.mHub.onRailChange(applyRailState)
 
 // Ctrl+1..9 arrives from the main process as a POSITION, because that is all a digit means.
 // Which account sits at that position is the rail's business, and past the end of a short
 // rail the answer is simply nobody.
-window.msgHub.onSelectAccount((index) => {
+window.mHub.onSelectAccount((index) => {
   const account = railAccounts[index]
   if (account) switchTo(account.id)
 })
 
 // A view took the system's focus on its own — a clicked notification, most likely. The rail
 // has to follow it rather than the other way round.
-window.msgHub.onSelectAccountId((accountId) => {
+window.mHub.onSelectAccountId((accountId) => {
   if (railAccounts.some((a) => a.id === accountId)) switchTo(accountId)
 })
 
@@ -142,10 +142,10 @@ window.msgHub.onSelectAccountId((accountId) => {
 // and asks again once the window is back. :hover is Chromium's own answer to "is the
 // pointer over this element", which is exactly the question, and the only one worth
 // trusting after a spell in which our mouse events were not being delivered.
-window.msgHub.onRailRecheck(() => window.msgHub.hoverRail(rail.matches(':hover'), false))
+window.mHub.onRailRecheck(() => window.mHub.hoverRail(rail.matches(':hover'), false))
 
 async function refreshRail() {
-  railAccounts = await window.msgHub.listAccounts()
+  railAccounts = await window.mHub.listAccounts()
 
   // The rail rebuilds itself after every rename and reorder. Without remembering the
   // account, the operator would land back on the first channel every single time.
@@ -209,7 +209,7 @@ async function openAccountForm(account = null) {
     notifications.checked = account.notifications ?? PLATFORM_DEFAULT_NOTIFICATIONS[account.platform] ?? false
   } else {
     // Two accounts in one colour cancel out the identity signal — suggest a free one.
-    form.querySelector('input[name="color"]').value = await window.msgHub.unusedColor()
+    form.querySelector('input[name="color"]').value = await window.mHub.unusedColor()
     notifications.checked = PLATFORM_DEFAULT_NOTIFICATIONS[platform.value] ?? false
   }
 
@@ -233,12 +233,12 @@ document.getElementById('save-account').addEventListener('click', async (event) 
   const data = Object.fromEntries(new FormData(accountDialog.querySelector('form')))
 
   const result = editedAccountId
-    ? await window.msgHub.updateAccount(editedAccountId, {
+    ? await window.mHub.updateAccount(editedAccountId, {
         name: data.name,
         color: data.color,
         notifications: Boolean(data.notifications),
       })
-    : await window.msgHub.addAccount({ ...data, notifications: Boolean(data.notifications) })
+    : await window.mHub.addAccount({ ...data, notifications: Boolean(data.notifications) })
 
   if (!result.ok) {
     accountErrors.textContent = describeErrors(result.errors)
@@ -322,7 +322,7 @@ async function insertMacro(macro) {
     if (!values) return
   }
 
-  const result = await window.msgHub.insertMacro(macro.id, values)
+  const result = await window.mHub.insertMacro(macro.id, values)
 
   if (result?.ok) {
     // The product promise, said out loud: this app prepares, it does not send.
@@ -343,7 +343,7 @@ async function insertMacro(macro) {
 }
 
 export async function refreshMacros() {
-  const macros = await window.msgHub.listMacros(macroSearch.value)
+  const macros = await window.mHub.listMacros(macroSearch.value)
   macroList.replaceChildren()
 
   if (!macros.length) {
@@ -441,7 +441,7 @@ macroSearch.addEventListener('keydown', async (event) => {
   if (event.key === 'Enter') {
     event.preventDefault()
     const macroId = rows[selectedMacro]?.dataset.macroId
-    const macros = await window.msgHub.listMacros(macroSearch.value)
+    const macros = await window.mHub.listMacros(macroSearch.value)
     const macro = macros.find((m) => m.id === macroId)
     if (macro) await insertMacro(macro)
   }
@@ -471,7 +471,7 @@ window.addEventListener('keydown', (event) => {
 
 // The same shortcut pressed while an account view holds focus never reaches the renderer
 // at all — the main process intercepts it there and sends the decision back.
-window.msgHub.onOpenMacros(() => document.getElementById('open-macros').click())
+window.mHub.onOpenMacros(() => document.getElementById('open-macros').click())
 
 // Spec section 8: a failed start must produce a visible message, not an empty status bar.
 // The message MUST be dismissable — otherwise a stale error occupies the bar for the rest
@@ -518,7 +518,7 @@ function hideMessage() {
 document.getElementById('reload-account').addEventListener('click', async () => {
   const accountId = pendingOffer?.accountId
   hideMessage()
-  await window.msgHub.reloadAccount(accountId)
+  await window.mHub.reloadAccount(accountId)
 })
 
 // The id of a download this process recorded, never a path — main looks up where the file
@@ -526,7 +526,7 @@ document.getElementById('reload-account').addEventListener('click', async () => 
 document.getElementById('show-download').addEventListener('click', async () => {
   const downloadId = pendingOffer?.downloadId
   hideMessage()
-  await window.msgHub.showDownload(downloadId)
+  await window.mHub.showDownload(downloadId)
 })
 
 document.getElementById('dismiss-message').addEventListener('click', hideMessage)
@@ -563,14 +563,14 @@ async function applyLanguage() {
 }
 
 languageSelect.addEventListener('change', async () => {
-  language = validLanguage(await window.msgHub.setLanguage(languageSelect.value))
+  language = validLanguage(await window.mHub.setLanguage(languageSelect.value))
   await applyLanguage()
 })
 
 const closeToTrayBox = document.getElementById('close-to-tray')
 
 closeToTrayBox.addEventListener('change', async () => {
-  closeToTrayBox.checked = await window.msgHub.setCloseToTray(closeToTrayBox.checked)
+  closeToTrayBox.checked = await window.mHub.setCloseToTray(closeToTrayBox.checked)
 })
 
 const askWhereToSaveBox = document.getElementById('ask-where-to-save')
@@ -586,24 +586,24 @@ function applyDownloadSettings(settings) {
 }
 
 askWhereToSaveBox.addEventListener('change', async () => {
-  applyDownloadSettings(await window.msgHub.setDownloadSettings({ ask: askWhereToSaveBox.checked }))
+  applyDownloadSettings(await window.mHub.setDownloadSettings({ ask: askWhereToSaveBox.checked }))
 })
 
 document.getElementById('pick-download-dir').addEventListener('click', async () => {
   // Null means the picker was cancelled, and cancelling is not a decision to change anything.
-  applyDownloadSettings(await window.msgHub.pickDownloadDir())
+  applyDownloadSettings(await window.mHub.pickDownloadDir())
 })
 
 async function start() {
   try {
     // The language must be known BEFORE the first list is drawn, otherwise the first
     // frame shows English and the second swaps it for Polish.
-    language = validLanguage(await window.msgHub.getLanguage())
+    language = validLanguage(await window.mHub.getLanguage())
     translateDocument()
     buildLanguageSelect()
-    closeToTrayBox.checked = await window.msgHub.getCloseToTray()
-    applyDownloadSettings(await window.msgHub.downloadSettings())
-    applyRailState(await window.msgHub.railState())
+    closeToTrayBox.checked = await window.mHub.getCloseToTray()
+    applyDownloadSettings(await window.mHub.downloadSettings())
+    applyRailState(await window.mHub.railState())
     await refreshRail()
   } catch (error) {
     showMessage(tr('messageLoadAccountsFailed', { reason: error.message }))
@@ -642,7 +642,7 @@ export function drawUnreadBadge(total) {
 // on each channel, and the taskbar overlay still needs the total on its own.
 let overlayTotal = null
 
-window.msgHub.onUnread((data) => {
+window.mHub.onUnread((data) => {
   const total = typeof data === 'number' ? data : (data?.total ?? 0)
   unreadByAccount = typeof data === 'number' ? {} : (data?.byAccount ?? {})
   refreshUnread()
@@ -651,12 +651,12 @@ window.msgHub.onUnread((data) => {
   // title event a page produced.
   if (total === overlayTotal) return
   overlayTotal = total
-  window.msgHub.setOverlay(drawUnreadBadge(total))
+  window.mHub.setOverlay(drawUnreadBadge(total))
 })
 
 // Messages from the main process (a failed account load, for instance) land on the status
 // bar rather than in a modal — one sick account must not block the rest.
-window.msgHub.onMessage((payload) =>
+window.mHub.onMessage((payload) =>
   showMessage(payload.text, payload.tone ?? 'error', payload.offer, {
     id: payload.id ?? null,
     autoHideMs: payload.autoHideMs ?? 0,
@@ -728,7 +728,7 @@ document.getElementById('cancel-macro').addEventListener('click', (event) => {
 document.getElementById('save-macro').addEventListener('click', async (event) => {
   event.preventDefault()
   showMacroError('')
-  const result = await window.msgHub.saveMacro({
+  const result = await window.mHub.saveMacro({
     ...(editedMacroId ? { id: editedMacroId } : {}),
     name: editorName.value,
     text: editorText.value,
@@ -786,7 +786,7 @@ function refreshAttachments() {
 
 document.getElementById('add-attachment').addEventListener('click', async () => {
   showMacroError('')
-  const result = await window.msgHub.pickFile()
+  const result = await window.mHub.pickFile()
   if (!result) return
   if (result.error) {
     showMacroError(tr('messageAttachmentFailed', { reason: tr(result.error.code, result.error.params) }))
@@ -803,7 +803,7 @@ document.getElementById('add-attachment').addEventListener('click', async () => 
 // opened and would put the layer back on top.
 function refreshViewVisibility() {
   const anyOpen = [...document.querySelectorAll('dialog')].some((d) => d.open)
-  window.msgHub.setViewsVisible(!anyOpen)
+  window.mHub.setViewsVisible(!anyOpen)
 }
 
 function showDialog(dialog) {
@@ -824,7 +824,7 @@ const removeAccountDialog = document.getElementById('remove-account-dialog')
 let accountToRemove = null
 
 async function refreshAccountList() {
-  const accounts = await window.msgHub.listAccounts()
+  const accounts = await window.mHub.listAccounts()
   accountList.replaceChildren()
 
   if (!accounts.length) {
@@ -893,7 +893,7 @@ async function refreshAccountList() {
 }
 
 async function moveAccount(accountId, offset) {
-  await window.msgHub.moveAccount(accountId, offset)
+  await window.mHub.moveAccount(accountId, offset)
   await refreshRail()
   await refreshAccountList()
 }
@@ -932,7 +932,7 @@ document.getElementById('confirm-remove-account').addEventListener('click', asyn
   event.preventDefault()
   hideMessage()
   if (!accountToRemove) return
-  const result = await window.msgHub.removeAccount(accountToRemove.id)
+  const result = await window.mHub.removeAccount(accountToRemove.id)
   accountToRemove = null
   removeAccountDialog.close()
   if (!result.ok) {
@@ -967,7 +967,7 @@ document.getElementById('confirm-remove-macro').addEventListener('click', async 
   event.preventDefault()
   hideMessage()
   if (!macroToRemove) return
-  const result = await window.msgHub.removeMacro(macroToRemove.id)
+  const result = await window.mHub.removeMacro(macroToRemove.id)
   macroToRemove = null
   removeMacroDialog.close()
   if (!result.ok) {

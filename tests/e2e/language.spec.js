@@ -14,7 +14,7 @@ async function startApp() {
 }
 
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-language-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'mhub-language-'))
   await startApp()
 })
 
@@ -67,7 +67,7 @@ test('the chosen language survives an application restart', async () => {
 })
 
 test('a damaged language value in the settings file does not sink the start', async () => {
-  await page.evaluate(() => window.msgHub.setLanguage('klingon'))
+  await page.evaluate(() => window.mHub.setLanguage('klingon'))
   await electronApp.close()
 
   await startApp()

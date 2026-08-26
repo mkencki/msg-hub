@@ -21,7 +21,7 @@ async function fillAccountForm(name, platform) {
 }
 
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-settings-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'mhub-settings-'))
   electronApp = await electron.launch({ args: ['.', `--user-data-dir=${dataDir}`] })
   page = await electronApp.firstWindow()
   await page.waitForSelector('body[data-ready="1"]')

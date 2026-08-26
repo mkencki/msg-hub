@@ -8,7 +8,7 @@ let electronApp
 let page
 
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-tags-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'mhub-tags-'))
   electronApp = await electron.launch({ args: ['.', `--user-data-dir=${dataDir}`] })
   page = await electronApp.firstWindow()
   await page.waitForSelector('body[data-ready="1"]')
@@ -36,7 +36,7 @@ test('a macro can be given tags, and they come back to be edited', async () => {
   await page.locator('#save-macro').click()
   await expect(page.locator('#editor-dialog')).toBeHidden()
 
-  const stored = await page.evaluate(() => window.msgHub.listMacros(''))
+  const stored = await page.evaluate(() => window.mHub.listMacros(''))
   expect(stored[0].tags).toEqual(['zone', 'guide'])
 
   await openPalette()
@@ -46,9 +46,9 @@ test('a macro can be given tags, and they come back to be edited', async () => {
 
 test('a tag makes the macro findable by it', async () => {
   await page.evaluate(() =>
-    window.msgHub.saveMacro({ name: 'Client Zone manual', text: 'guide', tags: ['zone'] }),
+    window.mHub.saveMacro({ name: 'Client Zone manual', text: 'guide', tags: ['zone'] }),
   )
-  await page.evaluate(() => window.msgHub.saveMacro({ name: 'Offer', text: 'prices' }))
+  await page.evaluate(() => window.mHub.saveMacro({ name: 'Offer', text: 'prices' }))
 
   await openPalette()
   await page.locator('#macro-search').fill('zone')
@@ -60,9 +60,9 @@ test('a tag makes the macro findable by it', async () => {
 // discoverable without a word of explanation.
 test('tags are shown on the row and filter when clicked', async () => {
   await page.evaluate(() =>
-    window.msgHub.saveMacro({ name: 'Client Zone manual', text: 'guide', tags: ['zone', 'guide'] }),
+    window.mHub.saveMacro({ name: 'Client Zone manual', text: 'guide', tags: ['zone', 'guide'] }),
   )
-  await page.evaluate(() => window.msgHub.saveMacro({ name: 'Offer', text: 'prices', tags: ['sales'] }))
+  await page.evaluate(() => window.mHub.saveMacro({ name: 'Offer', text: 'prices', tags: ['sales'] }))
 
   await openPalette()
   await expect(page.locator('#macro-list li')).toHaveCount(2)
@@ -78,7 +78,7 @@ test('tags are shown on the row and filter when clicked', async () => {
 // Clearing a field has to be possible; it just has to be asked for.
 test('clearing the tags field clears the tags', async () => {
   await page.evaluate(() =>
-    window.msgHub.saveMacro({ name: 'Client Zone manual', text: 'guide', tags: ['zone'] }),
+    window.mHub.saveMacro({ name: 'Client Zone manual', text: 'guide', tags: ['zone'] }),
   )
 
   await openPalette()
@@ -87,6 +87,6 @@ test('clearing the tags field clears the tags', async () => {
   await page.locator('#save-macro').click()
   await expect(page.locator('#editor-dialog')).toBeHidden()
 
-  const stored = await page.evaluate(() => window.msgHub.listMacros(''))
+  const stored = await page.evaluate(() => window.mHub.listMacros(''))
   expect(stored[0].tags).toEqual([])
 })

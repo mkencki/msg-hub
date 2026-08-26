@@ -8,7 +8,7 @@ let electronApp
 let page
 
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-macros-editing-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'mhub-macros-editing-'))
   electronApp = await electron.launch({ args: ['.', `--user-data-dir=${dataDir}`] })
   page = await electronApp.firstWindow()
   await page.waitForSelector('body[data-ready="1"]')
@@ -22,7 +22,7 @@ test.afterEach(async () => {
 
 async function addMacro(name, text, attachments = []) {
   await page.evaluate(
-    (macro) => window.msgHub.saveMacro(macro),
+    (macro) => window.mHub.saveMacro(macro),
     { name, text, attachments },
   )
 }
@@ -60,7 +60,7 @@ test('saving after an edit overwrites the macro instead of creating a second one
   // closes ONLY after a successful save, so that is the end-of-operation signal.
   await expect(page.locator('#editor-dialog')).toBeHidden()
 
-  const macros = await page.evaluate(() => window.msgHub.listMacros(''))
+  const macros = await page.evaluate(() => window.mHub.listMacros(''))
   expect(macros).toHaveLength(1)
   expect(macros[0].text).toBe('new content')
 })
@@ -79,7 +79,7 @@ test('editing does not throw the macro to the end of the list', async () => {
   // closes ONLY after a successful save, so that is the end-of-operation signal.
   await expect(page.locator('#editor-dialog')).toBeHidden()
 
-  const macros = await page.evaluate(() => window.msgHub.listMacros(''))
+  const macros = await page.evaluate(() => window.mHub.listMacros(''))
   expect(macros.map((m) => m.name)).toEqual(['Alfa', 'Beta', 'Gamma'])
 })
 
@@ -92,7 +92,7 @@ test('a cancelled removal leaves the macro on the list', async () => {
   await page.locator('#cancel-remove-macro').click()
 
   await expect(page.locator('#macro-list li')).toHaveCount(1)
-  expect(await page.evaluate(() => window.msgHub.listMacros(''))).toHaveLength(1)
+  expect(await page.evaluate(() => window.mHub.listMacros(''))).toHaveLength(1)
 })
 
 test('a confirmed removal takes the macro away and deletes its attachment from the store', async () => {
@@ -104,7 +104,7 @@ test('a confirmed removal takes the macro away and deletes its attachment from t
   await page.locator('#confirm-remove-macro').click()
 
   await expect(page.locator('#macro-list .empty')).toHaveText(/No macros/)
-  expect(await page.evaluate(() => window.msgHub.listMacros(''))).toHaveLength(0)
+  expect(await page.evaluate(() => window.mHub.listMacros(''))).toHaveLength(0)
 
   // Without sweeping the store, a 4 MB file would sit on disk forever.
   expect(await readdir(path.join(dataDir, 'att'))).toEqual([])
@@ -125,7 +125,7 @@ test('an attachment can be detached from a macro in the editor', async () => {
   // closes ONLY after a successful save, so that is the end-of-operation signal.
   await expect(page.locator('#editor-dialog')).toBeHidden()
 
-  const macros = await page.evaluate(() => window.msgHub.listMacros(''))
+  const macros = await page.evaluate(() => window.mHub.listMacros(''))
   expect(macros[0].attachments).toEqual([])
   expect(await readdir(path.join(dataDir, 'att'))).toEqual([])
 })
@@ -137,13 +137,13 @@ test('an attachment can be detached from a macro in the editor', async () => {
 // found by them after one unrelated edit. Silent data loss triggered by a normal action.
 test('editing a macro does not erase tags the editor cannot see', async () => {
   await page.evaluate(() =>
-    window.msgHub.saveMacro({
+    window.mHub.saveMacro({
       name: 'Client Zone manual',
       text: 'old content',
       tags: ['zone', 'guide'],
     }),
   )
-  expect(await page.evaluate(() => window.msgHub.listMacros('zone'))).toHaveLength(1)
+  expect(await page.evaluate(() => window.mHub.listMacros('zone'))).toHaveLength(1)
 
   await page.keyboard.press('Control+Semicolon')
   await page.locator('#macro-list li .edit-macro').click()
@@ -151,8 +151,8 @@ test('editing a macro does not erase tags the editor cannot see', async () => {
   await page.locator('#save-macro').click()
   await expect(page.locator('#editor-dialog')).toBeHidden()
 
-  const macros = await page.evaluate(() => window.msgHub.listMacros(''))
+  const macros = await page.evaluate(() => window.mHub.listMacros(''))
   expect(macros[0].text).toBe('new content')
   expect(macros[0].tags).toEqual(['zone', 'guide'])
-  expect(await page.evaluate(() => window.msgHub.listMacros('guide'))).toHaveLength(1)
+  expect(await page.evaluate(() => window.mHub.listMacros('guide'))).toHaveLength(1)
 })

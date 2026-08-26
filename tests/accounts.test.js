@@ -21,7 +21,7 @@ let dir
 let file
 
 beforeEach(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'msghub-'))
+  dir = await mkdtemp(path.join(tmpdir(), 'mhub-'))
   file = path.join(dir, 'accounts.json')
 })
 

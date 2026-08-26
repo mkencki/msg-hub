@@ -21,7 +21,7 @@ const windowIsVisible = () =>
   electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.isVisible() ?? null)
 
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-tray-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'mhub-tray-'))
 })
 
 test.afterEach(async () => {

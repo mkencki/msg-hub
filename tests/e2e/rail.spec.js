@@ -63,7 +63,7 @@ const viewLeftEdge = () =>
   }, appWindowId)
 
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-rail-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'mhub-rail-'))
   await launchApp()
   // Nothing here is about hovering, so the cursor is parked out of the rail's way. Without
   // this a machine whose cursor happens to rest over the left edge of the window would see
@@ -125,7 +125,7 @@ test('a leave reported while another window holds the foreground leaves the rail
     .poll(() => electronApp.evaluate(({ BrowserWindow }, id) => BrowserWindow.fromId(id).isFocused(), appWindowId))
     .toBe(false)
 
-  await page.evaluate(() => window.msgHub.hoverRail(false, true))
+  await page.evaluate(() => window.mHub.hoverRail(false, true))
 
   expect(await viewLeftEdge()).toBe(EXPANDED + MARGIN)
   await expect(page.locator('.channel-name')).toBeVisible()
@@ -140,7 +140,7 @@ test('a leave reported while another window holds the foreground leaves the rail
 test('coming back to the foreground settles a rail held open on a stale hover', async () => {
   await addAccount()
   await parkPointer(AWAY)
-  await page.evaluate(() => window.msgHub.hoverRail(true))
+  await page.evaluate(() => window.mHub.hoverRail(true))
   await expect.poll(viewLeftEdge).toBe(EXPANDED + MARGIN)
 
   await electronApp.evaluate(({ BrowserWindow }) => {
@@ -150,7 +150,7 @@ test('coming back to the foreground settles a rail held open on a stale hover', 
   await expect
     .poll(() => electronApp.evaluate(({ BrowserWindow }, id) => BrowserWindow.fromId(id).isFocused(), appWindowId))
     .toBe(false)
-  await page.evaluate(() => window.msgHub.hoverRail(false, true))
+  await page.evaluate(() => window.mHub.hoverRail(false, true))
   expect(await viewLeftEdge()).toBe(EXPANDED + MARGIN)
 
   await electronApp.evaluate(({ BrowserWindow }, id) => {

@@ -28,7 +28,7 @@ const macro = (overrides = {}) => ({
 })
 
 beforeEach(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'msghub-macros-'))
+  dir = await mkdtemp(path.join(tmpdir(), 'mhub-macros-'))
   file = path.join(dir, 'macros.json')
 })
 

@@ -12,8 +12,8 @@ let electronApp
 let page
 
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-dl-'))
-  saveDir = await mkdtemp(path.join(tmpdir(), 'msghub-saved-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'mhub-dl-'))
+  saveDir = await mkdtemp(path.join(tmpdir(), 'mhub-saved-'))
 
   // A real download, because will-download fires for nothing less. A file served as an
   // attachment from a local port is the cheapest real one there is, and it keeps the test off

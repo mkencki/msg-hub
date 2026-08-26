@@ -16,7 +16,7 @@ const account = (n, color) => ({
 })
 
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-keys-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'mhub-keys-'))
   await writeFile(
     path.join(dataDir, 'accounts.json'),
     JSON.stringify({ version: 2, accounts: [account('one', '#2f7d5b'), account('two', '#6586ec'), account('three', '#c9a227')] }),

@@ -34,7 +34,7 @@ test('the packaged application starts with a working renderer and IPC bridge', a
   // test.skip(condition, description) as a declaration of a skipped test, not as a condition.
   test.skip(!built, 'no dist/win-unpacked — run npm run dist first')
 
-  const dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-package-'))
+  const dataDir = await mkdtemp(path.join(tmpdir(), 'mhub-package-'))
 
   // This test used to skip on a REGISTRY READ ALONE ("SAC is on, so it will surely block"),
   // which is a guess. It now skips on a MEASURED attempt to launch.
@@ -51,7 +51,7 @@ test('the packaged application starts with a working renderer and IPC bridge', a
   // the main process, and a CommonJS preload.
   expect(await page.title()).toBe('M-HUB')
   await expect(page.locator('#add-account')).toBeVisible()
-  expect(await page.evaluate(() => window.msgHub.listAccounts())).toEqual([])
+  expect(await page.evaluate(() => window.mHub.listAccounts())).toEqual([])
 
   await page.keyboard.press('Control+Semicolon')
   await expect(page.locator('#macros-dialog')).toBeVisible()

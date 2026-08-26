@@ -19,7 +19,7 @@ async function visibleViews() {
 }
 
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-dialogs-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'mhub-dialogs-'))
   electronApp = await electron.launch({ args: ['.', `--user-data-dir=${dataDir}`] })
   page = await electronApp.firstWindow()
   await page.waitForSelector('body[data-ready="1"]')

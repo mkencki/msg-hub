@@ -7,7 +7,7 @@ import { createLogger, LOGGED_FIELDS } from '../src/main/log.js'
 let dir
 
 beforeEach(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'msghub-log-'))
+  dir = await mkdtemp(path.join(tmpdir(), 'mhub-log-'))
 })
 
 afterEach(async () => {

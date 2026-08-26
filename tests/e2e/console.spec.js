@@ -8,7 +8,7 @@ let electronApp
 let page
 
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-console-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'mhub-console-'))
   electronApp = await electron.launch({ args: ['.', `--user-data-dir=${dataDir}`] })
   page = await electronApp.firstWindow()
   await page.waitForSelector('body[data-ready="1"]')
@@ -73,7 +73,7 @@ test('switching channels repaints the on-air edge', async () => {
 
 test('the rail shows the number of new messages next to the account', async () => {
   await addAccount('WhatsApp test')
-  const accountId = await page.evaluate(async () => (await window.msgHub.listAccounts())[0].id)
+  const accountId = await page.evaluate(async () => (await window.mHub.listAccounts())[0].id)
 
   await electronApp.evaluate(({ BrowserWindow }, id) => {
     BrowserWindow.getAllWindows()[0].webContents.send('unread:changed', {
@@ -97,7 +97,7 @@ async function switchToPolish() {
 test('after switching to Polish the rail inflects the numeral through three forms', async () => {
   await addAccount('WhatsApp test')
   await switchToPolish()
-  const accountId = await page.evaluate(async () => (await window.msgHub.listAccounts())[0].id)
+  const accountId = await page.evaluate(async () => (await window.mHub.listAccounts())[0].id)
 
   const send = (count) =>
     electronApp.evaluate(({ BrowserWindow }, payload) => {
@@ -117,8 +117,8 @@ test('after switching to Polish the rail inflects the numeral through three form
 
 test('arrows and Enter insert the selected macro without reaching for the mouse', async () => {
   await addAccount('WhatsApp test')
-  await page.evaluate(() => window.msgHub.saveMacro({ name: 'Alfa', text: 'alpha content' }))
-  await page.evaluate(() => window.msgHub.saveMacro({ name: 'Beta', text: 'beta content' }))
+  await page.evaluate(() => window.mHub.saveMacro({ name: 'Alfa', text: 'alpha content' }))
+  await page.evaluate(() => window.mHub.saveMacro({ name: 'Beta', text: 'beta content' }))
   await electronApp.evaluate(({ clipboard }) => clipboard.writeText('whatever was on the clipboard before'))
 
   await page.keyboard.press('Control+Semicolon')
@@ -139,7 +139,7 @@ test('arrows and Enter insert the selected macro without reaching for the mouse'
 // the content went in, or into which account — the one real risk this product carries.
 test('after inserting, the status bar names the account and leaves Enter to the operator', async () => {
   await addAccount('WhatsApp work')
-  await page.evaluate(() => window.msgHub.saveMacro({ name: 'Alfa', text: 'alpha content' }))
+  await page.evaluate(() => window.mHub.saveMacro({ name: 'Alfa', text: 'alpha content' }))
 
   await page.keyboard.press('Control+Semicolon')
   await page.locator('#macro-list li').first().click()
@@ -151,7 +151,7 @@ test('after inserting, the status bar names the account and leaves Enter to the 
 
 test('the insertion report is not an error and carries a different tone', async () => {
   await addAccount('WhatsApp test')
-  await page.evaluate(() => window.msgHub.saveMacro({ name: 'Alfa', text: 'alpha content' }))
+  await page.evaluate(() => window.mHub.saveMacro({ name: 'Alfa', text: 'alpha content' }))
 
   await page.keyboard.press('Control+Semicolon')
   await page.locator('#macro-list li').first().click()
@@ -161,7 +161,7 @@ test('the insertion report is not an error and carries a different tone', async 
 })
 
 test('a failed insertion lights the error tone', async () => {
-  await page.evaluate(() => window.msgHub.saveMacro({ name: 'Alfa', text: 'alpha content' }))
+  await page.evaluate(() => window.mHub.saveMacro({ name: 'Alfa', text: 'alpha content' }))
 
   await page.locator('#open-macros').click()
   await page.locator('#macro-list li').first().click()

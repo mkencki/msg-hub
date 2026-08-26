@@ -9,7 +9,7 @@ let electronApp
 let page
 
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-messages-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'mhub-messages-'))
   electronApp = await electron.launch({ args: ['.', `--user-data-dir=${dataDir}`] })
   page = await electronApp.firstWindow()
   await page.waitForSelector('body[data-ready="1"]')
@@ -33,7 +33,7 @@ async function addAccount() {
 // A silent failure is worse than a visible error: the panel disappears on every choice, so a
 // failed insertion looks exactly like a successful one.
 test('a macro clicked with no account says there is nowhere to insert', async () => {
-  await page.evaluate(() => window.msgHub.saveMacro({ name: 'Makro', text: 'content' }))
+  await page.evaluate(() => window.mHub.saveMacro({ name: 'Makro', text: 'content' }))
 
   await page.locator('#open-macros').click()
   await page.locator('#macro-list li').first().click()
@@ -44,7 +44,7 @@ test('a macro clicked with no account says there is nowhere to insert', async ()
 
 test('a macro with neither content nor attachment reports that there is nothing to insert', async () => {
   await addAccount()
-  await page.evaluate(() => window.msgHub.saveMacro({ name: 'Makro puste', text: '' }))
+  await page.evaluate(() => window.mHub.saveMacro({ name: 'Makro puste', text: '' }))
 
   await page.locator('#open-macros').click()
   await page.locator('#macro-list li').first().click()
@@ -81,7 +81,7 @@ test('a successful save clears the error shown on the previous attempt', async (
 })
 
 test('a message in the bar can be dismissed with the button', async () => {
-  await page.evaluate(() => window.msgHub.saveMacro({ name: 'Makro', text: 'content' }))
+  await page.evaluate(() => window.mHub.saveMacro({ name: 'Makro', text: 'content' }))
   await page.locator('#open-macros').click()
   await page.locator('#macro-list li').first().click()
   await expect(page.locator('#message')).toBeVisible()

@@ -8,7 +8,7 @@ let electronApp
 let page
 
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-logging-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'mhub-logging-'))
   await writeFile(
     path.join(dataDir, 'accounts.json'),
     JSON.stringify({

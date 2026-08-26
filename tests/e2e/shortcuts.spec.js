@@ -8,7 +8,7 @@ let electronApp
 let page
 
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-shortcuts-e2e-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'mhub-shortcuts-e2e-'))
   electronApp = await electron.launch({ args: ['.', `--user-data-dir=${dataDir}`] })
   page = await electronApp.firstWindow()
   await page.waitForSelector('body[data-ready="1"]')
@@ -58,8 +58,8 @@ test('Ctrl+; opens the macro panel while an account view holds focus', async () 
 })
 
 test('a macro panel opened from an account view accepts typing in the search box', async () => {
-  await page.evaluate(() => window.msgHub.saveMacro({ name: 'Passango', text: 'installation' }))
-  await page.evaluate(() => window.msgHub.saveMacro({ name: 'Client Zone', text: 'sign-in' }))
+  await page.evaluate(() => window.mHub.saveMacro({ name: 'Passango', text: 'installation' }))
+  await page.evaluate(() => window.mHub.saveMacro({ name: 'Client Zone', text: 'sign-in' }))
   await focusAccountView()
   await pressInView(';')
   await expect(page.locator('#macros-dialog')).toBeVisible()

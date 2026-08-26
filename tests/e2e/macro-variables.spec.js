@@ -8,7 +8,7 @@ let electronApp
 let page
 
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-vars-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'mhub-vars-'))
   await writeFile(
     path.join(dataDir, 'accounts.json'),
     JSON.stringify({
@@ -48,7 +48,7 @@ const pick = async (name) => {
 
 test('a macro with placeholders asks before it goes anywhere', async () => {
   await page.evaluate(() =>
-    window.msgHub.saveMacro({ name: 'Quote', text: 'Hello {name}, the quote for {company} is ready.' }),
+    window.mHub.saveMacro({ name: 'Quote', text: 'Hello {name}, the quote for {company} is ready.' }),
   )
   await electronApp.evaluate(({ clipboard }) => clipboard.writeText('nothing yet'))
 
@@ -67,7 +67,7 @@ test('a macro with placeholders asks before it goes anywhere', async () => {
 
 // Every macro that exists today takes this path, and it may not change by a character.
 test('a macro without placeholders is not interrupted and not altered', async () => {
-  await page.evaluate(() => window.msgHub.saveMacro({ name: 'Greeting', text: 'Good morning.' }))
+  await page.evaluate(() => window.mHub.saveMacro({ name: 'Greeting', text: 'Good morning.' }))
 
   await pick('Greeting')
 
@@ -76,7 +76,7 @@ test('a macro without placeholders is not interrupted and not altered', async ()
 })
 
 test('the date fills itself rather than being asked for', async () => {
-  await page.evaluate(() => window.msgHub.saveMacro({ name: 'Dated', text: 'Sent on {date}.' }))
+  await page.evaluate(() => window.mHub.saveMacro({ name: 'Dated', text: 'Sent on {date}.' }))
 
   await pick('Dated')
 
@@ -88,7 +88,7 @@ test('the date fills itself rather than being asked for', async () => {
 // Backing out has to leave nothing behind — least of all a half-filled message on the
 // clipboard, which is the one thing that could reach a conversation by accident.
 test('cancelling the question inserts nothing at all', async () => {
-  await page.evaluate(() => window.msgHub.saveMacro({ name: 'Quote', text: 'Hello {name}.' }))
+  await page.evaluate(() => window.mHub.saveMacro({ name: 'Quote', text: 'Hello {name}.' }))
   await electronApp.evaluate(({ clipboard }) => clipboard.writeText('nothing yet'))
 
   await pick('Quote')

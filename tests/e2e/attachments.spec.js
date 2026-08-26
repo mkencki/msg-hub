@@ -58,7 +58,7 @@ async function filesOnClipboard() {
 }
 
 test.beforeEach(async () => {
-  dataDir = await mkdtemp(path.join(tmpdir(), 'msghub-attachments-'))
+  dataDir = await mkdtemp(path.join(tmpdir(), 'mhub-attachments-'))
   electronApp = await electron.launch({ args: ['.', `--user-data-dir=${dataDir}`] })
   page = await electronApp.firstWindow()
   await page.waitForSelector('body[data-ready="1"]')
@@ -88,7 +88,7 @@ for (const material of MATERIALS) {
 
     await page.evaluate(
       (relative) =>
-        window.msgHub.saveMacro({
+        window.mHub.saveMacro({
           name: 'Passango installation',
           text: '*Installation manual:*',
           attachments: [relative],
@@ -100,8 +100,8 @@ for (const material of MATERIALS) {
     await electronApp.evaluate(({ clipboard }) => clipboard.writeText('whatever was on the clipboard before'))
 
     const result = await page.evaluate(async () => {
-      const macros = await window.msgHub.listMacros('')
-      return window.msgHub.insertMacro(macros[0].id)
+      const macros = await window.mHub.listMacros('')
+      return window.mHub.insertMacro(macros[0].id)
     })
 
     expect(result.ok).toBe(true)
@@ -114,7 +114,7 @@ for (const material of MATERIALS) {
 
 test('a file missing from the store does not sink the macro: the text works and the gap is reported', async () => {
   await page.evaluate(() =>
-    window.msgHub.saveMacro({
+    window.mHub.saveMacro({
       name: 'Macro with an orphaned attachment',
       text: '*The text works even with the file gone*',
       attachments: ['att/no-such-file.pdf'],
@@ -124,8 +124,8 @@ test('a file missing from the store does not sink the macro: the text works and 
   await electronApp.evaluate(({ clipboard }) => clipboard.writeText('whatever was on the clipboard before'))
 
   const result = await page.evaluate(async () => {
-    const macros = await window.msgHub.listMacros('')
-    return window.msgHub.insertMacro(macros[0].id)
+    const macros = await window.mHub.listMacros('')
+    return window.mHub.insertMacro(macros[0].id)
   })
 
   expect(result.ok).toBe(false)
