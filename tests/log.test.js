@@ -14,7 +14,7 @@ afterEach(async () => {
   await rm(dir, { recursive: true, force: true, maxRetries: 3 }).catch(() => {})
 })
 
-const readLog = async (name = 'msg-hub.log') => readFile(path.join(dir, name), 'utf8')
+const readLog = async (name = 'm-hub.log') => readFile(path.join(dir, name), 'utf8')
 
 describe('the local log', () => {
   test('an event is one line, with the fields it was given', async () => {
@@ -89,17 +89,17 @@ describe('the local log', () => {
     for (let n = 0; n < 40; n += 1) await log.write('account-load-failed', { code: n })
 
     const files = (await readdir(dir)).sort()
-    expect(files).toEqual(['msg-hub.1.log', 'msg-hub.log'])
+    expect(files).toEqual(['m-hub.1.log', 'm-hub.log'])
     expect((await readLog()).length).toBeLessThanOrEqual(200 + 100)
   })
 
   test('rotating replaces the older file instead of piling them up', async () => {
-    await writeFile(path.join(dir, 'msg-hub.1.log'), 'ancient', 'utf8')
+    await writeFile(path.join(dir, 'm-hub.1.log'), 'ancient', 'utf8')
     const log = createLogger(dir, { maxBytes: 100 })
 
     for (let n = 0; n < 20; n += 1) await log.write('started', { count: n })
 
-    expect(await readLog('msg-hub.1.log')).not.toContain('ancient')
+    expect(await readLog('m-hub.1.log')).not.toContain('ancient')
   })
 
   // A log that cannot be written must never be the reason the application stops working.

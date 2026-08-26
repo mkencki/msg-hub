@@ -63,7 +63,7 @@ test('a page that blinks its own title does not blink the badge', async () => {
   await addAccount('WhatsApp', 'whatsapp')
   await blinkTitle()
 
-  await expect.poll(windowTitle, { timeout: 5000 }).toBe('msg-hub (3)')
+  await expect.poll(windowTitle, { timeout: 5000 }).toBe('M-HUB (3)')
 
   // Two seconds is eight blinks. Without the latch, at least one sample lands on the bare
   // title — and every sample that does is a second the taskbar spent showing nothing.
@@ -72,7 +72,7 @@ test('a page that blinks its own title does not blink the badge', async () => {
     seen.add(await windowTitle())
     await new Promise((done) => setTimeout(done, 100))
   }
-  expect([...seen]).toEqual(['msg-hub (3)'])
+  expect([...seen]).toEqual(['M-HUB (3)'])
 })
 
 // The other half of the contract, and the half a careless latch breaks: a count that really
@@ -81,7 +81,7 @@ test('a page that blinks its own title does not blink the badge', async () => {
 test('a count that really reaches zero still clears itself', async () => {
   await addAccount('WhatsApp', 'whatsapp')
   await blinkTitle()
-  await expect.poll(windowTitle, { timeout: 5000 }).toBe('msg-hub (3)')
+  await expect.poll(windowTitle, { timeout: 5000 }).toBe('M-HUB (3)')
 
   await electronApp.evaluate(({ BrowserWindow }) => {
     const view = BrowserWindow.getAllWindows()[0].contentView.children[0]
@@ -90,7 +90,7 @@ test('a count that really reaches zero still clears itself', async () => {
     )
   })
 
-  await expect.poll(windowTitle, { timeout: 8000 }).toBe('msg-hub')
+  await expect.poll(windowTitle, { timeout: 8000 }).toBe('M-HUB')
 })
 
 // A number that changes without passing through zero is news, and news waits for nothing.
@@ -102,14 +102,14 @@ test('a count that goes up is shown at once', async () => {
     await view.webContents.loadURL('about:blank').catch(() => {})
     return view.webContents.executeJavaScript("document.title = '(1) WhatsApp'; true")
   })
-  await expect.poll(windowTitle, { timeout: 5000 }).toBe('msg-hub (1)')
+  await expect.poll(windowTitle, { timeout: 5000 }).toBe('M-HUB (1)')
 
   const before = Date.now()
   await electronApp.evaluate(({ BrowserWindow }) => {
     const view = BrowserWindow.getAllWindows()[0].contentView.children[0]
     return view.webContents.executeJavaScript("document.title = '(4) WhatsApp'; true")
   })
-  await expect.poll(windowTitle, { timeout: 2000 }).toBe('msg-hub (4)')
+  await expect.poll(windowTitle, { timeout: 2000 }).toBe('M-HUB (4)')
   // Well inside the hold: a rise that waited for it would be the latch making the
   // application slower at the one thing it exists to be quick about.
   expect(Date.now() - before).toBeLessThan(2000)

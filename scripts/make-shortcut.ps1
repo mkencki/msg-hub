@@ -28,7 +28,7 @@ $ErrorActionPreference = 'Stop'
 # under Windows PowerShell 5.1, which is the interpreter `npm run shortcut` reaches.
 if (-not $Repo) { $Repo = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path }
 
-$shortcut = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\msg-hub.lnk'
+$shortcut = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\M-HUB.lnk'
 $electron = Join-Path $Repo 'node_modules\electron\dist\electron.exe'
 $icon = Join-Path $Repo 'src\renderer\icons\app.ico'
 
@@ -44,8 +44,16 @@ $link.TargetPath = $electron
 $link.Arguments = '"' + $Repo + '"'
 $link.WorkingDirectory = $Repo
 $link.IconLocation = "$icon,0"
-$link.Description = 'msg-hub'
+$link.Description = 'M-HUB'
 $link.Save()
+
+# Until 0.5.0 this script wrote msg-hub.lnk. Left in place it is a second Start menu entry for
+# the same application under its old name, and the wrong one of the two is easy to pin.
+$legacy = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\msg-hub.lnk'
+if (Test-Path -LiteralPath $legacy) {
+  Remove-Item -LiteralPath $legacy -Force
+  Write-Output "removed:  $legacy"
+}
 
 # WScript.Shell has no idea AppUserModelID exists; it lives in the shell property store, and
 # reaching that means COM. The read-back below is the point of writing this at all: a property

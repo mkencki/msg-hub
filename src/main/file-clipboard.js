@@ -3,7 +3,7 @@ import { promisify } from 'node:util'
 
 const defaultRun = promisify(execFile)
 
-export const DONE_MARKER = '@@MSGHUB-DONE@@'
+export const DONE_MARKER = '@@MHUB-DONE@@'
 const TIMEOUT_MS = 10000
 
 // Set-Clipboard -LiteralPath exists ONLY in Windows PowerShell 5.1.

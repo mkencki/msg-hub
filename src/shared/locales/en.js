@@ -32,7 +32,7 @@ export const en = {
   accounts: 'Accounts',
   orderHint: 'The order on this list is the order of the channels.',
   language: 'Language',
-  closeToTray: 'Closing the window keeps msg-hub in the tray',
+  closeToTray: 'Closing the window keeps M-HUB in the tray',
   askWhereToSave: 'Ask where to save every downloaded file',
   downloadFolder: 'Download folder',
   changeFolder: 'Change…',
@@ -132,7 +132,7 @@ export const en = {
   trayShow: 'Show',
   trayAutoStart: 'Start with Windows',
   trayQuit: 'Quit',
-  trayUnread: { one: 'msg-hub — {n} unread', other: 'msg-hub — {n} unread' },
+  trayUnread: { one: 'M-HUB — {n} unread', other: 'M-HUB — {n} unread' },
   overlayUnread: 'unread messages',
   loadAccountFailed:
     'Could not load {account} — error {code}: {description}. If your network is fine and the site ' +

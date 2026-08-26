@@ -26,8 +26,8 @@ function render(fields) {
 }
 
 export function createLogger(dir, { maxBytes = DEFAULT_MAX_BYTES, create = true, now = () => new Date() } = {}) {
-  const file = path.join(dir, 'msg-hub.log')
-  const previous = path.join(dir, 'msg-hub.1.log')
+  const file = path.join(dir, 'm-hub.log')
+  const previous = path.join(dir, 'm-hub.1.log')
   let ready = null
 
   const ensureDir = () => {

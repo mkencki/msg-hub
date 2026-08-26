@@ -37,7 +37,7 @@ export const pl = {
   accounts: 'Konta',
   orderHint: 'Kolejność na liście jest kolejnością kanałów.',
   language: 'Język',
-  closeToTray: 'Zamknięcie okna zostawia msg-hub w zasobniku',
+  closeToTray: 'Zamknięcie okna zostawia M-HUB w zasobniku',
   askWhereToSave: 'Pytaj, gdzie zapisać każdy pobierany plik',
   downloadFolder: 'Folder pobierania',
   changeFolder: 'Zmień…',
@@ -135,10 +135,10 @@ export const pl = {
   trayAutoStart: 'Uruchamiaj z Windows',
   trayQuit: 'Zakończ',
   trayUnread: {
-    one: 'msg-hub — {n} nieprzeczytana',
-    few: 'msg-hub — {n} nieprzeczytane',
-    many: 'msg-hub — {n} nieprzeczytanych',
-    other: 'msg-hub — {n} nieprzeczytanych',
+    one: 'M-HUB — {n} nieprzeczytana',
+    few: 'M-HUB — {n} nieprzeczytane',
+    many: 'M-HUB — {n} nieprzeczytanych',
+    other: 'M-HUB — {n} nieprzeczytanych',
   },
   overlayUnread: 'nieprzeczytane wiadomości',
   loadAccountFailed:

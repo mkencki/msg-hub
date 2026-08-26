@@ -23,7 +23,7 @@ test('the window renders the channel rail and exposes the bridge to the renderer
   const electronApp = await electron.launch({ args: ['.', `--user-data-dir=${dataDir}`] })
   const page = await electronApp.firstWindow()
 
-  expect(await page.title()).toBe('msg-hub')
+  expect(await page.title()).toBe('M-HUB')
   await expect(page.locator('#channels')).toBeAttached()
   await expect(page.locator('#add-account')).toBeVisible()
 

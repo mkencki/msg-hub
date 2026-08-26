@@ -22,7 +22,7 @@ test('the app starts and opens exactly one window', async () => {
     return BrowserWindow.getAllWindows().map((page) => page.getTitle())
   })
 
-  expect(titles).toEqual(['msg-hub'])
+  expect(titles).toEqual(['M-HUB'])
 
   await electronApp.close()
   const cleanup = rm(dataDir, { recursive: true, force: true, maxRetries: 3 }).catch(() => {})

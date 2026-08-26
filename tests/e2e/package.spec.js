@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-const EXE = path.resolve('dist/win-unpacked/msg-hub.exe')
+const EXE = path.resolve('dist/win-unpacked/M-HUB.exe')
 
 // The package exists only after `npm run dist` — without it the test has nothing to check.
 let built = true
@@ -49,7 +49,7 @@ test('the packaged application starts with a working renderer and IPC bridge', a
 
   // These are exactly the places where a package can drift from the sources: asar, ESM in
   // the main process, and a CommonJS preload.
-  expect(await page.title()).toBe('msg-hub')
+  expect(await page.title()).toBe('M-HUB')
   await expect(page.locator('#add-account')).toBeVisible()
   expect(await page.evaluate(() => window.msgHub.listAccounts())).toEqual([])
 

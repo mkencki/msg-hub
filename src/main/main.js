@@ -42,6 +42,12 @@ app.userAgentFallback = cleanUserAgent(app.userAgentFallback, app.getName())
 // only in the electron-builder configuration — that is, in the installer, not in the running
 // process. Electron exposes a setter and no getter, so this one is verified by reading it
 // rather than by a test.
+//
+// It keeps the old spelling on purpose. NSIS derives the GUID under which Windows records the
+// installation from this string, so changing it would make the 0.5.0 installer look like a
+// different application: a second entry in Settings, a second folder in Programs, and the
+// previous version left behind for someone to uninstall by hand. Nobody sees an appId; the
+// name is everywhere else.
 app.setAppUserModelId('pl.kencki.msghub')
 
 // Electron's default menu (File/Edit/View/Window) does not belong to this app and on
@@ -91,12 +97,12 @@ async function createWindow() {
     y: layout.y,
     minWidth: 800,
     minHeight: 600,
-    title: 'msg-hub',
+    title: 'M-HUB',
     icon: WINDOW_ICON,
     backgroundColor: '#111b21',
     webPreferences: { preload: path.join(HERE, '..', 'preload', 'preload.cjs') },
   })
-  window.setTitle('msg-hub')
+  window.setTitle('M-HUB')
   if (layout.maximized) window.maximize()
 
   // An account view is a native layer ABOVE the renderer: while it holds focus — which
@@ -331,8 +337,8 @@ async function createWindow() {
     if (!window || window.isDestroyed()) return
     const byAccount = manager.unreadByAccount()
     const total = Object.values(byAccount).reduce((sum, n) => sum + n, 0)
-    window.setTitle(total ? `msg-hub (${total})` : 'msg-hub')
-    tray?.setToolTip(total ? tr('trayUnread', { n: total }) : 'msg-hub')
+    window.setTitle(total ? `M-HUB (${total})` : 'M-HUB')
+    tray?.setToolTip(total ? tr('trayUnread', { n: total }) : 'M-HUB')
     // The renderer also gets the per-account breakdown — the rail shows a count on each.
     if (!window.webContents.isDestroyed()) window.webContents.send('unread:changed', { total, byAccount })
 
@@ -579,7 +585,7 @@ function buildTray() {
   if (!tray) {
     // An empty tray icon is INVISIBLE on Windows — it has to be a real image.
     tray = new Tray(nativeImage.createFromPath(TRAY_ICON).resize({ width: 16, height: 16 }))
-    tray.setToolTip('msg-hub')
+    tray.setToolTip('M-HUB')
     tray.on('click', () => (window?.isVisible() ? window.hide() : window?.show()))
   }
   tray.setContextMenu(

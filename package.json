@@ -1,5 +1,6 @@
 {
-  "name": "msg-hub",
+  "name": "m-hub",
+  "productName": "M-HUB",
   "version": "0.4.0",
   "description": "Messenger and two WhatsApp accounts in one window, each in an isolated session, with text macros and attachments",
   "author": "Marek Kencki",
@@ -29,7 +30,7 @@
   },
   "build": {
     "appId": "pl.kencki.msghub",
-    "productName": "msg-hub",
+    "productName": "M-HUB",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -50,12 +51,12 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "msg-hub",
-      "artifactName": "msg-hub-${version}-installer.exe",
+      "shortcutName": "M-HUB",
+      "artifactName": "M-HUB-${version}-installer.exe",
       "deleteAppDataOnUninstall": false
     },
     "portable": {
-      "artifactName": "msg-hub-${version}-portable.exe"
+      "artifactName": "M-HUB-${version}-portable.exe"
     }
   }
 }

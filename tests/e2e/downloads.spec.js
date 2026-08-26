@@ -23,7 +23,7 @@ test.beforeEach(async () => {
       'content-type': 'application/octet-stream',
       'content-disposition': 'attachment; filename="notatka.txt"',
     })
-    response.end('msg-hub')
+    response.end('notatka')
   })
   await new Promise((listening) => server.listen(0, '127.0.0.1', listening))
   fileUrl = `http://127.0.0.1:${server.address().port}/notatka.txt`

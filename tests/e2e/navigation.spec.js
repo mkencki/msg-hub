@@ -73,7 +73,7 @@ test('the service opening its own sign-in gets a window that is locked down', as
 
   await expect.poll(windowCount).toBe(2)
   const child = await electronApp.evaluate(({ BrowserWindow }) => {
-    const created = BrowserWindow.getAllWindows().find((w) => w.getTitle() !== 'msg-hub')
+    const created = BrowserWindow.getAllWindows().find((w) => w.getTitle() !== 'M-HUB')
     const preferences = created.webContents.getLastWebPreferences()
     return {
       title: created.getTitle(),
@@ -101,7 +101,7 @@ test('a child window cannot rename itself', async () => {
   // and preventDefault is what stops it. The pending load has to be stopped first, or
   // loading anything else over it comes back as ERR_FAILED.
   const title = await electronApp.evaluate(async ({ BrowserWindow }) => {
-    const created = BrowserWindow.getAllWindows().find((w) => w.getTitle() !== 'msg-hub')
+    const created = BrowserWindow.getAllWindows().find((w) => w.getTitle() !== 'M-HUB')
     created.webContents.stop()
     // The load it was already attempting is aborted by this one, and Electron reports that
     // abort by rejecting. The document still becomes about:blank, which is all this needs.

@@ -30,7 +30,7 @@ test.afterEach(async () => {
   await Promise.race([cleanup, new Promise((done) => setTimeout(done, 3000))])
 })
 
-const readLog = () => readFile(path.join(dataDir, 'logs', 'msg-hub.log'), 'utf8')
+const readLog = () => readFile(path.join(dataDir, 'logs', 'm-hub.log'), 'utf8')
 
 // Nothing lands on disk today: the only channel for a message is the status bar, which is
 // gone the moment it is dismissed. Someone helping a friend whose app will not sign in has
