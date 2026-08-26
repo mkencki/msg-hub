@@ -2,6 +2,7 @@ import { test, expect, _electron as electron } from '@playwright/test'
 import { mkdtemp, rm, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { blankTheViews } from './helpers.js'
 
 let dataDir
 let electronApp
@@ -98,13 +99,13 @@ test('Facebook and Messenger are separate sessions even for one identity', async
 
 // The switch has to reach the permission, or it is decoration. What decides whether anything
 // ever pops up is the answer the page gets when it asks the browser.
-const askForNotifications = () =>
-  electronApp.evaluate(async ({ BrowserWindow }) => {
+const askForNotifications = async () => {
+  await blankTheViews(electronApp)
+  return electronApp.evaluate(({ BrowserWindow }) => {
     const view = BrowserWindow.getAllWindows()[0].contentView.children[0]
-    view.webContents.stop()
-    await view.webContents.loadURL('about:blank').catch(() => {})
     return view.webContents.executeJavaScript('Notification.requestPermission()')
   })
+}
 
 test('a whole service is refused notifications until the operator allows them', async () => {
   await addAccount('Facebook', 'facebook')

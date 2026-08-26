@@ -2,6 +2,7 @@ import { test, expect, _electron as electron } from '@playwright/test'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { blankTheViews } from './helpers.js'
 
 let dataDir
 let electronApp
@@ -28,13 +29,9 @@ test.beforeEach(async () => {
     )
     .toBe(1)
 
-  // The service page is not reachable from a test machine and none of this is about the
-  // service page. about:blank gives the view a real document to lose when it reloads.
-  await electronApp.evaluate(async ({ BrowserWindow }) => {
-    const view = BrowserWindow.getAllWindows()[0].contentView.children[0]
-    view.webContents.stop()
-    await view.webContents.loadURL('about:blank').catch(() => {})
-  })
+  // None of this is about the service page: about:blank gives the view a real document to
+  // lose when it reloads. Blanked the careful way — see blankTheViews.
+  await blankTheViews(electronApp)
 })
 
 test.afterEach(async () => {

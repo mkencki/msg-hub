@@ -2,6 +2,7 @@ import { test, expect, _electron as electron } from '@playwright/test'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { blankTheViews } from './helpers.js'
 
 let dataDir
 let electronApp
@@ -36,16 +37,9 @@ test.beforeEach(async () => {
   // takes the system's focus while it is being created and that is not a notification click.
   // The views are therefore given a page that certainly finishes: about:blank.
   //
-  // stop() alone was not enough, and the reason is worth writing down. isLoading() going
-  // false and did-stop-loading firing are not the same signal — a load stopped before it
-  // commits can leave the first without the second, and the app waits for the second. This
-  // spec then failed about one full suite run in three while passing alone every time.
-  await electronApp.evaluate(async ({ BrowserWindow }) => {
-    for (const view of BrowserWindow.getAllWindows()[0].contentView.children) {
-      view.webContents.stop()
-      await view.webContents.loadURL('about:blank').catch(() => {})
-    }
-  })
+  // stop() alone was not enough, and neither was stop() plus a replacement — see
+  // blankTheViews for what the second attempt got wrong and what this one waits for.
+  await blankTheViews(electronApp)
   await expect
     .poll(() =>
       electronApp.evaluate(({ BrowserWindow }) =>

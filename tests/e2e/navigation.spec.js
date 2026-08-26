@@ -2,6 +2,7 @@ import { test, expect, _electron as electron } from '@playwright/test'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { blankTheViews } from './helpers.js'
 
 let dataDir
 let electronApp
@@ -31,15 +32,9 @@ test.beforeEach(async () => {
   // None of this is about the service page. about:blank gives the view a real script context
   // to open windows from, which is the thing under test.
   //
-  // The pending load has to be stopped first and the rejection swallowed: on a machine with
-  // a working network the real page is genuinely loading, and replacing a load in flight
-  // comes back as ERR_ABORTED. Measured — this spec passed alone and failed roughly one full
-  // suite run in three, entirely because of that race.
-  await electronApp.evaluate(async ({ BrowserWindow }) => {
-    const view = BrowserWindow.getAllWindows()[0].contentView.children[0]
-    view.webContents.stop()
-    await view.webContents.loadURL('about:blank').catch(() => {})
-  })
+  // Replacing the load in flight was the first attempt at this and it lost the race one full
+  // suite run in three — see blankTheViews, which waits for the real page to land first.
+  await blankTheViews(electronApp)
   await expect
     .poll(() =>
       electronApp.evaluate(({ BrowserWindow }) =>

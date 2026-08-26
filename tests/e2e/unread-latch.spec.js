@@ -2,6 +2,7 @@ import { test, expect, _electron as electron } from '@playwright/test'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { blankTheViews } from './helpers.js'
 
 let dataDir
 let electronApp
@@ -47,17 +48,17 @@ const addAccount = async (name, platform) => {
 //
 // The blink here runs four times faster than a real page so the test costs seconds instead of
 // a minute. Nothing else about it differs, and a faster blink is the harder case.
-const blinkTitle = () =>
-  electronApp.evaluate(async ({ BrowserWindow }) => {
+const blinkTitle = async () => {
+  await blankTheViews(electronApp)
+  return electronApp.evaluate(({ BrowserWindow }) => {
     const view = BrowserWindow.getAllWindows()[0].contentView.children[0]
-    view.webContents.stop()
-    await view.webContents.loadURL('about:blank').catch(() => {})
     return view.webContents.executeJavaScript(
       `window.__blink = setInterval(() => {
          document.title = document.title.startsWith('(') ? 'WhatsApp' : '(3) WhatsApp'
        }, 250); true`,
     )
   })
+}
 
 test('a page that blinks its own title does not blink the badge', async () => {
   await addAccount('WhatsApp', 'whatsapp')
@@ -96,10 +97,9 @@ test('a count that really reaches zero still clears itself', async () => {
 // A number that changes without passing through zero is news, and news waits for nothing.
 test('a count that goes up is shown at once', async () => {
   await addAccount('WhatsApp', 'whatsapp')
-  await electronApp.evaluate(async ({ BrowserWindow }) => {
+  await blankTheViews(electronApp)
+  await electronApp.evaluate(({ BrowserWindow }) => {
     const view = BrowserWindow.getAllWindows()[0].contentView.children[0]
-    view.webContents.stop()
-    await view.webContents.loadURL('about:blank').catch(() => {})
     return view.webContents.executeJavaScript("document.title = '(1) WhatsApp'; true")
   })
   await expect.poll(windowTitle, { timeout: 5000 }).toBe('M-HUB (1)')
