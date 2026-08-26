@@ -65,7 +65,11 @@ jobs:
       # answer actually matters.
       - name: Installer fingerprint
         run: |
-          $exe = Get-ChildItem dist/msg-hub-*-installer.exe | Select-Object -First 1
+          # Matched by SHAPE and not by name. The application was called msg-hub until 0.5.0,
+          # and a glob carrying the name would have gone on finding nothing — quietly, since
+          # a step that finds no file here does not fail, it publishes a release without a
+          # fingerprint. The portable target ends in -portable.exe, so it cannot be caught.
+          $exe = Get-ChildItem dist/*-installer.exe | Select-Object -First 1
           $hash = (Get-FileHash -Algorithm SHA256 $exe.FullName).Hash
           $sac = (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\CI\Policy' -Name VerifiedAndReputablePolicyState -ErrorAction SilentlyContinue).VerifiedAndReputablePolicyState
           $sacText = switch ($sac) { 1 { 'enforcing' } 2 { 'evaluation' } 0 { 'off' } default { 'not present' } }
@@ -97,8 +101,8 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: msg-hub-installer
-          path: dist/msg-hub-*-installer.exe
+          name: M-HUB-installer
+          path: dist/*-installer.exe
           if-no-files-found: error
 
       # The body of a release is the notes for THIS version followed by the installation
@@ -120,6 +124,6 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/msg-hub-*-installer.exe
+          files: dist/*-installer.exe
           body_path: release-body.md
           generate_release_notes: true
