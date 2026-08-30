@@ -3,6 +3,7 @@ import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { blankTheViews } from './helpers.js'
 
 // Electron derives the profile directory from the application's name, so version 0.5.0's
 // productName moved it: a machine upgrading from an earlier version came up with an empty
@@ -30,8 +31,14 @@ test('accounts left under the old profile name are picked up on the next start',
   )
   // The session behind the account. Leaving this one behind would mean a fresh QR code,
   // which is the difference between an upgrade and an accident.
+  //
+  // The marker is a file of OUR OWN, not one of Chromium's. The first version of this test
+  // wrote a fake "Cookies" and asserted on it afterwards; Chromium owns that name inside a
+  // partition it opens, and it replaced the impostor — the CI run of 2026-08-30 failed with
+  // ENOENT on exactly that path. What is under test is whether the directory was carried
+  // across, so the test carries something only the test can touch.
   await mkdir(path.join(legacy, 'Partitions', 'acc-messenger'), { recursive: true })
-  await writeFile(path.join(legacy, 'Partitions', 'acc-messenger', 'Cookies'), 'session', 'utf8')
+  await writeFile(path.join(legacy, 'Partitions', 'acc-messenger', 'session-marker.txt'), 'session', 'utf8')
 
   const electronApp = await electron.launch({ args: ['.', `--user-data-dir=${dataDir}`] })
 
@@ -50,9 +57,14 @@ test('accounts left under the old profile name are picked up on the next start',
 
   expect(views).toBe(1)
 
+  // The view is real and would otherwise sit there fetching messenger.com for as long as this
+  // spec runs, on a runner that executes the suite one worker at a time. What is under test is
+  // that a view EXISTS for the migrated account, which the count above already establishes.
+  await blankTheViews(electronApp)
+
   const accounts = JSON.parse(await readFile(path.join(dataDir, 'accounts.json'), 'utf8'))
   expect(accounts.konta ?? accounts.accounts).toHaveLength(1)
-  expect(await readFile(path.join(dataDir, 'Partitions', 'acc-messenger', 'Cookies'), 'utf8')).toBe('session')
+  expect(await readFile(path.join(dataDir, 'Partitions', 'acc-messenger', 'session-marker.txt'), 'utf8')).toBe('session')
   // Nothing stays behind to come back to life if the new profile is ever lost.
   expect(existsSync(path.join(legacy, 'accounts.json'))).toBe(false)
 
