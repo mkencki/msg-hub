@@ -9,6 +9,7 @@ import { classify } from './navigation.js'
 import { registerAccountChannels, registerMacroChannels } from './bridge.js'
 import { createClipboardSession } from './file-clipboard.js'
 import { createLogger } from './log.js'
+import { migrateProfile, LEGACY_PROFILE_DIR } from './profile.js'
 import { resolveDownloadDir, planSave } from './downloads.js'
 import { WINDOW_ICON, TRAY_ICON } from './assets.js'
 import { t, validLanguage } from '../shared/i18n.js'
@@ -77,6 +78,26 @@ async function createWindow() {
   logDir = path.join(dataDir, 'logs')
   logger = createLogger(logDir)
   logger.write('started', { count: 0 })
+
+  // BEFORE the layout is read, because the layout is one of the things that may still be
+  // sitting in the old profile. Version 0.5.0 gave the application a productName and Electron
+  // builds this directory out of the name, so everything an earlier version wrote lives one
+  // directory away, whole and unread. Moving it is a one-off; profile.js decides whether
+  // there is anything to move and refuses to touch a profile that has been used.
+  //
+  // A failure here must not stop the application starting: it comes up on the new profile,
+  // as it does today, and says so in the log rather than silently.
+  const migration = await migrateProfile({
+    from: path.join(path.dirname(dataDir), LEGACY_PROFILE_DIR),
+    to: dataDir,
+  }).catch((error) => {
+    logger.write('profile-migration-failed', { reason: error?.code ?? error?.message ?? String(error) })
+    return { moved: [] }
+  })
+  // count rather than the names: LOGGED_FIELDS is an allowlist, and a field outside it is
+  // dropped without a word. The names are visible in the profile directory anyway.
+  if (migration.moved.length) logger.write('profile-migrated', { count: migration.moved.length })
+
   const layoutFile = path.join(dataDir, 'layout.json')
   // Schema version 1 kept this file under a Polish name. Reading the old one when the
   // new one is absent keeps the window position, the pinned rail and the chosen
