@@ -1,5 +1,6 @@
 import { describe, test, expect } from 'vitest'
 import { classify } from '../src/main/navigation.js'
+import { PLATFORMS } from '../src/main/accounts.js'
 
 // The shape a platform declares. The real ones live in accounts.js; these are here so the
 // rules can be read next to the cases that exercise them.
@@ -89,5 +90,42 @@ describe('classify', () => {
   test('a platform that declares nothing sends everything to the browser', () => {
     expect(classify({}, 'https://example.org/')).toBe('external')
     expect(classify(undefined, 'https://example.org/')).toBe('external')
+  })
+})
+
+// The cases above use stand-in platforms so the rules can be read beside them. This one uses
+// the REAL LinkedIn entry, because what failed on 2026-08-30 was the declaration, not the rule.
+//
+// "Sign in with Microsoft" was pushed to the system browser and answered with
+//   AADSTS900561: The endpoint only accepts POST requests. Received a GET request.
+// shell.openExternal can only ever issue a GET, and this flow is POST: the authorize call
+// carries response_mode=form_post. So an undeclared host does not merely open in the wrong
+// place — it arrives stripped of its method and cannot work at all.
+//
+// Both addresses below were measured, not guessed: login.live.com by following the button on
+// linkedin.com/login, and login.microsoft.com from the error screen the operator hit at the
+// passkey step.
+describe('the hosts LinkedIn sign-in really visits', () => {
+  test('a Microsoft account sign-in is kept inside the application', () => {
+    expect(
+      classify(
+        PLATFORMS.linkedin,
+        'https://login.live.com/oauth20_authorize.srf?client_id=3fa91358-6f74-4525-b5df-da149652be36&response_mode=form_post&tenant=consumers',
+        { viaWindowOpen: true },
+      ),
+    ).toBe('child')
+  })
+
+  test('the passkey step of that sign-in is kept inside the application too', () => {
+    expect(
+      classify(PLATFORMS.linkedin, 'https://login.microsoft.com/consumers/fido/get?mkt=EN-US&lc=1033&uiflavor=web', {
+        viaWindowOpen: true,
+      }),
+    ).toBe('child')
+  })
+
+  // The allowlist is an allowlist. A host that merely looks Microsoft-ish is still a stranger.
+  test('a lookalike host is still sent to the system browser', () => {
+    expect(classify(PLATFORMS.linkedin, 'https://login.live.com.example.invalid/', { viaWindowOpen: true })).toBe('external')
   })
 })

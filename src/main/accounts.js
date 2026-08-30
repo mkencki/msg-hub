@@ -47,7 +47,25 @@ export const PLATFORMS = {
     // Sign-in genuinely leaves the service. Apple's opens a window and answers back through
     // postMessage to whoever opened it, so it can neither be pushed to the system browser
     // nor silently denied; Microsoft's navigates the main frame instead of opening anything.
-    authHosts: ['appleid.apple.com', 'login.microsoftonline.com', 'edge-auth.microsoft.com', 'accounts.google.com'],
+    //
+    // MEASURED 2026-08-30, after "Sign in with Microsoft" failed: the button goes to
+    // login.live.com — the CONSUMER endpoint — and the passkey step that follows goes to
+    // login.microsoft.com. Neither was declared here, so both were sent to the system browser
+    // and the flow came back with
+    //     AADSTS900561: The endpoint only accepts POST requests. Received a GET request.
+    // That error is the whole point of declaring them: shell.openExternal can only ever issue
+    // a GET, and the authorize call asks for response_mode=form_post. An undeclared sign-in
+    // host is not merely opened in the wrong window — it arrives stripped of its method and
+    // cannot work anywhere. login.microsoftonline.com is the WORK-account endpoint and stays;
+    // which of the two a sign-in uses depends on the account, so both belong here.
+    authHosts: [
+      'appleid.apple.com',
+      'login.live.com',
+      'login.microsoft.com',
+      'login.microsoftonline.com',
+      'edge-auth.microsoft.com',
+      'accounts.google.com',
+    ],
     external: [],
     // The number in LinkedIn's title is the SUM of eight badge sources — feed, jobs,
     // notifications, messaging and more. In one rail with a WhatsApp "(3)" it would be a
