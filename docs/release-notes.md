@@ -1,5 +1,31 @@
 # Release notes
 
+## 0.5.1 — the profile 0.5.0 left behind, and a Microsoft sign-in that arrives whole
+
+**0.5.0 walked away from your setup. This version goes back for it.** Electron builds the
+profile directory out of the application's name, so the rename moved it from `%APPDATA%\msg-hub`
+to `%APPDATA%\M-HUB` and nothing carried the old one across: accounts, macros, attachments and
+signed-in sessions all stayed on disk, in a directory the application had stopped reading. They
+are moved on the first start of 0.5.1 — sessions included, so no account asks for a fresh QR
+code.
+
+It moves only what the new profile does not already have, and only when that profile has never
+held accounts. So it cannot run twice, and it cannot bring back accounts anybody deleted on
+purpose: removing every account writes an empty list rather than deleting the file. The accounts
+file moves last, which is what lets an interrupted move finish by itself on the next start
+instead of stranding the sessions.
+
+**"Sign in with Microsoft" on LinkedIn stopped leaving the application.** It failed in the system
+browser with `AADSTS900561: The endpoint only accepts POST requests. Received a GET request.`
+The sign-in host list knew `login.microsoftonline.com`, which is where WORK accounts sign in; a
+personal Microsoft account goes to `login.live.com`, and the passkey step after it to
+`login.microsoft.com`. Neither was declared, so both were handed to the system browser — and
+that is why the error was about a method rather than a window: opening an address externally can
+only ever be a GET, while the sign-in asks for `response_mode=form_post`. An undeclared sign-in
+host does not merely open in the wrong place, it arrives without its method and cannot work
+anywhere. Both endpoints are now declared; the work-account one stays, because which is used
+depends on the account.
+
 ## 0.5.0 — the name, and a wizard that looks like the application
 
 The application is called **M-HUB**. Everything an operator sees carries the new name: the
