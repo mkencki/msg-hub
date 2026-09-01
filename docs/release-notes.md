@@ -1,5 +1,22 @@
 # Release notes
 
+## 0.5.3 — installing over an older copy is an update, and looks like one
+
+**The installer stops asking questions.** It no longer offers a directory, and no longer asks
+whether to install for you or for everybody: it installs under your own account, in
+`%LOCALAPPDATA%\Programs\M-HUB`, and never raises a password prompt. One click, and it is done.
+
+**Run it where M-HUB already lives and it updates that copy.** That was true before — NSIS
+uninstalls the previous version and takes its place, leaving one entry in Settings and one
+folder under Programs — but the wizard asked for an install mode and a directory on the way, so
+an upgrade was indistinguishable from a first installation. With nothing to ask, there is
+nothing to mistake. Your profile is untouched either way: accounts, macros, attachments and
+signed-in sessions carry over.
+
+The one thing lost is the choice of folder. It bought little — the per-user location is the
+only one an installer can use without an administrator, which is how this application reaches
+locked-down machines — and it cost a page that made every upgrade look like starting over.
+
 ## 0.5.2 — the window opens where you are looking
 
 **The window no longer remembers where it was; it works out where it belongs.** A remembered
