@@ -1,5 +1,23 @@
 # Release notes
 
+## 0.5.2 — the window opens where you are looking
+
+**The window no longer remembers where it was; it works out where it belongs.** A remembered
+position is only true for the monitor arrangement it was written on, and arrangements change:
+two external screens at the desk, the laptop's own screen on the train. Measured on
+2026-09-01, a stored layout carrying `x=-1394 y=972` opened the window on no screen at all,
+and a later start put it in the corner of a second monitor nobody was looking at. The
+application was running and unreachable, which for a window amounts to not running.
+
+M-HUB now opens centred on whichever monitor Windows currently treats as primary. The size it
+opens at is trimmed to that monitor's work area first, because a window remembered from a
+large external screen is wider than a laptop's, and centring something bigger than the screen
+puts its title bar — and its close button — above the top edge.
+
+The size and the maximised state are still remembered: a window closed maximised comes back
+maximised, on whichever monitor is primary now. Only the position is gone from the layout
+file, because a stored position is a fact nothing reads and everything outlives.
+
 ## 0.5.1 — the profile 0.5.0 left behind, and a Microsoft sign-in that arrives whole
 
 **0.5.0 walked away from your setup. This version goes back for it.** Electron builds the
