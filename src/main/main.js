@@ -1,9 +1,9 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, globalShortcut, shell, powerMonitor, dialog } from 'electron'
+import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, globalShortcut, screen, shell, powerMonitor, dialog } from 'electron'
 import path from 'node:path'
 import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { cleanUserAgent, ViewManager } from './views.js'
-import { loadLayout, saveLayout, setAutoStart, acceptHoverReport, HIDDEN_FLAG } from './shell.js'
+import { loadLayout, saveLayout, centreOn, setAutoStart, acceptHoverReport, HIDDEN_FLAG } from './shell.js'
 import { loadAccounts, PLATFORMS, notificationsAllowed } from './accounts.js'
 import { classify } from './navigation.js'
 import { registerAccountChannels, registerMacroChannels } from './bridge.js'
@@ -110,12 +110,16 @@ async function createWindow() {
   // and hidden a moment later, which would flash across the screen at every login.
   const startHidden = process.argv.includes(HIDDEN_FLAG)
 
+  // The primary monitor is whichever one the operator has told Windows is theirs, and it
+  // changes with the desk: two external screens some days, the laptop's own on others. A
+  // position remembered from one arrangement is wrong in the next, so it is not remembered —
+  // it is worked out here, at every start. screen is safe to ask now: createWindow runs after
+  // app.whenReady().
+  const bounds = centreOn(screen.getPrimaryDisplay().workArea, layout)
+
   window = new BrowserWindow({
     show: !startHidden,
-    width: layout.width,
-    height: layout.height,
-    x: layout.x,
-    y: layout.y,
+    ...bounds,
     minWidth: 800,
     minHeight: 600,
     title: 'M-HUB',
@@ -263,8 +267,9 @@ async function createWindow() {
   const currentLayout = () => {
     const rect = window.getNormalBounds()
     return {
-      x: rect.x,
-      y: rect.y,
+      // No x or y. The window is centred on the primary monitor at every start, so a stored
+      // position would be a fact nothing reads — and the kind that rots quietly: the value
+      // this file carried on 2026-09-01 pointed at a monitor that was no longer there.
       width: rect.width,
       height: rect.height,
       maximized: window.isMaximized(),

@@ -3,7 +3,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { loadLayout, saveLayout, setAutoStart, acceptHoverReport, DEFAULT_LAYOUT } from '../src/main/shell.js'
+import { loadLayout, saveLayout, centreOn, setAutoStart, acceptHoverReport, DEFAULT_LAYOUT } from '../src/main/shell.js'
 
 let file, dir
 
@@ -218,5 +218,56 @@ describe('where downloads go, inside the layout', () => {
     await writeFile(file, JSON.stringify({ downloadDir: { where: 'D:\Praca' } }), 'utf8')
 
     expect((await loadLayout(file)).downloadDir).toBe('')
+  })
+})
+
+// Where the window opens is no longer a stored fact but a computed one. A remembered position
+// is only valid for the monitor arrangement it was written on, and arrangements change:
+// measured on 2026-09-01, a layout carrying x=-1394 y=972 put the window on a screen the
+// operator was not looking at, and the size stored beside it — 1347x795 — was wider than the
+// laptop's own work area. Both halves have to be answered, or centring alone would place an
+// oversized window with its title bar above the top edge.
+describe('centring the window on the primary monitor', () => {
+  const workArea = (x, y, width, height) => ({ x, y, width, height })
+
+  test('a window smaller than the screen is centred in the work area', () => {
+    expect(centreOn(workArea(0, 0, 1920, 1032), { width: 1280, height: 752 })).toEqual({
+      x: 320,
+      y: 140,
+      width: 1280,
+      height: 752,
+    })
+  })
+
+  // The work area, not the whole screen: the taskbar is not somewhere a window may sit.
+  test('a taskbar down the side shifts the centre with it', () => {
+    expect(centreOn(workArea(80, 0, 1840, 1080), { width: 1280, height: 752 })).toEqual({
+      x: 360,
+      y: 164,
+      width: 1280,
+      height: 752,
+    })
+  })
+
+  // A monitor that is not the leftmost has an origin of its own, and one placed to the left of
+  // the primary has a NEGATIVE origin — the arrangement measured on this machine.
+  test('the origin of the monitor is carried into the result', () => {
+    expect(centreOn(workArea(-1680, 644, 1680, 990), { width: 1280, height: 752 })).toEqual({
+      x: -1480,
+      y: 763,
+      width: 1280,
+      height: 752,
+    })
+  })
+
+  // Remembered from a larger monitor. Centring a window bigger than the screen would put its
+  // top edge — and with it the title bar and the close button — out of reach.
+  test('a window larger than the screen is cut down to it, not centred beyond it', () => {
+    expect(centreOn(workArea(0, 0, 1280, 752), { width: 1347, height: 795 })).toEqual({
+      x: 0,
+      y: 0,
+      width: 1280,
+      height: 752,
+    })
   })
 })

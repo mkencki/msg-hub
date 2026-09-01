@@ -23,6 +23,34 @@ export const DEFAULT_LAYOUT = {
   language: 'en',
 }
 
+// Where the window opens, worked out at every start instead of remembered.
+//
+// A stored position is only true for the monitor arrangement it was written on, and
+// arrangements change: measured 2026-09-01 on this machine, a layout carrying x=-1394 y=972
+// opened the window on a second screen the operator was not looking at, and an earlier one had
+// put it off the desktop entirely. The primary monitor is the one the operator has told
+// Windows to treat as theirs, so that is where the window belongs.
+//
+// The SIZE is clamped here too, and not as an afterthought. A window remembered from a large
+// external monitor is wider than a laptop's work area, and centring something bigger than the
+// screen puts its top edge — the title bar, the close button — beyond reach. Clamped first,
+// then centred, the result is always somewhere the mouse can get to.
+//
+// workArea rather than bounds: the taskbar is not somewhere a window may sit. Its x and y are
+// carried through because a monitor has an origin of its own, and one placed left of the
+// primary has a negative one.
+export function centreOn(workArea, { width, height }) {
+  const fitted = {
+    width: Math.min(width, workArea.width),
+    height: Math.min(height, workArea.height),
+  }
+  return {
+    x: workArea.x + Math.round((workArea.width - fitted.width) / 2),
+    y: workArea.y + Math.round((workArea.height - fitted.height) / 2),
+    ...fitted,
+  }
+}
+
 // Passed by the login item and read back at startup — see setAutoStart.
 export const HIDDEN_FLAG = '--hidden'
 
