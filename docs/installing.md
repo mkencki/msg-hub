@@ -58,22 +58,38 @@ Potrzebujesz do tego [Node.js](https://nodejs.org/). Stan Smart App Control spra
 
 ---
 
-## Nie instaluj przez `/S` / Do not install with `/S`
+## Instalacja i aktualizacja / Installing and updating
 
-**Po polsku.** Instalator jest kreatorem (wybór katalogu, wybór „tylko dla mnie"), a nie
-jednoklikowcem. Uruchomiony z przełącznikiem ciszy `/S` **skopiuje pliki i założy skróty, ale
-nie zapisze niczego w rejestrze** — aplikacja nie pojawi się wtedy w *Ustawienia → Aplikacje*,
-a sam instalator przy następnym uruchomieniu uzna instalację za świeżą. Zmierzone 2026-08-26:
-po `/S` zero nowych kluczy w `HKCU\Software` i w `…\CurrentVersion\Uninstall`; po przejściu
-kreatora normalnie — `DisplayName = msg-hub 0.4.0` i `UninstallString` na miejscu. Klikaj
-instalator normalnie. Odinstalowanie zawsze działa przez `Uninstall M-HUB.exe` w katalogu
-instalacji, niezależnie od rejestru.
+**Po polsku.** Od 0.5.3 instalator jest **jednoklikowy**: nie pyta o katalog ani o to, czy
+instalować dla wszystkich użytkowników. Instaluje na koncie bieżącego użytkownika, w
+`%LOCALAPPDATA%\Programs\M-HUB`, więc nigdy nie prosi o hasło administratora.
 
-**English.** This is a wizard installer (it asks for a directory and for per-user vs all-users),
-not a one-click one. Run with the silent switch `/S` it **copies the files and creates the
-shortcuts but writes nothing to the registry** — the application then does not appear in
-*Settings → Installed apps*, and the installer treats the next run as a fresh install. Measured
-2026-08-26: after `/S`, zero new keys under `HKCU\Software` and under
-`…\CurrentVersion\Uninstall`; after clicking through the wizard, `DisplayName = msg-hub 0.4.0`
-and an `UninstallString` are both there. Click the installer normally. Uninstalling always works
-through `Uninstall M-HUB.exe` in the installation folder, registry or no registry.
+Uruchomiony tam, gdzie M-HUB już jest, **aktualizuje istniejącą instalację**: NSIS odinstalowuje
+poprzednią wersję i zajmuje jej miejsce. Zostaje jeden wpis w *Ustawienia → Aplikacje* i jeden
+katalog w `Programs`. Profil (`%APPDATA%\M-HUB`) nie jest ruszany — konta, makra, załączniki i
+zalogowane sesje przechodzą na nową wersję. Tak działo się i wcześniej, ale kreator pytał po
+drodze o tryb i katalog, więc aktualizacja wyglądała jak instalacja od zera.
+
+Przełącznik ciszy `/S` na instalatorze **kreatorowym** (0.5.2 i starsze) był zepsuty — zmierzone
+2026-08-26: kopiował pliki i zakładał skróty, ale nie zapisywał **nic** w rejestrze, więc
+aplikacja nie pojawiała się w *Ustawieniach*, a instalator przy następnym uruchomieniu uznawał
+instalację za świeżą. Dla instalatora jednoklikowego **nie zostało to zmierzone ponownie**, więc
+do czasu takiego pomiaru klikaj instalator normalnie. Odinstalowanie zawsze działa przez
+`Uninstall M-HUB.exe` w katalogu instalacji, niezależnie od rejestru.
+
+**English.** From 0.5.3 the installer is **one-click**: it asks for neither a directory nor
+per-user versus all-users. It installs under the current account, in
+`%LOCALAPPDATA%\Programs\M-HUB`, so it never asks for an administrator password.
+
+Run where M-HUB is already installed, it **updates that installation**: NSIS uninstalls the
+previous version and takes its place. One entry in *Settings → Installed apps*, one folder under
+`Programs`. The profile (`%APPDATA%\M-HUB`) is left alone — accounts, macros, attachments and
+signed-in sessions carry over. That was true before as well, but the wizard asked for an install
+mode and a directory along the way, so an upgrade looked like a first installation.
+
+The silent switch `/S` was broken on the **wizard** installer (0.5.2 and earlier) — measured
+2026-08-26: it copied the files and created the shortcuts but wrote **nothing** to the registry,
+so the application did not appear in *Settings*, and the installer treated the next run as a
+fresh install. This has **not been measured again** on the one-click installer, so until somebody
+does, click the installer normally. Uninstalling always works through `Uninstall M-HUB.exe` in
+the installation folder, registry or no registry.
