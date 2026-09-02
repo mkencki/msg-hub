@@ -13,9 +13,11 @@ Windows 10 usually have it off). It allows unsigned programs only when Microsoft
 already built a reputation for that exact file, and a freshly built one never has. Right-click →
 Properties → **Unblock** does *not* help: the block survives it.
 
-Turning Smart App Control off is a **one-way** change – switching it back on requires reinstalling
-Windows. Do not do it for one app. Instead, run M-HUB from source, which works even with Smart
-App Control enabled, because Electron's own binary is trusted:
+Turning Smart App Control off is reversible: since a Windows update in April 2026 it can be
+switched back on from Windows Security without reinstalling Windows, which was not true before.
+Even so, do not switch off a protection that covers every program on the machine for the sake of
+one. Run M-HUB from source instead, which works with Smart App Control enabled, because Electron's
+own binary is trusted:
 
 ```
 git clone https://github.com/mkencki/m-hub.git
@@ -26,6 +28,11 @@ npm start
 
 You need [Node.js](https://nodejs.org/) for that. To check whether Smart App Control is on:
 **Windows Security → App & browser control → Smart App Control settings**.
+
+**Code signing.** M-HUB is applying to the [SignPath Foundation](https://signpath.org/), which
+provides free code signing to open source projects. Until that application is granted, releases
+stay unsigned and everything above applies. Once it is granted, installers will be signed with a
+certificate issued in SignPath Foundation's name, and this section will say so instead.
 
 ---
 
@@ -42,9 +49,11 @@ zaktualizowane z Windows 10 zwykle mają go wyłączonego). Przepuszcza niepodpi
 wtedy, gdy chmura Microsoftu zdążyła wyrobić reputację dokładnie temu plikowi – a świeżo zbudowany
 żadnej nie ma. Prawoklik → Właściwości → **Odblokuj** **nie pomaga**: blokada to przeżywa.
 
-Wyłączenie Smart App Control jest **nieodwracalne** – ponowne włączenie wymaga reinstalacji
-Windows. Nie rób tego dla jednej aplikacji. Uruchom M-HUB ze źródeł – to działa nawet przy
-włączonym Smart App Control, bo binarka Electrona jest zaufana:
+Wyłączenie Smart App Control jest odwracalne: od aktualizacji Windows z kwietnia 2026 można go
+włączyć z powrotem z poziomu Zabezpieczeń Windows, bez reinstalacji systemu – wcześniej było
+inaczej. Mimo to nie wyłączaj dla jednej aplikacji ochrony obejmującej wszystkie programy na
+komputerze. Uruchom M-HUB ze źródeł – to działa nawet przy włączonym Smart App Control, bo
+binarka Electrona jest zaufana:
 
 ```
 git clone https://github.com/mkencki/m-hub.git
@@ -55,6 +64,12 @@ npm start
 
 Potrzebujesz do tego [Node.js](https://nodejs.org/). Stan Smart App Control sprawdzisz w:
 **Zabezpieczenia Windows → Kontrola aplikacji i przeglądarki → Ustawienia Smart App Control**.
+
+**Podpisywanie kodu.** M-HUB ubiega się o certyfikat [SignPath Foundation](https://signpath.org/),
+która udostępnia darmowe podpisywanie kodu projektom open source. Dopóki wniosek nie zostanie
+rozpatrzony, wydania pozostają niepodpisane i obowiązuje wszystko powyżej. Po jego przyjęciu
+instalatory będą podpisywane certyfikatem wystawionym na SignPath Foundation, a ta sekcja będzie
+mówić właśnie to.
 
 ---
 

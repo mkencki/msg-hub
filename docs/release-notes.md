@@ -1,5 +1,20 @@
 # Release notes
 
+## 0.5.6 – a correction about Smart App Control, and where the signature is going
+
+**Turning Smart App Control off is no longer a one-way door, and these notes said it was.** Until
+a Windows update in April 2026 it was one: switching the protection back on meant reinstalling
+Windows, and the installation notes said so in both languages, in every release. Microsoft has
+since made it a toggle in Windows Security. The advice that mattered has not changed – do not
+switch off a protection covering every program on the machine because one program is unsigned,
+run M-HUB from source instead – but the reason given for it had gone stale.
+
+**Where the signature is going.** M-HUB is applying to the SignPath Foundation, which gives open
+source projects free code signing. The installation notes and both READMEs now say so. Until it is
+granted, releases stay unsigned and Windows goes on treating them as unknown.
+
+Nothing about the application itself changed.
+
 ## 0.5.5 – the log says how many accounts it found
 
 **The first line of the log now carries a number that means something.** It always read
