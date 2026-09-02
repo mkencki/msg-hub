@@ -533,7 +533,14 @@ default User-Agent all follow it. One field, three consequences.
 | profile directory | `%APPDATA%\msg-hub` | `%APPDATA%\M-HUB` | follows `productName`; **not migrated** — see below |
 | User-Agent token | `msg-hub/0.4.0` | removed | it was removed before too, by a literal |
 | `appId` | `pl.kencki.msghub` | unchanged | NSIS derives the installation's GUID from it |
-| repository | `mkencki/msg-hub` | unchanged | every published release links through it |
+| repository | `mkencki/msg-hub` | unchanged **at the time** | every published release linked through it |
+
+**Both of those decisions were reversed later.** The repository was renamed to `mkencki/m-hub`
+on 2026-09-02 — GitHub keeps permanent redirects, so the release links written under the old
+name still resolve — and 0.5.3 does carry a profile across: `src/main/profile.js` moves what an
+older version left in `%APPDATA%\msg-hub`, sessions included, guarded by the absence of
+`accounts.json` in the new profile. The paragraph below records why it was not built in 0.5.0,
+which is still the reason 0.5.0 shipped without it.
 
 **No migration, by the operator's decision.** The profile moves with the name, and the 805 MB
 left behind — three signed-in sessions, one macro, its 4.7 MB attachment — were deleted
