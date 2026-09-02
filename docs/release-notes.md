@@ -1,5 +1,28 @@
 # Release notes
 
+## 0.5.4 – one dash, and quotations that close
+
+**Nothing about how the application behaves has changed.** No new setting, no fixed crash,
+nothing moved. This release exists to make the words look right. If 0.5.3 is running and
+reading well, there is nothing here worth the download.
+
+**One dash, everywhere.** The em dash is gone: 505 of them, across the interface, the
+documentation and the comments in the code, are en dashes now. In the application itself this
+shows in a handful of places – the hint under an empty rail, the tray title carrying an unread
+count, the message that reports an account failing to load.
+
+**Polish quotations close with the right mark.** Seven of the eight quotations in the Polish
+interface opened with `„` and closed with a straight `"`, which is not a pair. They close with
+`”` now, and so do the two in the Polish README and the two in the installation notes, where
+the same slip had reached. The English strings keep their straight quotes: there the character
+is used consistently, so it was a choice rather than a slip.
+
+**And a build that went red for no reason.** The end-to-end test covering the download setting
+read the layout file before the application had written it. A poll whose callback throws is not
+a poll: measured 2026-09-02, it gave up in 8 ms on the missing file instead of waiting for it.
+Nothing about the application was wrong – the test was – but it failed builds at random, which
+is worse than a test that never runs. A file that is not there now means "not yet".
+
 ## 0.5.3 – installing over an older copy is an update, and looks like one
 
 **The installer stops asking questions.** It no longer offers a directory, and no longer asks
