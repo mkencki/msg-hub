@@ -1,7 +1,8 @@
 # M-HUB
 
-A Windows desktop app that keeps Messenger and two WhatsApp accounts in one window —
-each in a fully isolated session — plus text macros with attachments.
+A Windows desktop app that keeps multiple messaging accounts in one window – each in a fully
+isolated session – plus text macros with attachments. WhatsApp, Messenger, LinkedIn and
+Facebook, with no limit on how many accounts you add.
 
 Interface in **English** and **Polish**. English is the default; switch it in Settings.
 
@@ -11,10 +12,13 @@ Interface in **English** and **Polish**. English is the default; switch it in Se
 
 ## Why it exists
 
-It replaces **All-in-One Messenger Hub**, which since 2026-07-18 requires a Pro licence for a
-second WhatsApp account. An audit of that app turned up two reasons not to buy it: no reachable
-entity responsible for the data, and `wppconnect-wa.js` on board — a library that reaches into
-WhatsApp Web's internals, which risks a permanent ban on the phone number.
+I built it for my own use: I needed several accounts side by side, each in its own session,
+and I publish it because that problem is not mine alone. It is free, and it stays free.
+
+It is a free alternative to **All-in-One Messenger Hub**, which since 2026-07-18 requires a Pro
+licence for a second WhatsApp account. An audit of that app turned up two reasons not to buy
+it: no reachable entity responsible for the data, and `wppconnect-wa.js` on board – a library
+that reaches into WhatsApp Web's internals, which risks a permanent ban on the phone number.
 
 This app does neither. See **[What it will never do](#what-it-will-never-do)**.
 

@@ -113,7 +113,7 @@ notification and reports no count, which is the entire reason this application e
 Whether five accounts are worth two gigabytes is the operator's decision, so the number is in
 the README rather than hidden behind a lazy-loading switch.
 
-Isolation comes from a separate session partition per account. The two WhatsApp accounts
+Isolation comes from a separate session partition per account. Two WhatsApp accounts
 see each other as two independent browsers — they share no cookies, no `localStorage` and
 no `IndexedDB`. This is the heart of the application and the one mechanism without which
 there is no product.
