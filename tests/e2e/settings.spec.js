@@ -148,9 +148,19 @@ test('a fresh profile asks where to save, and says where files would go', async 
   // And it is not STORED as one. Toggling the switch writes the layout file, so this reads
   // what a profile carrying this setting actually holds: an empty folder, which the next
   // machine resolves for itself.
+  //
+  // The file need not exist yet at the first read. A poll whose callback THROWS is not a poll:
+  // measured 2026-09-02, the ENOENT ends the test in 8 ms, without ever making a second attempt.
+  // So a file that is not there reads as null – "not yet", the same answer as a value that has
+  // not changed – and the poll carries on. The assertion itself is untouched: the file still
+  // has to appear, and still has to say this.
   await page.locator('#ask-where-to-save').uncheck()
   await expect
-    .poll(async () => JSON.parse(await readFile(path.join(dataDir, 'layout.json'), 'utf8')).downloadDir)
+    .poll(() =>
+      readFile(path.join(dataDir, 'layout.json'), 'utf8')
+        .then((raw) => JSON.parse(raw).downloadDir)
+        .catch(() => null),
+    )
     .toBe('')
 })
 
