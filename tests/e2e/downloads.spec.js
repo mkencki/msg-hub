@@ -57,7 +57,25 @@ test.beforeEach(async () => {
 })
 
 test.afterEach(async () => {
-  await electronApp.close().catch(() => {})
+  // Ask the application to QUIT, rather than leaving the window to close on its own. The two are
+  // not the same thing here: closeToTray defaults to on, and the close handler chooses between
+  // hiding and quitting from `quitting`, which nothing but before-quit sets, so a window close
+  // arriving first hides to the tray and leaves the process running. Nothing was reproduced
+  // locally: this closes a race found by reading the handler, not one that has been measured.
+  // The result of evaluate() is not waited for, because the process it talks to is on its way out.
+  await electronApp.evaluate(({ app }) => app.quit()).catch(() => {})
+
+  // And the wait for the exit is bounded. Measured 2026-09-02 on CI: it ran past the 30 s hook
+  // budget, the worker died with it, and the results of the 39 tests that worker had already run
+  // died too. This is not a longer timeout hiding a slow test: whether the application shuts down
+  // cleanly is asserted where that is the subject, in settings.spec.js, so ending a stuck process
+  // here hides nothing this file was ever measuring. The process is ended only when the close is
+  // genuinely stuck: process() reads a handle Playwright discards on a completed close, and asking
+  // for it afterwards throws.
+  const closing = electronApp.close().then(() => 'closed', () => 'closed')
+  const exit = await Promise.race([closing, new Promise((over) => setTimeout(() => over('stuck'), 10000))])
+  if (exit === 'stuck') electronApp.process().kill()
+
   await new Promise((closed) => server.close(closed))
   for (const dir of [dataDir, saveDir]) {
     const cleanup = rm(dir, { recursive: true, force: true, maxRetries: 3 }).catch(() => {})
