@@ -32,7 +32,7 @@ const addAccount = async (name, platform) => {
   await expect(page.locator('#account-dialog')).toBeHidden()
 }
 
-// An account may host a whole service, not only a messenger — the widening the design
+// An account may host a whole service, not only a messenger – the widening the design
 // document took on 2026-08-25. Until now the picker offered two messengers and nothing else.
 test('LinkedIn and Facebook can be added like any other account', async () => {
   const offered = await page
@@ -41,7 +41,7 @@ test('LinkedIn and Facebook can be added like any other account', async () => {
   expect(offered).toEqual(['whatsapp', 'messenger', 'linkedin', 'facebook'])
 })
 
-// The apex host answers "Checking your browser - reCAPTCHA" — measured with curl, twice. The
+// The apex host answers "Checking your browser - reCAPTCHA" – measured with curl, twice. The
 // entry point has to be the www host and the feed path, or the account opens on a wall.
 test('LinkedIn is entered at the feed, never at the apex', async () => {
   await addAccount('LinkedIn work', 'linkedin')

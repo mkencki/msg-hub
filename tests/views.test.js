@@ -10,7 +10,7 @@ describe('cleanUserAgent', () => {
 
   // Electron builds the default User-Agent out of the application's own name, so this
   // function had that name written into it as a literal. Rename the application and the
-  // literal stops matching — quietly, with the new name going out to Meta's servers on
+  // literal stops matching – quietly, with the new name going out to Meta's servers on
   // every request. The name is a parameter for that reason, and these two cases are the
   // same string with a different name in it.
   test('strips the application name it is given', () => {
@@ -62,7 +62,7 @@ describe('createView', () => {
   const account = { id: 'acc-sample', url: 'https://example.test/', name: 'Sample' }
 
   // Chromium treats a view of zero height as a hidden tab and slows its timers by an order
-  // of magnitude — measured 2026-08-25: 101 ticks of a 100 ms timer in ten seconds while
+  // of magnitude – measured 2026-08-25: 101 ticks of a 100 ms timer in ten seconds while
   // active, 10 while hidden. Every account but the current one is exactly that, and once
   // the window is in the tray so is the current one. An app whose whole purpose is to
   // notice messages arriving must not put its accounts to sleep to save a little battery.
@@ -87,7 +87,7 @@ describe('unreadFromTitle at the edges', () => {
   // LinkedIn's own title writer, lifted from its production bundle:
   //   document.title = r > 99 ? `(99+) ${e}` : r > 0 ? `(${r}) ${e}` : e
   // The old pattern demanded digits and a closing bracket, so it read "(99+) LinkedIn" as
-  // zero — the badge vanished exactly when the account was busiest.
+  // zero – the badge vanished exactly when the account was busiest.
   test('a service that says 99+ is not read as nothing', () => {
     expect(unreadFromTitle('(99+) LinkedIn')).toBe(99)
   })
@@ -97,7 +97,7 @@ describe('unreadFromTitle at the edges', () => {
   })
 
   test('a plus somewhere else in the title is not a count', () => {
-    expect(unreadFromTitle('Google+ — WhatsApp')).toBe(0)
+    expect(unreadFromTitle('Google+ – WhatsApp')).toBe(0)
     expect(unreadFromTitle('(+) WhatsApp')).toBe(0)
   })
 })

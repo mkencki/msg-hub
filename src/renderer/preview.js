@@ -1,4 +1,4 @@
-// Turning WhatsApp markers into PREVIEW html. This is not a WhatsApp renderer — it
+// Turning WhatsApp markers into PREVIEW html. This is not a WhatsApp renderer – it
 // exists only so the operator can see how the text will sit in a chat.
 
 function escapeHtml(text) {

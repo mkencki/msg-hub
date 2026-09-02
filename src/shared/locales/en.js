@@ -50,13 +50,13 @@ export const en = {
   reloadAccount: 'Reload',
   trayOpenLogs: 'Open log folder',
   tags: 'Tags',
-  tagsHint: 'offer, client zone — separated by commas',
+  tagsHint: 'offer, client zone – separated by commas',
   filterByTag: 'Show only macros tagged {tag}',
   fillIn: 'Fill in',
   fillInHint: 'The macro is put together here and goes nowhere until you say so.',
   insertButton: 'Insert',
   close: 'Close',
-  noAccountsHint: 'No accounts yet — click "Add account".',
+  noAccountsHint: 'No accounts yet – click "Add account".',
   edit: 'Edit',
   remove: 'Remove',
   editAccountTitle: 'Edit {name}',
@@ -73,7 +73,7 @@ export const en = {
   // Macros
   insertInto: 'insert into',
   searchMacros: 'Search by name, content or tag',
-  noMacros: 'No macros yet — click "New macro".',
+  noMacros: 'No macros yet – click "New macro".',
   nothingMatches: 'Nothing matches "{phrase}". Try another phrase, or create a new macro.',
   newMacro: 'New macro',
   macro: 'Macro',
@@ -99,18 +99,18 @@ export const en = {
   addAttachment: 'Add attachment',
   detach: 'Remove',
   detachFile: 'Remove {name}',
-  storageHint: 'The file is copied into the app storage — you no longer need the original.',
+  storageHint: 'The file is copied into the app storage – you no longer need the original.',
   saveMacro: 'Save macro',
   none: 'none',
 
   // Status-bar messages
-  messageNoAccount: 'Nowhere to insert — add an account first, then open a conversation in it.',
+  messageNoAccount: 'Nowhere to insert – add an account first, then open a conversation in it.',
   messageNoMacro: 'That macro is no longer on the list.',
-  messageEmptyMacro: 'This macro has neither content nor an attachment — there is nothing to insert.',
+  messageEmptyMacro: 'This macro has neither content nor an attachment – there is nothing to insert.',
   messageInsertFailed: 'Could not insert the macro.',
   // Deliberately short of a claim. webContents.paste() with no editable field focused in
   // the page does nothing and reports nothing, and finding out whether it landed would
-  // mean reading the page — which rule 7.3 forbids. So the sentence says what is known.
+  // mean reading the page – which rule 7.3 forbids. So the sentence says what is known.
   messageInserted: 'Pasted "{macro}" into {account}. Check the message box; Enter is yours to press.',
   messageTheAccount: 'the account',
   messageMissingAttachments: 'Attachments missing from storage: {list}. The text was inserted anyway.',
@@ -132,9 +132,9 @@ export const en = {
   trayShow: 'Show',
   trayAutoStart: 'Start with Windows',
   trayQuit: 'Quit',
-  trayUnread: { one: 'M-HUB — {n} unread', other: 'M-HUB — {n} unread' },
+  trayUnread: { one: 'M-HUB – {n} unread', other: 'M-HUB – {n} unread' },
   overlayUnread: 'unread messages',
   loadAccountFailed:
-    'Could not load {account} — error {code}: {description}. If your network is fine and the site ' +
-    'refuses the client, update Electron (npm install electron@latest) — WhatsApp Web needs a recent Chromium.',
+    'Could not load {account} – error {code}: {description}. If your network is fine and the site ' +
+    'refuses the client, update Electron (npm install electron@latest) – WhatsApp Web needs a recent Chromium.',
 }

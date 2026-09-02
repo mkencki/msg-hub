@@ -32,7 +32,7 @@ describe('uniquePath', () => {
   })
 
   // Chromium adds its own "(1)" only while it is choosing the path itself. The moment
-  // setSavePath is called the path is taken literally — and the same attachment downloaded
+  // setSavePath is called the path is taken literally – and the same attachment downloaded
   // twice would overwrite the first copy without a word.
   test('a taken name gets a number instead of the previous file', () => {
     expect(uniquePath(where, 'faktura.pdf', taken('faktura.pdf'))).toBe(path.join(where, 'faktura (2).pdf'))
@@ -60,7 +60,7 @@ describe('uniquePath', () => {
 })
 
 // What happens to a file the moment it starts arriving. It is a pure function for one reason:
-// the DEFAULT branch opens a modal save dialog, and no end-to-end test can answer a modal — so
+// the DEFAULT branch opens a modal save dialog, and no end-to-end test can answer a modal – so
 // every download test has to turn the question off, and the branch the operator actually meets
 // was the one branch nothing ever exercised.
 describe('planSave', () => {

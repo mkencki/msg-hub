@@ -234,7 +234,7 @@ describe('what a platform declares', () => {
   })
 
   // A messenger's "(3)" means three conversations waiting. LinkedIn's number is the SUM of
-  // eight badge sources — feed, jobs, notifications, messaging and more — so next to a
+  // eight badge sources – feed, jobs, notifications, messaging and more – so next to a
   // WhatsApp count in the same rail it is a different unit wearing the same clothes.
   // Facebook's format could not be confirmed for 2026 at all. Both therefore show nothing
   // rather than something misleading; turning either on is one word.

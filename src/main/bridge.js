@@ -89,7 +89,7 @@ export function registerAccountChannels({
 
   ipcMain.handle('accounts:move', async (_event, accountId, offset) => {
     const { accounts } = await loadAccounts(accountsFile)
-    // Order in the file is the order of the channels — the rail rebuilds itself from it.
+    // Order in the file is the order of the channels – the rail rebuilds itself from it.
     await saveAccounts(accountsFile, moveAccount(accounts, accountId, offset))
     return { ok: true }
   })
@@ -104,14 +104,14 @@ export function registerAccountChannels({
 }
 
 
-// Spec section 8: a file missing from the store must not sink the macro — the text has to
+// Spec section 8: a file missing from the store must not sink the macro – the text has to
 // work, and the interface has to say which attachments are missing.
 //
 // A clipboard that refuses is the same kind of failure and gets the same answer. It used to
 // be neither caught nor reported: the rejection escaped the IPC handler, the operator was
 // told nothing, and the attachments after the failed one were never even attempted. Whether
 // the file is absent from disk or the clipboard would not take it, the operator needs the
-// same sentence — that one did not go in.
+// same sentence – that one did not go in.
 export async function pasteAttachments({ attachments, dataDir, clipboardSession, view, reach = access }) {
   const missing = []
   for (const relative of attachments) {
@@ -150,7 +150,7 @@ export function registerMacroChannels({ dataDir, manager, clipboardSession }) {
     const id = macro.id || makeMacroId(macro.name)
     // A save is a PARTIAL update: whatever the caller does not send falls back to what is
     // already stored, never to an empty default. The editor sends name, text and
-    // attachments and has never sent `tags`, because no screen sets them — so the bare
+    // attachments and has never sent `tags`, because no screen sets them – so the bare
     // `tags: []` default used to win on every save and quietly emptied the field. A macro
     // saved with tags stopped being findable by them after one unrelated edit, while the
     // palette's own search box promises "name, content or tag". Clearing a field still
@@ -158,7 +158,7 @@ export function registerMacroChannels({ dataDir, manager, clipboardSession }) {
     const stored = macros.find((m) => m.id === id)
     const saved = upsert(macros, { attachments: [], tags: [], ...stored, ...macro, id })
     await saveMacros(macrosFile, saved)
-    // An attachment detached in the editor is no longer used — without this sweep it
+    // An attachment detached in the editor is no longer used – without this sweep it
     // would sit in the store forever, and that is often several megabytes of video.
     await removeOrphanAttachments(attDir, saved)
     return { ok: true, id }
@@ -180,7 +180,7 @@ export function registerMacroChannels({ dataDir, manager, clipboardSession }) {
     const macro = macros.find((m) => m.id === macroId)
 
     // Every failure carries a named reason. Without one the panel simply vanished and
-    // the operator could not tell whether the macro went in — and it had not.
+    // the operator could not tell whether the macro went in – and it had not.
     if (!macro) return { ok: false, reason: 'no-macro', missing: [] }
 
     const view = manager.active()
@@ -202,7 +202,7 @@ export function registerMacroChannels({ dataDir, manager, clipboardSession }) {
 
     // Ctrl+; deliberately moves the keyboard to the renderer, or the palette opens and cannot
     // be typed in. Getting it back was left to whatever closing a <dialog> happens to do, and
-    // that turns out to depend on which webContents held focus when the dialog opened —
+    // that turns out to depend on which webContents held focus when the dialog opened –
     // measured 2026-08-25: with the window brought to the front first the view gets it back,
     // without that the renderer keeps it. The most frequent action in this application cannot
     // rest on which of those two states the operator happens to be in, so it is asked for.
@@ -221,7 +221,7 @@ export function registerMacroChannels({ dataDir, manager, clipboardSession }) {
     try {
       return await addAttachment(attDir, result.filePaths[0])
     } catch (error) {
-      // A code, not a sentence — the renderer owns the language. See accounts.js.
+      // A code, not a sentence – the renderer owns the language. See accounts.js.
       return { error: { code: error.code ?? 'attachmentFailed', params: error.params ?? {} } }
     }
   })

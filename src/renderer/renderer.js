@@ -5,12 +5,12 @@ import { findVariables } from '../shared/variables.js'
 import { PLATFORM_DEFAULT_NOTIFICATIONS } from '../shared/platform-defaults.js'
 
 // Interface language. The value arrives from the main process at startup, so until the
-// answer comes back we hold the default — otherwise the first frame would show bare keys.
+// answer comes back we hold the default – otherwise the first frame would show bare keys.
 let language = DEFAULT_LANGUAGE
 const tr = (key, params) => t(language, key, params)
 
 // Static text carries data-i18n keys in the HTML and is swapped in place. That way
-// changing the language needs no window reload — and a reload would tear down the
+// changing the language needs no window reload – and a reload would tear down the
 // native account views along with their sign-ins.
 function translateDocument() {
   document.documentElement.lang = language
@@ -45,7 +45,7 @@ function unreadLabel(count) {
   return count ? tr('unreadNew', { n: count }) : tr('noNew')
 }
 
-// The active account's colour outlines the whole working area — it is the only saturated
+// The active account's colour outlines the whole working area – it is the only saturated
 // element in the window and the only constant answer to "who am I right now".
 function paintChannel(account) {
   document.documentElement.style.setProperty('--channel', account?.color ?? '#2f7d5b')
@@ -85,7 +85,7 @@ function refreshUnread() {
   paintChannel(railAccounts.find((a) => a.id === activeAccountId))
 }
 
-// The rail collapses to bare channel colours and expands on hover — until it is pinned,
+// The rail collapses to bare channel colours and expands on hover – until it is pinned,
 // which holds it open. The main process owns the state, because it also computes the
 // geometry of the views; the renderer only reports hover and paints the answer.
 let railPinned = false
@@ -103,7 +103,7 @@ function applyRailState({ pinned, expanded }) {
 rail.addEventListener('mouseenter', () => window.mHub.hoverRail(true))
 
 // A mouseleave does not always mean the pointer left. Chromium fires one when the window
-// stops being the foreground window, carrying the position the pointer had all along —
+// stops being the foreground window, carrying the position the pointer had all along –
 // measured 2026-08-25 at clientX 24 inside a rail box of 0..162, with the cursor never
 // moved. Whether that is worth acting on is the main process's call, because only it knows
 // whether the window is still focused; the renderer's job is to report WHERE the pointer
@@ -132,7 +132,7 @@ window.mHub.onSelectAccount((index) => {
   if (account) switchTo(account.id)
 })
 
-// A view took the system's focus on its own — a clicked notification, most likely. The rail
+// A view took the system's focus on its own – a clicked notification, most likely. The rail
 // has to follow it rather than the other way round.
 window.mHub.onSelectAccountId((accountId) => {
   if (railAccounts.some((a) => a.id === accountId)) switchTo(accountId)
@@ -195,7 +195,7 @@ async function openAccountForm(account = null) {
   form.reset()
   document.getElementById('account-dialog-title').textContent = tr(account ? 'editAccount' : 'addAccount')
 
-  // The platform determines the address and the session partition — swapping it would be
+  // The platform determines the address and the session partition – swapping it would be
   // a different account, not a correction of this one, so the field is locked when editing.
   const platform = form.querySelector('select[name="platform"]')
   platform.disabled = Boolean(account)
@@ -208,7 +208,7 @@ async function openAccountForm(account = null) {
     form.querySelector('input[name="color"]').value = account.color
     notifications.checked = account.notifications ?? PLATFORM_DEFAULT_NOTIFICATIONS[account.platform] ?? false
   } else {
-    // Two accounts in one colour cancel out the identity signal — suggest a free one.
+    // Two accounts in one colour cancel out the identity signal – suggest a free one.
     form.querySelector('input[name="color"]').value = await window.mHub.unusedColor()
     notifications.checked = PLATFORM_DEFAULT_NOTIFICATIONS[platform.value] ?? false
   }
@@ -251,7 +251,7 @@ document.getElementById('save-account').addEventListener('click', async (event) 
   if (settingsDialog.open) await refreshAccountList()
 })
 
-// The panel closes on every choice, so a failed insertion is invisible — every reason
+// The panel closes on every choice, so a failed insertion is invisible – every reason
 // has to reach the status bar, otherwise it looks exactly like a successful insertion.
 const INSERT_REASONS = {
   'no-account': 'messageNoAccount',
@@ -259,7 +259,7 @@ const INSERT_REASONS = {
   'empty-macro': 'messageEmptyMacro',
 }
 
-// The main process returns errors as codes with parameters — only here is it known which
+// The main process returns errors as codes with parameters – only here is it known which
 // language the user should read them in.
 function describeErrors(errors) {
   return (errors ?? []).map((error) => tr(error.code, error.params)).join('; ')
@@ -268,7 +268,7 @@ function describeErrors(errors) {
 let selectedMacro = 0
 
 // A macro with placeholders is a question before it is an insertion. Nothing is written
-// anywhere — not the clipboard, not the page — until the question has an answer, because a
+// anywhere – not the clipboard, not the page – until the question has an answer, because a
 // half-filled message on the clipboard is the one thing that could reach a conversation by
 // accident.
 const variablesDialog = document.getElementById('variables-dialog')
@@ -368,7 +368,7 @@ export async function refreshMacros() {
     label.className = 'macro-label'
     label.textContent = count ? tr('macroLabel', { name: macro.name, count }) : macro.name
 
-    // Clicking the row inserts the macro — the most frequent action, so it stays the
+    // Clicking the row inserts the macro – the most frequent action, so it stays the
     // cheapest. The buttons stop propagation so editing and deleting do not insert
     // the macro on the way.
     row.addEventListener('click', () => insertMacro(macro))
@@ -395,7 +395,7 @@ export async function refreshMacros() {
 
     // Tags nobody can see are tags nobody uses, and showing them is also the only
     // explanation the filter needs. Clicking one searches for it, which is exactly what the
-    // search box already does — the tag is a shortcut to typing it.
+    // search box already does – the tag is a shortcut to typing it.
     const tags = document.createElement('span')
     tags.className = 'macro-tags'
     for (const tag of macro.tags ?? []) {
@@ -455,7 +455,7 @@ document.getElementById('open-macros').addEventListener('click', async () => {
   macroSearch.focus()
 })
 
-// The macro panel has no <form method="dialog">, so value="close" alone closes nothing —
+// The macro panel has no <form method="dialog">, so value="close" alone closes nothing –
 // the button needs an explicit handler, exactly as in the settings dialog.
 document.getElementById('close-macros').addEventListener('click', (event) => {
   event.preventDefault()
@@ -470,11 +470,11 @@ window.addEventListener('keydown', (event) => {
 })
 
 // The same shortcut pressed while an account view holds focus never reaches the renderer
-// at all — the main process intercepts it there and sends the decision back.
+// at all – the main process intercepts it there and sends the decision back.
 window.mHub.onOpenMacros(() => document.getElementById('open-macros').click())
 
 // Spec section 8: a failed start must produce a visible message, not an empty status bar.
-// The message MUST be dismissable — otherwise a stale error occupies the bar for the rest
+// The message MUST be dismissable – otherwise a stale error occupies the bar for the rest
 // of the session and the operator keeps reading it long after the cause is fixed.
 // An OFFER is something the operator can act on from the bar. Reloading is offered rather
 // than done, because it throws away whatever is half-typed in a composer.
@@ -521,7 +521,7 @@ document.getElementById('reload-account').addEventListener('click', async () => 
   await window.mHub.reloadAccount(accountId)
 })
 
-// The id of a download this process recorded, never a path — main looks up where the file
+// The id of a download this process recorded, never a path – main looks up where the file
 // actually landed. A page that could name the path could point Explorer anywhere.
 document.getElementById('show-download').addEventListener('click', async () => {
   const downloadId = pendingOffer?.downloadId
@@ -532,7 +532,7 @@ document.getElementById('show-download').addEventListener('click', async () => {
 document.getElementById('dismiss-message').addEventListener('click', hideMessage)
 
 // An error raised by an OPEN dialog must not go to the status bar: a modal freezes
-// everything around it, so the message would be visible but dead — impossible to dismiss
+// everything around it, so the message would be visible but dead – impossible to dismiss
 // and detached from the field it concerns. The account form has had its own error line
 // from the start; the macro editor gets one too.
 function showMacroError(text) {
@@ -550,7 +550,7 @@ function buildLanguageSelect() {
   languageSelect.value = language
 }
 
-// Changing the language does NOT reload the window — a reload would tear down the native
+// Changing the language does NOT reload the window – a reload would tear down the native
 // account views along with their sign-ins. Instead everything that composes its own text
 // is repainted.
 async function applyLanguage() {
@@ -638,7 +638,7 @@ export function drawUnreadBadge(total) {
   return canvas.toDataURL('image/png')
 }
 
-// The main process sends the total and the per-account breakdown — the rail shows a count
+// The main process sends the total and the per-account breakdown – the rail shows a count
 // on each channel, and the taskbar overlay still needs the total on its own.
 let overlayTotal = null
 
@@ -655,7 +655,7 @@ window.mHub.onUnread((data) => {
 })
 
 // Messages from the main process (a failed account load, for instance) land on the status
-// bar rather than in a modal — one sick account must not block the rest.
+// bar rather than in a modal – one sick account must not block the rest.
 window.mHub.onMessage((payload) =>
   showMessage(payload.text, payload.tone ?? 'error', payload.offer, {
     id: payload.id ?? null,
@@ -697,7 +697,7 @@ document.getElementById('format-bar').addEventListener('click', (event) => {
   refreshPreview()
 })
 
-// Editing keeps the macro's id even when the name changes — otherwise correcting a name
+// Editing keeps the macro's id even when the name changes – otherwise correcting a name
 // would create a second macro next to the old one.
 let editedMacroId = null
 
@@ -733,7 +733,7 @@ document.getElementById('save-macro').addEventListener('click', async (event) =>
     name: editorName.value,
     text: editorText.value,
     // Sent on every save, including when it is empty. A save is a partial update, so a field
-    // that is never sent can never be cleared — which is how tags used to be lost.
+    // that is never sent can never be cleared – which is how tags used to be lost.
     tags: parseTags(editorTags.value),
     attachments: macroAttachments,
   })
@@ -747,7 +747,7 @@ document.getElementById('save-macro').addEventListener('click', async (event) =>
 
 let macroAttachments = []
 
-// The stored name carries a UUID prefix — the operator only ever sees the original name.
+// The stored name carries a UUID prefix – the operator only ever sees the original name.
 function refreshAttachments() {
   const list = document.getElementById('attachment-list')
   list.replaceChildren()
@@ -796,7 +796,7 @@ document.getElementById('add-attachment').addEventListener('click', async () => 
   refreshAttachments()
 })
 
-// Account views are a native layer ABOVE the window content — an open <dialog> hides
+// Account views are a native layer ABOVE the window content – an open <dialog> hides
 // underneath it and only blocks clicks. The layer steps aside while ANY dialog is open.
 // The state is computed from the DOM, because a dialog's "close" event is queued rather
 // than synchronous: moving from the panel to the editor it would arrive AFTER the editor
@@ -807,7 +807,7 @@ function refreshViewVisibility() {
 }
 
 function showDialog(dialog) {
-  // Calling showModal again on an open dialog throws — and the shortcut can be pressed a
+  // Calling showModal again on an open dialog throws – and the shortcut can be pressed a
   // second time before the operator notices the panel is already open.
   if (dialog.open) return
   dialog.showModal()
@@ -913,7 +913,7 @@ document.getElementById('add-account-from-settings').addEventListener('click', (
   openAccountForm()
 })
 
-// Removing an account clears its session, which signs it out — hence a confirmation
+// Removing an account clears its session, which signs it out – hence a confirmation
 // rather than a bare click. The confirmation opens ON TOP of the settings, so closing it
 // returns the operator where they came from, with a refreshed list.
 function confirmAccountRemoval(account) {
@@ -943,7 +943,7 @@ document.getElementById('confirm-remove-account').addEventListener('click', asyn
   await refreshAccountList()
 })
 
-// Removing a macro also deletes its attachments from the store, so it too asks first —
+// Removing a macro also deletes its attachments from the store, so it too asks first –
 // exactly as accounts do.
 const removeMacroDialog = document.getElementById('remove-macro-dialog')
 let macroToRemove = null

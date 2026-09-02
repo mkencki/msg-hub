@@ -39,10 +39,10 @@ describe('fillVariables', () => {
     expect(fillVariables('Wysłano {data}.', {}, { now: noon })).toBe('Wysłano 2026-08-25.')
   })
 
-  // A macro that has none must come out exactly as it went in — this is the path every
+  // A macro that has none must come out exactly as it went in – this is the path every
   // existing macro takes, and it may not change by a single character.
   test('a macro without variables is returned untouched', () => {
-    const text = 'Good morning.\n\nThe *guide* is attached — {see} nothing here { }.'
+    const text = 'Good morning.\n\nThe *guide* is attached – {see} nothing here { }.'
     expect(fillVariables(text, {}, { now: noon })).toBe(text)
   })
 

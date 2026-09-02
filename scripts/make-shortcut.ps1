@@ -2,7 +2,7 @@
 #
 # Windows takes a pinned button's icon and name from the SHORTCUT, never from the running
 # window, so an application started with `npm start` and pinned from the taskbar is pinned as
-# electron.exe — with Electron's own logo on it. Measured 2026-08-25 on this machine: the
+# electron.exe – with Electron's own logo on it. Measured 2026-08-25 on this machine: the
 # pinned Electron.lnk targeted node_modules\electron\dist\electron.exe with IconLocation ",0",
 # and the Start menu already held an msg-hub.lnk pointing at an icon file that had not existed
 # since the repository was anglicised.
@@ -34,7 +34,7 @@ $icon = Join-Path $Repo 'src\renderer\icons\app.ico'
 
 foreach ($required in @($electron, $icon)) {
   if (-not (Test-Path -LiteralPath $required)) {
-    throw "Missing: $required — run npm install, and npm run icon, first."
+    throw "Missing: $required – run npm install, and npm run icon, first."
   }
 }
 
@@ -77,7 +77,7 @@ public struct PropertyKey {
   public uint propertyId;
 }
 
-// Padded to the real PROPVARIANT size — 16 bytes on x86, 24 on x64. A shorter struct would
+// Padded to the real PROPVARIANT size – 16 bytes on x86, 24 on x64. A shorter struct would
 // have the callee reading past the end of what was handed to it.
 [StructLayout(LayoutKind.Sequential)]
 public struct PropVariant {

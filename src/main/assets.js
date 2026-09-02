@@ -3,7 +3,7 @@
 // nothing could check that these paths lead anywhere.
 //
 // And nothing did. Both failures are SILENT: Electron ignores a window icon it cannot load,
-// and `new Tray()` given an empty image produces a tray icon that is simply invisible —
+// and `new Tray()` given an empty image produces a tray icon that is simply invisible –
 // no exception, no warning. Measured 2026-08-25 by pointing both constants at files that do
 // not exist: 215 unit tests and 7 end-to-end tests stayed green. tests/assets.test.js is the
 // test that mutation now fails.
@@ -18,5 +18,5 @@ const icons = (name) => path.join(HERE, '..', 'renderer', 'icons', name)
 // than a frame drawn for that size.
 export const WINDOW_ICON = icons('app.ico')
 
-// The tray takes the 32 and halves it — an exact division, unlike 256 into 16.
+// The tray takes the 32 and halves it – an exact division, unlike 256 into 16.
 export const TRAY_ICON = icons('icon-32.png')

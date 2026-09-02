@@ -55,7 +55,7 @@ export function createLogger(dir, { maxBytes = DEFAULT_MAX_BYTES, create = true,
         const rendered = render(fields)
         await appendFile(file, `${now().toISOString()} ${event}${rendered ? ' ' + rendered : ''}\n`, 'utf8')
       } catch {
-        // Nothing to do about it and nowhere to say so — this IS the place things get said.
+        // Nothing to do about it and nowhere to say so – this IS the place things get said.
       }
     },
   }

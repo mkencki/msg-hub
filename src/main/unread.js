@@ -1,6 +1,6 @@
 // A page with something waiting BLINKS its own title to catch the eye: messenger.com and
 // web.whatsapp.com alternate between "(1) Messenger" and "Messenger" about once a second. Read
-// literally, the title says one unread, then none, then one — and the taskbar overlay followed
+// literally, the title says one unread, then none, then one – and the taskbar overlay followed
 // it exactly, appearing for a second and vanishing for the next. Measured 2026-08-25 against a
 // page blinking four times a second: the window title took both values inside two seconds.
 //
@@ -35,7 +35,7 @@ export class UnreadLatch {
       return
     }
     // Only the FIRST zero of a run starts the clock. Letting every blink push the deadline
-    // forward would hold the badge for as long as the page keeps blinking — which is this
+    // forward would hold the badge for as long as the page keeps blinking – which is this
     // same bug wearing different clothes.
     if (entry.zeroSince === null) this.state.set(accountId, { ...entry, zeroSince: now })
   }
@@ -55,7 +55,7 @@ export class UnreadLatch {
   }
 
   // When the next held zero falls due, or null when nothing is being held. The badge is worked
-  // out from title events, and a page that has gone quiet sends none — so something has to
+  // out from title events, and a page that has gone quiet sends none – so something has to
   // come back on its own to let a held zero through.
   dueAt() {
     let due = null

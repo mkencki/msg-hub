@@ -13,13 +13,13 @@ const FORBIDDEN_PACKAGES = [
 
 // The calls that would break a boundary if they appeared in the source.
 //
-// sendInputEvent is here because rule 7.1 — the application never sends a message — had no
+// sendInputEvent is here because rule 7.1 – the application never sends a message – had no
 // repository-wide enforcement at all: only insertion.js was guarded, by its own negative test,
 // while bridge.js reaches a view on a second path that test cannot see. A synthetic Enter is
 // exactly how this application would start sending messages, and nothing was looking for it.
 const FORBIDDEN_CALLS = /executeJavaScript|insertCSS|sendInputEvent|wppconnect|WPP\./
 
-// A comment describing the prohibition is not a breach of it — only a call in the code
+// A comment describing the prohibition is not a breach of it – only a call in the code
 // counts. The scan therefore skips whole-line and block comments.
 function withoutComments(content) {
   const withoutBlocks = content.replace(/\/\*[\s\S]*?\*\//g, '')
@@ -65,7 +65,7 @@ describe('rule 7.2, no interference with the pages Meta serves', () => {
 describe('rule 7.1, the application does not send messages', () => {
   // insertion.js has its own negative test, but it is not the only place that reaches a view:
   // bridge.js pastes attachments on a second path that test never sees. A sendInputEvent
-  // carrying Enter, added anywhere, would send a message for real — and until now nothing in
+  // carrying Enter, added anywhere, would send a message for real – and until now nothing in
   // the repository looked for that call at all.
   test('no source file reaches for a synthetic key press', () => {
     const offenders = []
@@ -85,7 +85,7 @@ describe('rule 7.1, the application does not send messages', () => {
 
 describe('what the scan can see at all', () => {
   // The filter accepted .js and .cjs only, so an .mjs file anywhere under src/ would have been
-  // skipped in silence — by the one test this project leans on hardest.
+  // skipped in silence – by the one test this project leans on hardest.
   test('an .mjs file is not invisible to the scan', () => {
     const found = sourceFiles('build').map((file) => path.basename(file))
     expect(found).toContain('ico.mjs')

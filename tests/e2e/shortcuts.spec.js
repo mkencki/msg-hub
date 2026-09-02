@@ -20,7 +20,7 @@ test.afterEach(async () => {
   await Promise.race([cleanup, new Promise((done) => setTimeout(done, 3000))])
 })
 
-// An account view is a native layer ABOVE the renderer — while it holds focus the
+// An account view is a native layer ABOVE the renderer – while it holds focus the
 // keyboard never reaches the main window. Without routing the key out of the view the
 // shortcut is dead for most of the working time, because focus sits in the conversation.
 async function focusAccountView() {

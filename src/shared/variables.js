@@ -1,8 +1,8 @@
 // Placeholders in a macro. Shared, because the renderer asks for the values and the main
 // process puts them in, and both have to agree on what counts as a placeholder.
 
-// A name, not a sentence. Braces are ordinary characters in a message — "{}" and
-// "{see the guide}" are things people write — so only something shaped like a single word
+// A name, not a sentence. Braces are ordinary characters in a message – "{}" and
+// "{see the guide}" are things people write – so only something shaped like a single word
 // becomes a question the operator has to answer.
 const NAME = /\{([\p{L}\p{N}_-]{1,30})\}/gu
 

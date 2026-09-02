@@ -33,7 +33,7 @@ test.beforeEach(async () => {
   // to open windows from, which is the thing under test.
   //
   // Replacing the load in flight was the first attempt at this and it lost the race one full
-  // suite run in three — see blankTheViews, which waits for the real page to land first.
+  // suite run in three – see blankTheViews, which waits for the real page to land first.
   await blankTheViews(electronApp)
   await expect
     .poll(() =>
@@ -60,8 +60,8 @@ const openFromView = (address) =>
 
 const windowCount = () => electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)
 
-// A page asking for a window used to get a BARE Electron window — no address bar, no back,
-// no reload — carrying the account's signed-in session. Sign-in flows genuinely need a
+// A page asking for a window used to get a BARE Electron window – no address bar, no back,
+// no reload – carrying the account's signed-in session. Sign-in flows genuinely need a
 // window, so the answer is a controlled one rather than a refusal.
 test('the service opening its own sign-in gets a window that is locked down', async () => {
   await openFromView('https://www.messenger.com/login')
@@ -146,7 +146,7 @@ test('an account added while the app is running gets the same contract', async (
     .toBe(true)
 })
 
-// Registered on the account's own partition, never on the default session — on the default
+// Registered on the account's own partition, never on the default session – on the default
 // session there is nothing to say WHOSE file is arriving, which is the only thing the
 // message adds over the system's own Save dialog.
 test('a download is watched on the account that started it, not globally', async () => {

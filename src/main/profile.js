@@ -11,7 +11,7 @@ export const LEGACY_PROFILE_DIR = 'msg-hub'
 
 // accounts.json is LAST on purpose. Its presence in the new profile is what stops this
 // from running a second time, so moving it first would strand whatever an interrupted run
-// had not reached yet — the next start would find the guard satisfied and leave the
+// had not reached yet – the next start would find the guard satisfied and leave the
 // sessions behind for good. Moved last, an interrupted migration finishes on the next start.
 const CONTENTS = ['Partitions', 'att', 'macros.json', 'layout.json', 'uklad.json', 'accounts.json']
 
@@ -19,13 +19,13 @@ export async function migrateProfile({ from, to }) {
   const moved = []
   // Removing every account writes an empty list rather than deleting the file, so every
   // profile that has been used at all carries this file. Its absence is the only honest
-  // signal that the new directory has never held anything — and the only way to be sure
+  // signal that the new directory has never held anything – and the only way to be sure
   // this does not resurrect accounts somebody deliberately deleted.
   if (existsSync(path.join(to, 'accounts.json'))) return { moved }
   if (!existsSync(from)) return { moved }
 
   // main.js calls this before anything has written to the new profile, so the directory
-  // Electron will use may not be on disk yet — and a rename into a missing directory fails.
+  // Electron will use may not be on disk yet – and a rename into a missing directory fails.
   await mkdir(to, { recursive: true })
 
   for (const name of CONTENTS) {
@@ -42,7 +42,7 @@ export async function migrateProfile({ from, to }) {
 }
 
 // Both directories live under %APPDATA%, so this is a metadata change however large the
-// session data is — and sessions run to tens of megabytes each. Copying is the fallback
+// session data is – and sessions run to tens of megabytes each. Copying is the fallback
 // for the one case a rename cannot serve: a profile redirected to another volume.
 async function move(source, target) {
   try {

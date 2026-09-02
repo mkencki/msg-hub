@@ -73,7 +73,7 @@ test('the macro panel and the editor do not hide under the account view either',
 })
 
 // The macro panel's Close button does not sit inside <form method="dialog">, so value="close"
-// alone does not close it — without an explicit handler only ESC is left.
+// alone does not close it – without an explicit handler only ESC is left.
 test('the Close button closes the macro panel and brings the account view back', async () => {
   await page.keyboard.press('Control+Semicolon')
   await expect(page.locator('#macros-dialog')).toBeVisible()

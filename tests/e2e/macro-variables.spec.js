@@ -35,7 +35,7 @@ test.afterEach(async () => {
   await Promise.race([cleanup, new Promise((done) => setTimeout(done, 3000))])
 })
 
-// What actually reached the clipboard, which is the only thing that matters here — the page
+// What actually reached the clipboard, which is the only thing that matters here – the page
 // itself is not reachable from a test machine and is none of this test's business.
 const clipboardText = () => electronApp.evaluate(({ clipboard }) => clipboard.readText())
 
@@ -85,7 +85,7 @@ test('the date fills itself rather than being asked for', async () => {
   await expect.poll(clipboardText).toBe(`Sent on ${today}.`)
 })
 
-// Backing out has to leave nothing behind — least of all a half-filled message on the
+// Backing out has to leave nothing behind – least of all a half-filled message on the
 // clipboard, which is the one thing that could reach a conversation by accident.
 test('cancelling the question inserts nothing at all', async () => {
   await page.evaluate(() => window.mHub.saveMacro({ name: 'Quote', text: 'Hello {name}.' }))

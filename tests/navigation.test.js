@@ -100,7 +100,7 @@ describe('classify', () => {
 //   AADSTS900561: The endpoint only accepts POST requests. Received a GET request.
 // shell.openExternal can only ever issue a GET, and this flow is POST: the authorize call
 // carries response_mode=form_post. So an undeclared host does not merely open in the wrong
-// place — it arrives stripped of its method and cannot work at all.
+// place – it arrives stripped of its method and cannot work at all.
 //
 // Both addresses below were measured, not guessed: login.live.com by following the button on
 // linkedin.com/login, and login.microsoft.com from the error screen the operator hit at the

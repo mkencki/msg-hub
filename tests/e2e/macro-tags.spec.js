@@ -26,7 +26,7 @@ const openPalette = async () => {
 }
 
 // The model has carried tags since stage 2 and search has always read them, and the search
-// box says so in as many words — "Search by name, content or tag". No screen ever set one.
+// box says so in as many words – "Search by name, content or tag". No screen ever set one.
 test('a macro can be given tags, and they come back to be edited', async () => {
   await openPalette()
   await page.locator('#new-macro').click()

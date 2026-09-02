@@ -7,7 +7,7 @@ import { migrateProfile } from '../src/main/profile.js'
 
 // Version 0.5.0 gave the application a productName, and Electron derives the profile
 // directory from it. Everything written under %APPDATA%\msg-hub stayed there while the
-// application began reading %APPDATA%\M-HUB — measured on a real machine on 2026-08-27,
+// application began reading %APPDATA%\M-HUB – measured on a real machine on 2026-08-27,
 // where three accounts and a macro sat on disk, complete, and invisible to the app that
 // had written them. Nothing was lost; the app simply stopped looking where the data is.
 
@@ -53,7 +53,7 @@ describe('a profile left behind by the 0.5.0 rename', () => {
   })
 
   // The session partition is named persist:<id>. Leaving it behind would sign every
-  // account out and demand a fresh QR code — the one thing an upgrade must never do.
+  // account out and demand a fresh QR code – the one thing an upgrade must never do.
   test('session partitions travel with the accounts, so nobody scans a QR code again', async () => {
     await write(from, 'accounts.json', oldAccounts)
     await mkdir(path.join(from, 'Partitions', 'acc-messenger'), { recursive: true })
@@ -88,7 +88,7 @@ describe('a profile left behind by the 0.5.0 rename', () => {
 describe('when there is nothing to migrate', () => {
   // Removing every account writes an empty list rather than deleting the file, so a
   // profile that has been used at all has accounts.json. Its presence is what keeps this
-  // from running twice — and from resurrecting accounts somebody deliberately deleted.
+  // from running twice – and from resurrecting accounts somebody deliberately deleted.
   test('a profile that already has accounts is left untouched', async () => {
     await write(to, 'accounts.json', { version: 2, accounts: [] })
     await write(from, 'accounts.json', oldAccounts)

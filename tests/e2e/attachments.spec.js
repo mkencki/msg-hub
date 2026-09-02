@@ -8,11 +8,11 @@ import path from 'node:path'
 const run = promisify(execFile)
 
 // The test generates its own material. It used to reach for files on the author's private
-// drive, which meant it passed on exactly one machine — on a CI runner it ended in ENOENT,
+// drive, which meant it passed on exactly one machine – on a CI runner it ended in ENOENT,
 // and in a public repository it would have given away someone else's directory structure.
 //
 // For this test the file's content does not matter: CF_HDROP carries the PATH, not bytes.
-// The files are nevertheless real, minimal documents of their format — a file named .pdf
+// The files are nevertheless real, minimal documents of their format – a file named .pdf
 // that is not a PDF would be a trap for whoever later adds type validation here.
 const SAMPLE_PDF = Buffer.from(
   `%PDF-1.4
@@ -42,7 +42,7 @@ let electronApp
 let page
 
 // Reading the ARTEFACT: what actually sits on the Windows clipboard. An exit code is not
-// enough — Set-Clipboard can report success and leave the clipboard empty.
+// enough – Set-Clipboard can report success and leave the clipboard empty.
 async function filesOnClipboard() {
   const { stdout } = await run(
     'powershell.exe',
@@ -63,7 +63,7 @@ test.beforeEach(async () => {
   page = await electronApp.firstWindow()
   await page.waitForSelector('body[data-ready="1"]')
 
-  // The account is created through the form — with no active view there is nowhere to insert.
+  // The account is created through the form – with no active view there is nowhere to insert.
   await page.locator('#add-account').click()
   await page.locator('#account-dialog input[name="name"]').fill('WhatsApp test')
   await page.locator('#save-account').click()
@@ -71,7 +71,7 @@ test.beforeEach(async () => {
 })
 
 test.afterEach(async () => {
-  // The clipboard holds a handle to the pasted file — without clearing it the temp
+  // The clipboard holds a handle to the pasted file – without clearing it the temp
   // directory stays locked and the next test waits for it to be released.
   await electronApp.evaluate(({ clipboard }) => clipboard.clear()).catch(() => {})
   await electronApp.close()
@@ -106,7 +106,7 @@ for (const material of MATERIALS) {
 
     expect(result.ok).toBe(true)
     expect(result.missing).toEqual([])
-    // The file lands on the clipboard AFTER the text — a macro inserts content first,
+    // The file lands on the clipboard AFTER the text – a macro inserts content first,
     // then the attachment.
     expect(await filesOnClipboard()).toEqual([storedName])
   })
@@ -131,7 +131,7 @@ test('a file missing from the store does not sink the macro: the text works and 
   expect(result.ok).toBe(false)
   expect(result.missing).toEqual(['att/no-such-file.pdf'])
 
-  // The text reached the clipboard even so — spec section 8.
+  // The text reached the clipboard even so – spec section 8.
   const onClipboard = await electronApp.evaluate(({ clipboard }) => clipboard.readText())
   expect(onClipboard).toBe('*The text works even with the file gone*')
 })

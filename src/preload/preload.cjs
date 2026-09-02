@@ -1,4 +1,4 @@
-// The preload of a sandboxed renderer must be CommonJS — Electron does not load ESM here.
+// The preload of a sandboxed renderer must be CommonJS – Electron does not load ESM here.
 const { contextBridge, ipcRenderer } = require('electron')
 
 contextBridge.exposeInMainWorld('mHub', {

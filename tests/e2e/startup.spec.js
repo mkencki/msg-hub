@@ -5,7 +5,7 @@ import path from 'node:path'
 
 // Its own profile, like every other spec here. Without one this test borrows the operator's:
 // it launched with no --user-data-dir, took the default profile, and from the moment a single
-// instance lock existed it failed whenever msg-hub happened to be running on the machine —
+// instance lock existed it failed whenever msg-hub happened to be running on the machine –
 // the second copy quits on purpose, and Playwright reports an application that would not
 // start. Measured 2026-08-25, with the operator's own window open at the time.
 test('the app starts and opens exactly one window', async () => {

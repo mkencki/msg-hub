@@ -22,7 +22,7 @@ describe('the window layout', () => {
   })
 
   // Language is a preference rather than geometry, but it lives in the same settings
-  // file — otherwise the first launch after installation would have to read two.
+  // file – otherwise the first launch after installation would have to read two.
   test('the default language after installation is English', async () => {
     expect(DEFAULT_LAYOUT.language).toBe('en')
     expect((await loadLayout(file)).language).toBe('en')
@@ -115,8 +115,8 @@ describe('acceptHoverReport', () => {
     expect(acceptHoverReport(report({ pointerStillInside: true, windowFocused: false }))).toBe(false)
   })
 
-  // Opening a modal dialog also produces a leave from inside the rail. That one is real —
-  // the window still has the foreground — and swallowing it would leave the rail stuck open.
+  // Opening a modal dialog also produces a leave from inside the rail. That one is real –
+  // the window still has the foreground – and swallowing it would leave the rail stuck open.
   test('a leave reported from inside the rail by the focused window still counts', () => {
     expect(acceptHoverReport(report({ pointerStillInside: true, windowFocused: true }))).toBe(true)
   })
@@ -181,7 +181,7 @@ describe('closing to the tray inside the layout', () => {
 
 describe('where downloads go, inside the layout', () => {
   // Asking is what Electron does when no save path is set, so this default changes nothing
-  // about how the application already behaves — it only puts the behaviour somewhere it can
+  // about how the application already behaves – it only puts the behaviour somewhere it can
   // be turned off.
   test('a fresh profile asks where to save', () => {
     expect(DEFAULT_LAYOUT.askWhereToSave).toBe(true)
@@ -202,7 +202,7 @@ describe('where downloads go, inside the layout', () => {
     expect(layout.downloadDir).toBe('D:\Praca')
   })
 
-  // Absent is not the same as off — the same rule closeToTray had to learn.
+  // Absent is not the same as off – the same rule closeToTray had to learn.
   test('a layout file written before these settings existed still asks', async () => {
     const file = path.join(dir, 'layout.json')
     await writeFile(file, JSON.stringify({ width: 1000, height: 700 }), 'utf8')
@@ -224,7 +224,7 @@ describe('where downloads go, inside the layout', () => {
 // Where the window opens is no longer a stored fact but a computed one. A remembered position
 // is only valid for the monitor arrangement it was written on, and arrangements change:
 // measured on 2026-09-01, a layout carrying x=-1394 y=972 put the window on a screen the
-// operator was not looking at, and the size stored beside it — 1347x795 — was wider than the
+// operator was not looking at, and the size stored beside it – 1347x795 – was wider than the
 // laptop's own work area. Both halves have to be answered, or centring alone would place an
 // oversized window with its title bar above the top edge.
 describe('centring the window on the primary monitor', () => {
@@ -250,7 +250,7 @@ describe('centring the window on the primary monitor', () => {
   })
 
   // A monitor that is not the leftmost has an origin of its own, and one placed to the left of
-  // the primary has a NEGATIVE origin — the arrangement measured on this machine.
+  // the primary has a NEGATIVE origin – the arrangement measured on this machine.
   test('the origin of the monitor is carried into the result', () => {
     expect(centreOn(workArea(-1680, 644, 1680, 990), { width: 1280, height: 752 })).toEqual({
       x: -1480,
@@ -261,7 +261,7 @@ describe('centring the window on the primary monitor', () => {
   })
 
   // Remembered from a larger monitor. Centring a window bigger than the screen would put its
-  // top edge — and with it the title bar and the close button — out of reach.
+  // top edge – and with it the title bar and the close button – out of reach.
   test('a window larger than the screen is cut down to it, not centred beyond it', () => {
     expect(centreOn(workArea(0, 0, 1280, 752), { width: 1347, height: 795 })).toEqual({
       x: 0,

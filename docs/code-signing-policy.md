@@ -11,7 +11,7 @@ Last reviewed: 2026-09-02.
 
 Only one artefact is published, and only that artefact is signed: the Windows installer
 `M-HUB-<version>-installer.exe`, attached to a [GitHub release](https://github.com/mkencki/m-hub/releases).
-Nothing else is distributed — there is no portable build, no separate updater, and no
+Nothing else is distributed – there is no portable build, no separate updater, and no
 third-party download mirror. A file carrying M-HUB's name from anywhere other than that
 Releases page did not come from this project.
 
@@ -26,9 +26,9 @@ roles therefore map as follows:
 
 | Role | Held by |
 |---|---|
-| Author — writes and commits the code | @mkencki |
-| Reviewer — approves the change into `main` | @mkencki |
-| Approver — releases and signs it | @mkencki |
+| Author – writes and commits the code | @mkencki |
+| Reviewer – approves the change into `main` | @mkencki |
+| Approver – releases and signs it | @mkencki |
 
 **This is stated plainly rather than dressed up.** A one-person project cannot separate these
 duties, and pretending otherwise would be the opposite of what a signature is for. What
@@ -75,7 +75,7 @@ traffic.
 - **Everything is local.** Accounts, macros, attachments and signed-in sessions live under
   `%APPDATA%\M-HUB` on the user's own machine. Nothing is uploaded or synchronised.
 - **The log is deliberately narrow.** `src/main/log.js` writes only the fields on an explicit
-  allow-list — account id, platform, error code, reason, count, duration. Page titles are
+  allow-list – account id, platform, error code, reason, count, duration. Page titles are
   excluded on purpose, because they carry the unread counts *and the names of the people in
   the conversation*. The log is meant to be safe to send to somebody who is helping.
 - **The application's own name is removed from the User-Agent**, so the services an account
@@ -91,8 +91,8 @@ switch off.
 
 The project has a standing boundary, enforced by a test rather than by a promise
 ([`tests/boundaries.test.js`](https://github.com/mkencki/m-hub/blob/main/tests/boundaries.test.js)):
-it contains no library that reaches into WhatsApp Web's internals — `wppconnect`,
-`@wppconnect/wa-js`, `whatsapp-web.js`, `baileys` and `venom-bot` are all refused by that test —
+it contains no library that reaches into WhatsApp Web's internals – `wppconnect`,
+`@wppconnect/wa-js`, `whatsapp-web.js`, `baileys` and `venom-bot` are all refused by that test –
 and it never synthesises input to send a message on the user's behalf. It contains no feature
 for identifying or exploiting security vulnerabilities and none for circumventing any security
 measure.
@@ -109,7 +109,7 @@ their setup. To remove them as well, delete `%APPDATA%\M-HUB` by hand.
 
 ## Reporting a problem with a signed binary
 
-If a file signed in this project's name looks wrong — a signature that does not match, a
+If a file signed in this project's name looks wrong – a signature that does not match, a
 SHA256 that differs from the release page, a binary obtained from anywhere but the Releases
-page — open an issue at https://github.com/mkencki/m-hub/issues, or write to the address on
+page – open an issue at https://github.com/mkencki/m-hub/issues, or write to the address on
 the GitHub profile @mkencki. Reports about a signed artefact are answered before feature work.
