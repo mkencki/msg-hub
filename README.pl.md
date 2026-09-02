@@ -173,6 +173,8 @@ telemetrii.
 
 ## Dokumentacja
 
+- [`docs/typography.md`](docs/typography.md)
+  – znaki, których używają oba języki, i test, który tego pilnuje
 - [`docs/design.md`](docs/design.md)
   – projekt: audyt, architektura, model danych, granice bezpieczeństwa, odrzucone warianty
 

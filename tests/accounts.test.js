@@ -312,7 +312,7 @@ describe('who is allowed to interrupt', () => {
 
 // Mirrored for the renderer, which cannot import this module. A copy is a liability unless
 // something notices when the two disagree.
-test('the renderer’s copy of the notification defaults matches the real ones', () => {
+test('the copy of the notification defaults in the renderer matches the real ones', () => {
   for (const [name, platform] of Object.entries(PLATFORMS)) {
     expect(PLATFORM_DEFAULT_NOTIFICATIONS[name], name).toBe(platform.notifyByDefault === true)
   }

@@ -208,6 +208,7 @@ language and show a bare key in the other.
 ## Documentation
 
 - [`docs/installing.md`](docs/installing.md) – what Windows does to an unsigned installer, and why
+- [`docs/typography.md`](docs/typography.md) – the characters the two languages use, and the test that enforces them
 - [`docs/design.md`](docs/design.md) – the design: audit, architecture, data model, security boundaries, rejected alternatives
 
 ## Stack
