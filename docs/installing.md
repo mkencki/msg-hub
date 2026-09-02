@@ -18,8 +18,8 @@ Windows. Do not do it for one app. Instead, run M-HUB from source, which works e
 App Control enabled, because Electron's own binary is trusted:
 
 ```
-git clone https://github.com/mkencki/msg-hub.git
-cd msg-hub
+git clone https://github.com/mkencki/m-hub.git
+cd m-hub
 npm install
 npm start
 ```
@@ -47,8 +47,8 @@ Windows. Nie rób tego dla jednej aplikacji. Uruchom M-HUB ze źródeł — to d
 włączonym Smart App Control, bo binarka Electrona jest zaufana:
 
 ```
-git clone https://github.com/mkencki/msg-hub.git
-cd msg-hub
+git clone https://github.com/mkencki/m-hub.git
+cd m-hub
 npm install
 npm start
 ```

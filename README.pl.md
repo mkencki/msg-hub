@@ -16,7 +16,9 @@ WhatsApp Web — a to grozi trwałą blokadą numeru.
 
 ## Instalacja
 
-Instalator leży w [Releases](https://github.com/mkencki/msg-hub/releases).
+Instalator leży w [Releases](https://github.com/mkencki/m-hub/releases). Każde wydanie niesie
+sumę SHA256 swojego instalatora, a to, kto podpisuje pliki i co aplikacja robi z danymi, opisuje
+[polityka podpisywania kodu](docs/code-signing-policy.md).
 
 > **Instalator nie jest podpisany cyfrowo.** Windows ostrzeże, a na czystej instalacji
 > Windows 11 **Smart App Control zablokuje go całkiem**. Przeczytaj
@@ -30,8 +32,11 @@ npm install
 npm start
 ```
 
-Repozytorium zostaje pod nazwą, pod którą było publikowane — `msg-hub` — bo przez nią
-prowadzą odnośniki wszystkich dotychczasowych wydań. Zmieniła się nazwa aplikacji.
+Repozytorium zmieniło nazwę na `m-hub` 2026-09-02, żeby zgadzała się z nazwą aplikacji.
+GitHub trzyma trwałe przekierowania, więc odnośniki opublikowane pod `mkencki/msg-hub` — w tym
+linki do plików w starszych wydaniach — nadal działają. Nie przekierowują się dwie rzeczy:
+witryny GitHub Pages i akcje hostowane w repozytorium, a tych projekt nie ma. Starej nazwy nie
+wolno użyć ponownie dla innego repozytorium, bo to zerwałoby przekierowania.
 
 ### Ikona na pasku zadań
 

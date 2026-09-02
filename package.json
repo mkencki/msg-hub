@@ -7,9 +7,9 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mkencki/msg-hub.git"
+    "url": "https://github.com/mkencki/m-hub.git"
   },
-  "homepage": "https://github.com/mkencki/msg-hub",
+  "homepage": "https://github.com/mkencki/m-hub",
   "main": "src/main/main.js",
   "type": "module",
   "private": true,

@@ -20,7 +20,9 @@ This app does neither. See **[What it will never do](#what-it-will-never-do)**.
 
 ## Install
 
-Download the installer from [Releases](https://github.com/mkencki/msg-hub/releases).
+Download the installer from [Releases](https://github.com/mkencki/m-hub/releases). Every
+release carries the SHA256 of its installer; who signs the binaries and what the application
+does with your data is set out in the [code signing policy](docs/code-signing-policy.md).
 
 > **The installer is not code-signed.** Windows will warn you, and on a clean Windows 11 install
 > **Smart App Control will block it outright**. Read
@@ -30,14 +32,17 @@ Download the installer from [Releases](https://github.com/mkencki/msg-hub/releas
 Running from source works even when Smart App Control is enabled:
 
 ```bash
-git clone https://github.com/mkencki/msg-hub.git
-cd msg-hub
+git clone https://github.com/mkencki/m-hub.git
+cd m-hub
 npm install
 npm start
 ```
 
-The repository keeps the name it was published under, `msg-hub`: every release link so far
-points through it. Only the application was renamed.
+The repository was renamed to `m-hub` on 2026-09-02, to match the application. GitHub keeps
+permanent redirects, so every link published under `mkencki/msg-hub` — including the download
+links in older releases — still resolves. Two things are NOT redirected: GitHub Pages sites and
+actions hosted in the repository, and this project has neither. The old name must never be
+reused for another repository, because that would break the redirects.
 
 ### The taskbar icon
 
