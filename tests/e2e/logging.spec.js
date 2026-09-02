@@ -41,6 +41,15 @@ test('the app writes a log where the operator can find it', async () => {
   expect(await readLog()).toContain('started')
 })
 
+// The count on the started line is the first thing to look at when somebody says their
+// accounts are gone: a profile that used to hold three and now says zero is the whole
+// diagnosis. It has to be the number the application actually loaded, not a placeholder.
+test('the started line says how many accounts the profile held', async () => {
+  await expect.poll(() => readLog().catch(() => null)).not.toBeNull()
+
+  expect(await readLog()).toContain('started count=1')
+})
+
 // The log is meant to be sent to somebody. Everything in it has to be safe to hand over,
 // which is why an account is recorded by its id and never by the name someone typed in –
 // that name is frequently a person.

@@ -77,7 +77,6 @@ async function createWindow() {
   const dataDir = app.getPath('userData')
   logDir = path.join(dataDir, 'logs')
   logger = createLogger(logDir)
-  logger.write('started', { count: 0 })
 
   // BEFORE the layout is read, because the layout is one of the things that may still be
   // sitting in the old profile. Version 0.5.0 gave the application a productName and Electron
@@ -547,6 +546,14 @@ async function createWindow() {
   // and the IPC channels must stand BEFORE loadFile. The other way round yields
   // "No handler registered for 'accounts:list'" and an empty rail.
   const { accounts } = await loadAccounts(path.join(dataDir, 'accounts.json'))
+
+  // Here rather than at the top of this function, because here the number is known. The line
+  // used to be written the moment the logger existed and carried a hardcoded zero, so it said
+  // nothing at all – and the one question it should answer is the first a helper asks when
+  // somebody reports that their accounts are gone. A start that never reaches this point
+  // leaves no started line, which is what failing to start ought to look like.
+  logger.write('started', { count: accounts.length })
+
   for (const account of accounts) prepareView(manager.add(account), account)
   fitViews()
   if (accounts.length) manager.show(accounts[0].id)
