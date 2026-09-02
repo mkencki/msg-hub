@@ -33,6 +33,10 @@ does with your data is set out in the [code signing policy](docs/code-signing-po
 > **[docs/installing.md](docs/installing.md)** before you download – it explains
 > which of the two you are seeing and what to do about each.
 
+That is being dealt with: M-HUB is applying to the [SignPath Foundation](https://signpath.org/)
+for the free code signing it offers open source projects. Until the application is granted,
+releases stay unsigned.
+
 Running from source works even when Smart App Control is enabled:
 
 ```bash

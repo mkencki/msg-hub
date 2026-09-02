@@ -29,6 +29,10 @@ sumę SHA256 swojego instalatora, a to, kto podpisuje pliki i co aplikacja robi 
 > **[docs/installing.md](docs/installing.md)** – tłumaczy, którą z dwóch
 > reakcji właśnie widzisz i co z każdą zrobić.
 
+Jest to w toku: M-HUB ubiega się w [SignPath Foundation](https://signpath.org/) o darmowe
+podpisywanie kodu, które fundacja oferuje projektom open source. Dopóki wniosek nie zostanie
+rozpatrzony, wydania pozostają niepodpisane.
+
 Uruchomienie ze źródeł działa nawet przy włączonym Smart App Control:
 
 ```bash
