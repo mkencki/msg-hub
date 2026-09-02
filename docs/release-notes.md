@@ -1,5 +1,20 @@
 # Release notes
 
+## 0.5.5 – the log says how many accounts it found
+
+**The first line of the log now carries a number that means something.** It always read
+`started count=0`, whatever the profile held. The line was written the moment the log file
+existed, which is before the accounts have been read, and the zero was a placeholder nothing
+ever replaced. It now reports how many accounts actually loaded.
+
+That is the first thing to look at when accounts appear to have vanished, and it is a question
+this application has already had to answer: the 0.5.0 rename moved the profile directory and
+left every account behind. A log reading `count=3` and then `count=0` would have said so at
+once, instead of needing an afternoon to work out.
+
+A start that never gets as far as reading the profile now leaves no `started` line at all,
+which is what failing to start ought to look like. Nothing else changed.
+
 ## 0.5.4 – one dash, and quotations that close
 
 **Nothing about how the application behaves has changed.** No new setting, no fixed crash,
