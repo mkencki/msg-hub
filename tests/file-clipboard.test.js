@@ -157,7 +157,7 @@ describe('createClipboardSession – the session that has to survive a bad day',
   // stdio is ['pipe','pipe','pipe'], so the child writes its errors into a pipe with a
   // finite buffer. Nobody was reading it. A PowerShell that says enough on stderr fills that
   // buffer and then BLOCKS – and every attachment after it waits out the timeout.
-  test('the child’s stderr is drained, or the child eventually blocks on it', () => {
+  test('stderr from the child is drained, or the child eventually blocks on it', () => {
     const fake = silentProcess()
 
     createClipboardSession(() => fake).warmUp()
