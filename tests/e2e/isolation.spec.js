@@ -48,7 +48,7 @@ test('the User-Agent gives away neither Electron nor this application', async ()
   expect(ua).not.toMatch(/Electron/i)
 
   // The name is ASKED OF THE RUNNING APPLICATION, not written here. This assertion used to
-  // read `not.toMatch(/msg-hub/i)`, which is green whatever the application is called — so
+  // read `not.toMatch(/msg-hub/i)`, which is green whatever the application is called – so
   // on the day it was renamed it would have gone on passing while the new name went out to
   // Meta's servers in the User-Agent of every request.
   expect(name).toBeTruthy()

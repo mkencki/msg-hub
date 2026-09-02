@@ -1,6 +1,6 @@
 // Assembles a Windows .ico out of ready PNG frames. The format has allowed whole PNGs inside
 // since Vista, so the entire file is a header, one directory entry per frame, and the frames
-// themselves — no encoder to write and no dependency to keep up to date.
+// themselves – no encoder to write and no dependency to keep up to date.
 //
 // 256 is the largest size an entry can address: width and height are single bytes, written as
 // zero and read back as 256. The 512 and 1024 PNGs stay in the set for everything that is not

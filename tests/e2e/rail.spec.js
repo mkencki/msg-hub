@@ -17,7 +17,7 @@ const AWAY = { x: 600, y: 300 }
 let dataDir
 let electronApp
 let page
-// BrowserWindow.getAllWindows() puts the NEWEST window first — measured, opening a second
+// BrowserWindow.getAllWindows() puts the NEWEST window first – measured, opening a second
 // one moved the app's own window to index 1. One test here deliberately opens another
 // window, so nothing may reach for the app's window by position.
 let appWindowId
@@ -39,7 +39,7 @@ async function addAccount(name = 'WhatsApp test') {
 // The rail reacts to the POINTER, and Playwright's hover() cannot move the physical one:
 // it dispatches an event through the debugger while the real cursor stays wherever the
 // person running the tests left it. Chromium then corrects the fiction on the next real
-// mouse event — measured 2026-08-25, mouseenter arrived with clientX 24 and a mouseleave
+// mouse event – measured 2026-08-25, mouseenter arrived with clientX 24 and a mouseleave
 // followed 20 ms later with clientX 1260, the true cursor position. Whether the assertion
 // or the correction got there first decided the result, which is why this file passed 20
 // runs out of 20 on an idle machine and failed once in 8 while a second Electron window
@@ -47,7 +47,7 @@ async function addAccount(name = 'WhatsApp test') {
 //
 // So the premise is made true instead of pretended: the WINDOW is moved until the wanted
 // point of its content sits under the physical cursor. The operator's mouse is never
-// touched — a test suite that grabbed the mouse would be worse than a flaky one.
+// touched – a test suite that grabbed the mouse would be worse than a flaky one.
 const parkPointer = ({ x, y }) =>
   electronApp.evaluate(({ BrowserWindow, screen }, { id, x, y }) => {
     const window = BrowserWindow.fromId(id)
@@ -82,7 +82,7 @@ test('the rail starts collapsed, so the account view gets more room', async () =
   await addAccount()
 
   // Poll, not a bare read. A channel appears in the rail once the renderer has the account
-  // list, but the native view is created by the main process in response to the switch —
+  // list, but the native view is created by the main process in response to the switch –
   // between the two there is a window in which children is still empty.
   await expect.poll(viewLeftEdge).toBe(COLLAPSED + MARGIN)
 })
@@ -98,7 +98,7 @@ test('hovering expands the rail and pushes the account view aside', async () => 
 })
 
 // Losing the foreground is not the operator moving away. Chromium reports it as a
-// mouseleave all the same, carrying the pointer position it had all along — measured
+// mouseleave all the same, carrying the pointer position it had all along – measured
 // 2026-08-25 at clientX 24 inside a rail box of 0..162, with the cursor never moved, and
 // the rail collapsed on 3 attempts out of 3. Acting on it shuts the rail under the cursor
 // of someone who never touched it, and it stays shut after they click back.
@@ -115,7 +115,7 @@ test('a leave reported while another window holds the foreground leaves the rail
 
   // Another window genuinely takes the foreground, rather than blur() being asked to
   // pretend. On Windows a window that nothing replaces stays the foreground window and
-  // isFocused() goes on answering true — measured, blur() alone left it focused in 16 runs
+  // isFocused() goes on answering true – measured, blur() alone left it focused in 16 runs
   // out of 20.
   await electronApp.evaluate(({ BrowserWindow }) => {
     globalThis.__thief = new BrowserWindow({ width: 240, height: 160 })

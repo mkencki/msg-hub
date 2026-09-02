@@ -6,7 +6,7 @@ import path from 'node:path'
 // A profile written on a desk with external monitors, opened on a desk without them. Measured
 // on 2026-09-01: a layout carrying x=-1394 y=972 put the window where no screen was, and a
 // later one put it on a second monitor the operator was not looking at. Either way the
-// application was running and unreachable — the window is what the application IS.
+// application was running and unreachable – the window is what the application IS.
 //
 // The position in the fixture is deliberately absurd. It is not a place any monitor could be,
 // so if the window turns up inside the work area the position was not the thing that decided.

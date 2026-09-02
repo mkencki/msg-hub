@@ -54,7 +54,7 @@ test('a macro with neither content nor attachment reports that there is nothing 
 })
 
 // The bar at the top lies OUTSIDE the dialog, and a modal freezes everything around it. An
-// error raised by an open editor has to stay in the editor — otherwise the operator sees red
+// error raised by an open editor has to stay in the editor – otherwise the operator sees red
 // text they can neither dismiss nor connect to the field it concerns.
 test('a failed macro save stays in the editor and does not escape to the bar above the modal', async () => {
   await page.locator('#open-macros').click()
@@ -92,7 +92,7 @@ test('a message in the bar can be dismissed with the button', async () => {
 })
 
 // The hidden attribute works through [hidden] { display: none } in the UA stylesheet. Any
-// author display on the same element beats it and the bar stays visible despite hidden —
+// author display on the same element beats it and the bar stays visible despite hidden –
 // a trap we have already fallen into once here.
 test('a bar carrying the hidden attribute really is invisible', async () => {
   const wyliczony = await page.evaluate(

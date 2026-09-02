@@ -42,7 +42,7 @@ const viewHasFocus = () =>
   )
 
 // Ctrl+; deliberately moves focus to the renderer, or the palette opens and cannot be typed
-// in. Nothing in this application moves it back afterwards — and yet it comes back, because
+// in. Nothing in this application moves it back afterwards – and yet it comes back, because
 // closing a <dialog> returns focus to what held it before, and here that is a NATIVE view
 // sitting above the renderer rather than an element inside it.
 //
@@ -53,7 +53,7 @@ test('after inserting a macro the keyboard is back in the account', async () => 
   // The precondition is established rather than assumed, and asserted before the thing under
   // test: a window that is not in front has no keyboard to give anybody, and focus() inside
   // one does nothing at all. Without this the test fails on a busy machine and points at the
-  // wrong thing — measured, once in four full suite runs.
+  // wrong thing – measured, once in four full suite runs.
   await electronApp.evaluate(({ BrowserWindow }) => {
     const w = BrowserWindow.getAllWindows()[0]
     w.show()
@@ -79,7 +79,7 @@ test('after inserting a macro the keyboard is back in the account', async () => 
 })
 
 // Measured 2026-08-25: with no editable field focused in the page, webContents.paste() does
-// nothing AT ALL and says nothing about it — the probe found activeElement on BODY and both
+// nothing AT ALL and says nothing about it – the probe found activeElement on BODY and both
 // fields empty. The status bar nonetheless announced the macro as inserted. The app cannot
 // find out whether the paste landed without reading the page, which rule 7.3 forbids, so the
 // right move is to stop claiming certainty rather than to go and get it.

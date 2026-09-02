@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest'
 import { pasteAttachments } from '../src/main/bridge.js'
 
-// THE DOUBLED BACKSLASHES ARE THE POINT — see the same warning in file-clipboard.test.js.
+// THE DOUBLED BACKSLASHES ARE THE POINT – see the same warning in file-clipboard.test.js.
 // Written with one, 'C:\data\att\a.pdf' parses to C:dataatta.pdf and the test exercises a
 // string that is not a path. This file was written that way first and the assertion caught
 // it, which is the only reason the note is here twice.

@@ -17,7 +17,7 @@ import { t, validLanguage } from '../shared/i18n.js'
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 
 // Console geometry. The channel rail stands on the left, the status bar along the
-// bottom, and the account view sits INSIDE the frame the renderer draws — the margin
+// bottom, and the account view sits INSIDE the frame the renderer draws – the margin
 // leaves room for the edge painted in the active account's colour.
 //
 // An unpinned rail collapses to bare channel colours and expands when the cursor
@@ -31,7 +31,7 @@ const WELL_MARGIN = 10
 const MACRO_SHORTCUT = 'Control+Shift+Space'
 // How long a finished download stays on the status bar. Long enough to read it and reach the
 // button beside it; short enough that a success does not have to be dismissed by hand, which
-// is the complaint this whole path exists to answer. A FAILED download does not disappear —
+// is the complaint this whole path exists to answer. A FAILED download does not disappear –
 // that one the operator has to notice.
 const DOWNLOAD_MESSAGE_MS = 8000
 
@@ -40,7 +40,7 @@ const DOWNLOAD_MESSAGE_MS = 8000
 app.userAgentFallback = cleanUserAgent(app.userAgentFallback, app.getName())
 
 // Windows attributes a toast to an application by this identifier, and until now it lived
-// only in the electron-builder configuration — that is, in the installer, not in the running
+// only in the electron-builder configuration – that is, in the installer, not in the running
 // process. Electron exposes a setter and no getter, so this one is verified by reading it
 // rather than by a test.
 //
@@ -64,7 +64,7 @@ let logDir
 // Closing the window hides it; only a deliberate Quit ends the process. Without this flag
 // the close handler could not tell the two apart and Quit would hide the window forever.
 let quitting = false
-// Armed only while an account's zero is being held — see refreshBadge.
+// Armed only while an account's zero is being held – see refreshBadge.
 let badgeTimer = null
 
 // Interface language. The main process owns the stored value, while the list of
@@ -112,7 +112,7 @@ async function createWindow() {
 
   // The primary monitor is whichever one the operator has told Windows is theirs, and it
   // changes with the desk: two external screens some days, the laptop's own on others. A
-  // position remembered from one arrangement is wrong in the next, so it is not remembered —
+  // position remembered from one arrangement is wrong in the next, so it is not remembered –
   // it is worked out here, at every start. screen is safe to ask now: createWindow runs after
   // app.whenReady().
   const bounds = centreOn(screen.getPrimaryDisplay().workArea, layout)
@@ -130,8 +130,8 @@ async function createWindow() {
   window.setTitle('M-HUB')
   if (layout.maximized) window.maximize()
 
-  // An account view is a native layer ABOVE the renderer: while it holds focus — which
-  // is most of the working time — the keyboard never reaches the main window and the
+  // An account view is a native layer ABOVE the renderer: while it holds focus – which
+  // is most of the working time – the keyboard never reaches the main window and the
   // renderer's shortcuts are dead. The interceptor is therefore attached to EVERY
   // webContents, not just the window. With no menu there is also no "Toggle Developer
   // Tools" item, so F12 is the only way into the messenger page's console.
@@ -158,8 +158,8 @@ async function createWindow() {
       // in normal use the keyboard is inside an account page, where Tab never gets to
       // them. The renderer is asked to switch rather than the manager being told directly:
       // it already owns switching, and going round it would leave the rail highlighting
-      // the account the operator just left. Services grab Ctrl+digit for themselves —
-      // Discord does — so the key is taken out of the page's reach.
+      // the account the operator just left. Services grab Ctrl+digit for themselves –
+      // Discord does – so the key is taken out of the page's reach.
       if (input.control && !input.shift && !input.alt && /^[1-9]$/.test(input.key)) {
         _event.preventDefault()
         window.webContents.send('accounts:select', Number(input.key) - 1)
@@ -167,10 +167,10 @@ async function createWindow() {
       }
 
       // Ctrl+; pressed in the main window is handled by the renderer's own listener on
-      // window. Here we intercept only the key that landed in an account view —
+      // window. Here we intercept only the key that landed in an account view –
       // otherwise the same shortcut would fire twice.
       if (input.control && input.key === ';' && webContents !== window.webContents) {
-        // The panel is drawn by the main window's renderer — and focus has to return
+        // The panel is drawn by the main window's renderer – and focus has to return
         // there too, or the operator opens the panel and cannot type in it.
         window.webContents.focus()
         window.webContents.send('macros:open')
@@ -184,7 +184,7 @@ async function createWindow() {
   // A modal freezes the whole application and demands a click, and one account failing
   // to load should not block the others.
   // A message may carry an OFFER: something the operator can act on from the status bar. It
-  // is an offer and not an action because the only thing on offer here — reloading — throws
+  // is an offer and not an action because the only thing on offer here – reloading – throws
   // away whatever is half-typed in a composer.
   // A message also carries a TONE, an IDENTITY and, sometimes, a request to disappear on its
   // own. The identity is what makes the last of those safe: a message that asked to be hidden
@@ -200,7 +200,7 @@ async function createWindow() {
   }
 
   manager = new ViewManager(window, app.userAgentFallback, ({ account, code, description }) => {
-    // The description comes from Chromium and names a failure, not a page — ERR_NAME_NOT_
+    // The description comes from Chromium and names a failure, not a page – ERR_NAME_NOT_
     // RESOLVED and its kin. It is the one string here worth keeping.
     logger.write('account-load-failed', { account: account.id, platform: account.platform, code, reason: description })
     showMessage(tr('loadAccountFailed', { account: account.name, code, description }), {
@@ -240,7 +240,7 @@ async function createWindow() {
   // the views, so the renderer only reports events and receives a finished decision.
   ipcMain.handle('rail:state', () => railState())
 
-  // Not every mouseleave the renderer reports means the pointer left — see
+  // Not every mouseleave the renderer reports means the pointer left – see
   // acceptHoverReport in shell.js, where the rule and the measurement behind it live.
   ipcMain.handle('rail:hover', (_event, hovered, pointerStillInside) => {
     if (!acceptHoverReport({ hovered, pointerStillInside, windowFocused: window.isFocused() })) return
@@ -257,7 +257,7 @@ async function createWindow() {
   window.on('resize', fitViews)
 
   // acceptHoverReport holds back a leave reported from inside the rail while the window was
-  // in the background — but holding one back loses it, and Chromium sends no second one
+  // in the background – but holding one back loses it, and Chromium sends no second one
   // once it considers the pointer gone. So the moment the window is back in front, ask the
   // renderer where the pointer actually is now instead of living on the stale answer.
   window.on('focus', () => {
@@ -268,7 +268,7 @@ async function createWindow() {
     const rect = window.getNormalBounds()
     return {
       // No x or y. The window is centred on the primary monitor at every start, so a stored
-      // position would be a fact nothing reads — and the kind that rots quietly: the value
+      // position would be a fact nothing reads – and the kind that rots quietly: the value
       // this file carried on 2026-09-01 pointed at a monitor that was no longer there.
       width: rect.width,
       height: rect.height,
@@ -304,7 +304,7 @@ async function createWindow() {
 
   ipcMain.handle('downloads:settings', () => downloadSettings())
 
-  // Explorer is handed a path this process recorded under that id — see the note on the map.
+  // Explorer is handed a path this process recorded under that id – see the note on the map.
   ipcMain.handle('downloads:show', (_event, downloadId) => {
     const savedAs = downloads.get(downloadId)
     if (!savedAs) return false
@@ -325,7 +325,7 @@ async function createWindow() {
     return downloadSettings()
   })
 
-  // A folder, not a file. Cancelling means "leave it as it was" rather than "clear it" —
+  // A folder, not a file. Cancelling means "leave it as it was" rather than "clear it" –
   // backing out of a picker is not a decision to change anything.
   ipcMain.handle('downloads:pick-dir', async () => {
     const result = await dialog.showOpenDialog(window, {
@@ -353,7 +353,7 @@ async function createWindow() {
   })
 
   // app.setBadgeCount works only on Linux and macOS. On Windows the count is shown by an
-  // overlay on the taskbar icon, and that needs a 16x16 image — the renderer draws it and
+  // overlay on the taskbar icon, and that needs a 16x16 image – the renderer draws it and
   // sends it back over unread:overlay. The window title and tray tooltip are the fallback,
   // visible even when the overlay does not take.
   const refreshBadge = () => {
@@ -365,12 +365,12 @@ async function createWindow() {
     const total = Object.values(byAccount).reduce((sum, n) => sum + n, 0)
     window.setTitle(total ? `M-HUB (${total})` : 'M-HUB')
     tray?.setToolTip(total ? tr('trayUnread', { n: total }) : 'M-HUB')
-    // The renderer also gets the per-account breakdown — the rail shows a count on each.
+    // The renderer also gets the per-account breakdown – the rail shows a count on each.
     if (!window.webContents.isDestroyed()) window.webContents.send('unread:changed', { total, byAccount })
 
     // A count being held at its last non-zero value has nothing to wake it: the page that
     // stopped blinking stopped sending titles too. One timer, rearmed on every pass, and
-    // never more than one — the fifty milliseconds are there so the deadline has actually
+    // never more than one – the fifty milliseconds are there so the deadline has actually
     // passed by the time the badge is worked out again, rather than being reached exactly.
     if (badgeTimer) clearTimeout(badgeTimer)
     badgeTimer = null
@@ -386,7 +386,7 @@ async function createWindow() {
   })
 
   // Until this existed a link in a conversation opened a BARE Electron window: no address
-  // bar, no back, no reload, and inside the account's signed-in session — measured, the
+  // bar, no back, no reload, and inside the account's signed-in session – measured, the
   // popup's session was the very same object as the view's. Which decision an address gets
   // is navigation.js's business; this is only the wiring.
   const gateNavigation = (view, account) => {
@@ -437,7 +437,7 @@ async function createWindow() {
 
     // Only will-navigate, deliberately. A redirect is the continuation of a navigation that
     // was already allowed, and sign-in flows legitimately pass through hosts nobody can
-    // enumerate in advance — gating those would break the sign-in rather than protect it.
+    // enumerate in advance – gating those would break the sign-in rather than protect it.
     // The rule is where a navigation CAME FROM, not where it is heading.
     view.webContents.on('will-navigate', (event, address) => {
       const verdict = classify(platform, address)
@@ -456,7 +456,7 @@ async function createWindow() {
 
       // Which of the two happens is decided in downloads.js, where it can be tested: the
       // asking branch ends in a modal no end-to-end test can answer, so it used to be the one
-      // branch nothing exercised — and it is the default.
+      // branch nothing exercised – and it is the default.
       const plan = planSave({ ask: askWhereToSave, folder: target, filename, exists: existsSync })
       if (plan.mode === 'dialog') item.setSaveDialogOptions({ defaultPath: plan.defaultPath })
       else item.setSavePath(plan.savePath)
@@ -489,7 +489,7 @@ async function createWindow() {
   const prepareView = (view, account) => {
     // The account object is re-read rather than captured, so turning notifications off in
     // Settings takes effect on the next request instead of on the next restart. A page asks
-    // once and remembers the answer, so a refusal also needs the page reloading — which the
+    // once and remembers the answer, so a refusal also needs the page reloading – which the
     // status bar offers anyway.
     view.webContents.session.setPermissionRequestHandler(async (_wc, permission, grant) => {
       if (permission !== 'notifications') return grant(false)
@@ -503,7 +503,7 @@ async function createWindow() {
     // Clicking a Windows toast hands focus to the view the toast came from, and nothing
     // else moved with it: the rail went on showing the account the operator had walked
     // away from, and the conversation they were sent to opened inside a view zero pixels
-    // tall. The renderer is asked to switch, for the same reason as Ctrl+1..9 — it owns
+    // tall. The renderer is asked to switch, for the same reason as Ctrl+1..9 – it owns
     // switching, and going round it desynchronises the rail.
     //
     // show() ends by focusing the view it just showed, so answering every focus event
@@ -568,7 +568,7 @@ async function createWindow() {
     showMessage(tr('wokeUp'), { offer: { action: 'reload', accountId: manager.activeId } })
   })
 
-  // The one shortcut that has to work when the app is not in front at all — that is the
+  // The one shortcut that has to work when the app is not in front at all – that is the
   // whole point of a macro palette for someone typing in another program. register()
   // answers with a boolean and says nothing when another program already owns the
   // combination, and silence would look exactly like a shortcut that works.
@@ -585,7 +585,7 @@ async function createWindow() {
     showMessage(tr('shortcutTaken', { shortcut: MACRO_SHORTCUT }))
   }
 
-  // Saving the layout must FINISH before the window closes — otherwise app.quit() cuts
+  // Saving the layout must FINISH before the window closes – otherwise app.quit() cuts
   // the asynchronous write short and the window position does not survive a restart. The
   // same write has to happen on the way to the tray, because from there the process may
   // well end without another close ever being seen.
@@ -605,11 +605,11 @@ async function createWindow() {
   })
 }
 
-// Rebuilt rather than mutated, because Electron's Menu is immutable once set — this is
+// Rebuilt rather than mutated, because Electron's Menu is immutable once set – this is
 // also how the tray follows a language change.
 function buildTray() {
   if (!tray) {
-    // An empty tray icon is INVISIBLE on Windows — it has to be a real image.
+    // An empty tray icon is INVISIBLE on Windows – it has to be a real image.
     tray = new Tray(nativeImage.createFromPath(TRAY_ICON).resize({ width: 16, height: 16 }))
     tray.setToolTip('M-HUB')
     tray.on('click', () => (window?.isVisible() ? window.hide() : window?.show()))
@@ -625,7 +625,7 @@ function buildTray() {
       },
       {
         // The log only earns its keep if the person it is for can find it. Everything in it
-        // is written by this app and is safe to send on — see src/main/log.js.
+        // is written by this app and is safe to send on – see src/main/log.js.
         label: tr('trayOpenLogs'),
         click: () => {
           if (logDir) shell.openPath(logDir)
@@ -664,7 +664,7 @@ if (!app.requestSingleInstanceLock()) {
   })
 }
 
-// Anything that ends the application — the tray menu, a session ending, a task manager —
+// Anything that ends the application – the tray menu, a session ending, a task manager –
 // arrives here first, and from here on a close means a close.
 app.on('before-quit', () => {
   quitting = true

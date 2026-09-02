@@ -6,7 +6,7 @@ import { UnreadLatch } from './unread.js'
 // whatever this application is called goes out to Meta's servers on every request unless it is
 // taken out here.
 //
-// The name is an ARGUMENT and not a literal. Written into the expression — as `msg-hub` was —
+// The name is an ARGUMENT and not a literal. Written into the expression – as `msg-hub` was –
 // it stops matching on the day the application is renamed, and it fails in the quietest way
 // there is: the new name simply starts appearing in the User-Agent, while the test guarding
 // this stays green, because the test was written against the old literal too.
@@ -25,7 +25,7 @@ export function cleanUserAgent(defaultUA, appName) {
 //   document.title = r > 99 ? `(99+) ${e}` : r > 0 ? `(${r}) ${e}` : e
 // A pattern demanding digits and then a closing bracket reads "(99+) LinkedIn" as zero, so
 // the badge disappeared exactly when the account was busiest. LinkedIn's own clean-up regex
-// treats the plus as a first-class case — \(\d+\+?\) — and so does this one.
+// treats the plus as a first-class case – \(\d+\+?\) – and so does this one.
 export function unreadFromTitle(title) {
   const hit = /^\((\d+)\+?\)/.exec(String(title || '').trim())
   return hit ? Number(hit[1]) : 0
@@ -41,7 +41,7 @@ export function createView(account, defaultUA, onError = () => {}, View = WebCon
       nodeIntegration: false,
       sandbox: true,
       // Chromium treats a view of zero height as a hidden tab and slows its timers by an
-      // order of magnitude — measured 2026-08-25: 101 ticks of a 100 ms timer in ten
+      // order of magnitude – measured 2026-08-25: 101 ticks of a 100 ms timer in ten
       // seconds while active, 10 while hidden. Every account but the current one is
       // exactly that, and once the window goes to the tray so is the current one, which
       // is the state this application exists to be useful in.
@@ -56,7 +56,7 @@ export function createView(account, defaultUA, onError = () => {}, View = WebCon
 
   // Spec section 8: a failed load must produce a visible message, not a blank window.
   // A rejection based on the User-Agent cannot be detected programmatically without
-  // reading the page DOM, and that would break rule 7.2 — so the message names both
+  // reading the page DOM, and that would break rule 7.2 – so the message names both
   // possible causes instead of guessing.
   view.webContents.on('did-fail-load', (_event, code, description, url, isMainFrame) => {
     if (!isMainFrame || code === -3) return // -3 = aborted by the user
@@ -103,7 +103,7 @@ export class ViewManager {
     const view = this.views.get(accountId)
     if (!view) return false
     this.window.contentView.removeChildView(view)
-    // Listeners come off BEFORE closing — otherwise the closing view still manages
+    // Listeners come off BEFORE closing – otherwise the closing view still manages
     // to fire a callback that reaches for an object which no longer exists.
     view.webContents.removeAllListeners('page-title-updated')
     view.webContents.removeAllListeners('did-fail-load')
@@ -128,8 +128,8 @@ export class ViewManager {
     this.views.get(accountId).webContents.focus()
   }
 
-  // The only way back into a view that has gone stale — a laptop waking to find WhatsApp
-  // saying the computer is not connected — used to be restarting the application and taking
+  // The only way back into a view that has gone stale – a laptop waking to find WhatsApp
+  // saying the computer is not connected – used to be restarting the application and taking
   // every other account down with it. Reloading throws away whatever is half-typed in the
   // composer, so this is never called on a timer; something has to ask for it.
   reload(accountId) {

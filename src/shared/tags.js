@@ -4,7 +4,7 @@
 
 // Tags are typed as one line separated by commas, because that is how anyone types a short
 // list. Case is settled here rather than at search time: search lowercases what it is looking
-// for, so a tag stored with a capital would answer to "Zone" and be invisible to "zone" —
+// for, so a tag stored with a capital would answer to "Zone" and be invisible to "zone" –
 // which is what a person actually types.
 export function parseTags(input) {
   const seen = new Set()

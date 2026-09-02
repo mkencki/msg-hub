@@ -30,7 +30,7 @@ test.beforeEach(async () => {
     .toBe(1)
 
   // None of this is about the service page: about:blank gives the view a real document to
-  // lose when it reloads. Blanked the careful way — see blankTheViews.
+  // lose when it reloads. Blanked the careful way – see blankTheViews.
   await blankTheViews(electronApp)
 })
 
@@ -52,7 +52,7 @@ const markSurvives = () =>
       .contentView.children[0].webContents.executeJavaScript('window.__mark === "here"'),
   )
 
-// Really crashing the renderer takes Playwright's own connection down with it — measured,
+// Really crashing the renderer takes Playwright's own connection down with it – measured,
 // the run ends with "Target crashed" before any assertion runs. What is under test here is
 // what the app DOES when Electron reports a dead renderer; delivering that report is
 // Electron's job, so the report is delivered directly.
@@ -63,7 +63,7 @@ const reportCrash = () =>
   })
 
 // Playwright's keyboard goes in through the debugger and never reaches before-input-event
-// — measured while writing tests/e2e/channel-shortcuts.spec.js, where the interceptor saw
+// – measured while writing tests/e2e/channel-shortcuts.spec.js, where the interceptor saw
 // nothing at all. sendInputEvent takes the path a real key takes.
 const pressInWindow = (key) =>
   electronApp.evaluate(({ BrowserWindow }, code) => {
@@ -81,7 +81,7 @@ const pressInView = (key) =>
   }, key)
 
 // A laptop coming back from sleep leaves WhatsApp Web saying the computer is not connected,
-// and until now the only cure was restarting the whole application — taking every other
+// and until now the only cure was restarting the whole application – taking every other
 // account down with it. F12 and Ctrl+R inside the developer tools did work, which is a way
 // out for whoever knows it is there and no way out at all for anyone else.
 test('Ctrl+R reloads the account the operator is looking at', async () => {
@@ -124,7 +124,7 @@ test('the offered reload really reloads, and the message gets out of the way', a
 
   await page.locator('#reload-account').click()
 
-  // The page is gone and built again — which is what reloading is. The address does not
+  // The page is gone and built again – which is what reloading is. The address does not
   // change, because reloading is not navigating.
   await expect.poll(markSurvives).toBe(false)
   await expect(page.locator('#message')).toBeHidden()

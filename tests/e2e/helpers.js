@@ -2,7 +2,7 @@
 // instead of establishing one, and then failed for a reason that had nothing to do with what
 // it was testing.
 
-// The status bar can already be carrying something the application said at startup — most
+// The status bar can already be carrying something the application said at startup – most
 // often that another program owns the global macro shortcut, which is a system-wide exclusive
 // and, during a full suite run, is sometimes still held by the previous spec's application on
 // its way out. A test about a message raised by the action under test has to start from an
@@ -16,7 +16,7 @@ export async function clearStatusBar(page) {
 // Puts every account view on a blank document, in an order Chromium cannot resolve the wrong
 // way round.
 //
-// The obvious version — stop() the real page, then loadURL('about:blank') over it — is a
+// The obvious version – stop() the real page, then loadURL('about:blank') over it – is a
 // RACE, and two specs already carried comments saying so and calling it fixed. It was not.
 // Measured 2026-08-26 over six full suite runs: navigation.spec.js failed in FOUR of them,
 // always the same way, with the real page landing on top of the replacement:
@@ -24,7 +24,7 @@ export async function clearStatusBar(page) {
 //     Expected: "about:blank"   Received: "https://www.messenger.com/"
 //
 // stop() cancels the load that is in flight. A navigation Chromium has already handed on to
-// commit is no longer in flight, and nothing cancels that one — it arrives last and wins.
+// commit is no longer in flight, and nothing cancels that one – it arrives last and wins.
 //
 // So nothing is replaced while it is still moving. Waiting for the pending navigation to
 // COMMIT (did-navigate) or give up (did-fail-load) leaves nothing that could still land, and
@@ -37,7 +37,7 @@ export async function clearStatusBar(page) {
 export const blankTheViews = (electronApp) =>
   electronApp.evaluate(async ({ BrowserWindow }) => {
     // The question is whether the main frame has COMMITTED anything yet, and the answer is
-    // the URL — not isLoadingMainFrame(). Measured 2026-08-26 on the two views of
+    // the URL – not isLoadingMainFrame(). Measured 2026-08-26 on the two views of
     // notification-routing.spec.js: the second had already committed the real page and still
     // reported isLoadingMainFrame() true while it finished fetching what the page asked for.
     // No second did-navigate was ever coming, so waiting for one waited until the test timed

@@ -5,7 +5,7 @@
    is the colour of the active account. Account colours are chosen by the operator,
    so the chrome has to host them rather than compete with them.
 
-   Typefaces are system ones, with not a single network request — this app grew out
+   Typefaces are system ones, with not a single network request – this app grew out
    of a privacy audit, so fetching fonts from someone else's server on every start
    would contradict it. Bahnschrift is Microsoft's derivative of DIN 1451, the
    typeface of German road signs: the right pedigree for an operator's tool, and
@@ -177,7 +177,7 @@ body {
 #rail:not(.expanded) .rail-action { justify-content: center; padding: 9px 0; }
 
 #rail:not(.expanded) .chip { position: relative; width: 26px; height: 26px; border-radius: 7px; }
-/* Collapsed there is no name and no row background to read — the active channel has
+/* Collapsed there is no name and no row background to read – the active channel has
    to be recognisable from the tile alone, so it gets a bright ring. */
 #rail:not(.expanded) .channel[aria-selected="true"] .chip {
   box-shadow: 0 0 0 2px var(--panel), 0 0 0 3px var(--text);
@@ -197,7 +197,7 @@ body {
 /* ---------- the working well and the on-air edge ---------- */
 #well { grid-area: well; padding: 8px; min-width: 0; }
 
-/* The account view is a native layer ABOVE this frame — the main process gives it a
+/* The account view is a native layer ABOVE this frame – the main process gives it a
    rectangle exactly inside the border (WELL_MARGIN in main.js). */
 #well-inset {
   height: 100%;
@@ -257,7 +257,7 @@ body {
 .errors { color: var(--lamp); min-height: 1em; font-family: var(--font-prose); font-size: 12.5px; }
 
 #message { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1; }
-/* The hidden attribute works through [hidden]{display:none} in the UA stylesheet —
+/* The hidden attribute works through [hidden]{display:none} in the UA stylesheet –
    the author display above beats it, so the bar has to be hidden explicitly. */
 #message[hidden] { display: none; }
 #message[data-tone="info"] { color: var(--muted); }
@@ -342,7 +342,7 @@ dialog input[type="color"] { padding: 2px; height: 30px; cursor: pointer; }
 
 #account-errors, #macro-errors { margin: 0 16px 10px; }
 
-/* Language is the only setting that concerns no particular account — it gets its own
+/* Language is the only setting that concerns no particular account – it gets its own
    row above the footer, ruled off from the list so it does not read as another
    account. The class outranks "dialog label" and "dialog select" on specificity, so
    the column direction and the 100% width do not come back from there. */
@@ -409,7 +409,7 @@ button:disabled { opacity: .3; cursor: default; }
 
 /* ---------- the macro palette ---------- */
 /* width:auto would undo dialog input{width:100%} and the field would shrink to its
-   default size — the margins have to be subtracted explicitly. */
+   default size – the margins have to be subtracted explicitly. */
 #macro-search {
   display: block;
   width: calc(100% - 32px);
@@ -538,7 +538,7 @@ button:disabled { opacity: .3; cursor: default; }
 
 /* The settings dialog's one checkbox. "dialog label" stacks its contents in a column and
    stretches the control to full width, which put the box on its own line above a centred
-   sentence — seen in the running app, not in a test. Like .language-row, this class has to
+   sentence – seen in the running app, not in a test. Like .language-row, this class has to
    outrank it on specificity and say so explicitly. The box leads the line here rather than
    the row being pushed apart, because the label IS the sentence. */
 .switch-row {

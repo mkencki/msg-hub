@@ -8,8 +8,8 @@ import { blankTheViews } from './helpers.js'
 // Electron derives the profile directory from the application's name, so version 0.5.0's
 // productName moved it: a machine upgrading from an earlier version came up with an empty
 // rail while its accounts sat, whole, in the directory the old name had built. This spec
-// launches the real application over such a machine — the profile beside the new one,
-// under the old name — and asks whether the accounts made it across.
+// launches the real application over such a machine – the profile beside the new one,
+// under the old name – and asks whether the accounts made it across.
 //
 // The two directories are siblings inside one temporary root because that is the shape on
 // a real machine: both live directly under %APPDATA%.
@@ -34,7 +34,7 @@ test('accounts left under the old profile name are picked up on the next start',
   //
   // The marker is a file of OUR OWN, not one of Chromium's. The first version of this test
   // wrote a fake "Cookies" and asserted on it afterwards; Chromium owns that name inside a
-  // partition it opens, and it replaced the impostor — the CI run of 2026-08-30 failed with
+  // partition it opens, and it replaced the impostor – the CI run of 2026-08-30 failed with
   // ENOENT on exactly that path. What is under test is whether the directory was carried
   // across, so the test carries something only the test can touch.
   await mkdir(path.join(legacy, 'Partitions', 'acc-messenger'), { recursive: true })

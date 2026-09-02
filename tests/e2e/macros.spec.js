@@ -41,7 +41,7 @@ test('a saved macro appears on the list and can be found by its content', async 
   await page.keyboard.press('Control+Semicolon')
   await expect(page.locator('#macro-list li')).toHaveCount(2)
 
-  // Search has to reach the content, not just the name — the phrase appears only in the content.
+  // Search has to reach the content, not just the name – the phrase appears only in the content.
   await page.locator('#macro-search').fill('driver')
   await expect(page.locator('#macro-list li')).toHaveCount(1)
   await expect(page.locator('#macro-list li')).toHaveText(/Client Zone/)
@@ -65,7 +65,7 @@ test('choosing a macro puts the text on the clipboard and sends no message', asy
   await page.keyboard.press('Control+Semicolon')
   await page.locator('#macro-list li').first().click()
 
-  // The panel disappears BEFORE the insertion finishes — insertMacro() closes the dialog
+  // The panel disappears BEFORE the insertion finishes – insertMacro() closes the dialog
   // and only then waits for the main process. Its disappearance therefore cannot measure
   // the end of the operation; the signal is the status-bar report, which lands once the
   // IPC call resolves.
@@ -118,7 +118,7 @@ test('a macro without a name is refused, with a message', async () => {
   await page.locator('#editor-text').fill('content without a name')
   await page.locator('#save-macro').click()
 
-  // The error stays in the editor — the bar above lies outside the modal and would be
+  // The error stays in the editor – the bar above lies outside the modal and would be
   // impossible to click.
   await expect(page.locator('#macro-errors')).toHaveText(/name is required/)
 })

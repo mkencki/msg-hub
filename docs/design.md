@@ -1,4 +1,4 @@
-# M-HUB — design
+# M-HUB – design
 
 Written: 2026-08-23
 Status: approved, implemented
@@ -7,12 +7,12 @@ Translated from the Polish original: 2026-08-24
 ## 1. Purpose
 
 One window on Windows for three messenger accounts: Messenger, a private WhatsApp and a
-work WhatsApp. It replaces the paid All-in-One Messenger Hub, which — after the grace
-period for existing users ended on 2026-07-18 — requires a Pro licence to run a second
+work WhatsApp. It replaces the paid All-in-One Messenger Hub, which – after the grace
+period for existing users ended on 2026-07-18 – requires a Pro licence to run a second
 WhatsApp account.
 
 This project follows an audit of that application. The audit showed that the only feature
-actually needed — several accounts of the same platform — comes down to isolated browser
+actually needed – several accounts of the same platform – comes down to isolated browser
 profiles and requires no reverse engineering whatsoever. It also showed that the other app
 loads `wppconnect-wa.js` (WPPConnect/wa-js v3.23.2), a library that reaches into the
 internals of WhatsApp Web. That breaches WhatsApp's terms and risks a permanent ban on the
@@ -20,8 +20,8 @@ phone number. The operator's work number is one of the accounts in question, so 
 that entire category of tooling is an overriding requirement, not a preference.
 
 **Widened 2026-08-25.** An account no longer has to be a messenger. See section 2,
-*Whole services*: the mechanism the audit identified — an isolated browser profile in a
-native view — turns out to be indifferent to what the profile holds, and the operator has
+*Whole services*: the mechanism the audit identified – an isolated browser profile in a
+native view – turns out to be indifferent to what the profile holds, and the operator has
 uses for two sites whose messaging is only one page among many. The purpose above still
 describes what the application is *for*; it no longer describes the limit of what it may
 hold.
@@ -42,8 +42,8 @@ hold.
 - locking the window with a PIN or Windows Hello (rejected by the operator)
 - separate rules for the work account, a mute schedule (rejected)
 - a notification bridge to `ntfy` (deferred; returns only if native notifications fail)
-- any automatic sending of messages (forbidden — see section 7)
-- contact export, chatbots, AI replies (the `wa-js` category, forbidden — see section 7)
+- any automatic sending of messages (forbidden – see section 7)
+- contact export, chatbots, AI replies (the `wa-js` category, forbidden – see section 7)
 - a web version and access from the work laptop (withdrawn by the operator, 2026-08-23)
 
 ### Whole services
@@ -51,7 +51,7 @@ hold.
 *Amended 2026-08-25, by the operator's decision.*
 
 An account may host a **whole service**, not only its messaging surface. LinkedIn and
-Facebook enter the design as full sites — `linkedin.com`, `facebook.com` — rather than as
+Facebook enter the design as full sites – `linkedin.com`, `facebook.com` – rather than as
 `/messaging/` and `/messages/`. Messaging on those two is one page inside a site the
 operator reads anyway, and splitting it off would mean keeping the same login open twice.
 
@@ -62,7 +62,7 @@ consequences follow, and none of them is optional:
 1. **A navigation and child-window contract becomes a precondition, not a nicety.** A whole
    service is full of outbound links, and its sign-in legitimately crosses origins
    mid-flow. Without a policy the application is a browser with no address bar, no back
-   button and notifications granted in advance — a worse place to click a stranger's link
+   button and notifications granted in advance – a worse place to click a stranger's link
    than the real browser next to it. Each platform therefore declares the hosts it owns
    and the hosts it authenticates through. Anything else opens in the system browser.
    Naive rules break this in both directions: blocking every off-origin navigation breaks
@@ -79,8 +79,8 @@ consequences follow, and none of them is optional:
    to you. A social network notifies about reactions, groups, pages, birthdays and things
    it would like you to look at. Granting the permission once for every account, as the
    application does today, does not survive contact with a full Facebook.
-4. **Platforms remain a closed list.** The obvious generalisation — an account type that
-   takes any URL — is refused. It would turn a reviewed allowlist into an uncontrolled
+4. **Platforms remain a closed list.** The obvious generalisation – an account type that
+   takes any URL – is refused. It would turn a reviewed allowlist into an uncontrolled
    browser carrying live sessions, and it is a security regression wearing the costume of
    flexibility. Adding a service stays a deliberate edit to this design.
 
@@ -106,7 +106,7 @@ main window (BrowserWindow)
                                           sandboxed, and gone when its opener is
 ```
 
-Each view costs about 250 MB once its page has loaded — measured 2026-08-25 at 754 MB for
+Each view costs about 250 MB once its page has loaded – measured 2026-08-25 at 754 MB for
 one account, 1266 for three and 1760 for five, on a machine with 16 GB. Every account is
 loaded at startup and stays loaded, deliberately: an account that is not loaded delivers no
 notification and reports no count, which is the entire reason this application exists.
@@ -114,7 +114,7 @@ Whether five accounts are worth two gigabytes is the operator's decision, so the
 the README rather than hidden behind a lazy-loading switch.
 
 Isolation comes from a separate session partition per account. Two WhatsApp accounts
-see each other as two independent browsers — they share no cookies, no `localStorage` and
+see each other as two independent browsers – they share no cookies, no `localStorage` and
 no `IndexedDB`. This is the heart of the application and the one mechanism without which
 there is no product.
 
@@ -126,28 +126,28 @@ session, the documentation points directly at `WebContentsView` with a separate 
 
 Each component has one responsibility and can be tested on its own.
 
-### 4.1 `accounts` — the account registry
+### 4.1 `accounts` – the account registry
 
 Reads and writes the account list and assigns partition identifiers. Knows nothing about
 windows.
 
-### 4.2 `views` — the view manager
+### 4.2 `views` – the view manager
 
 Creates a `WebContentsView` per account, attaches its session, sets the `User-Agent`,
 governs geometry as the window resizes, and switches the active view. Knows nothing about
 where the account list came from.
 
-### 4.3 `macros` — the macro store
+### 4.3 `macros` – the macro store
 
 Holds macro definitions and copies of attachments, and searches by name and content. Knows
 nothing about how a macro reaches a chat.
 
-### 4.4 `insertion` — putting content in
+### 4.4 `insertion` – putting content in
 
 Places text or a file on the clipboard and triggers a paste in the active view. The only
-component that touches the clipboard. It does not send messages — ever (section 7).
+component that touches the clipboard. It does not send messages – ever (section 7).
 
-Text goes through Electron's `clipboard.writeText`. A file needs the `CF_HDROP` format —
+Text goes through Electron's `clipboard.writeText`. A file needs the `CF_HDROP` format –
 the one Windows sets on `Ctrl+C` in Explorer and the one Chromium hands to a page as
 `DataTransfer.files`. Electron's `clipboard.writeBuffer('FileNameW', …)` handles only a
 single file and gives no assurance that Chromium will interpret it that way, so we use the
@@ -159,10 +159,10 @@ A catch found in stage 0: `Set-Clipboard -LiteralPath` and `Get-Clipboard -Forma
 name `powershell.exe` explicitly, never `pwsh`.
 
 Cost: starting a process, on the order of hundreds of milliseconds. If that turns out to be
-noticeable, the alternative is a native module setting up a `DROPFILES` structure — a purely
+noticeable, the alternative is a native module setting up a `DROPFILES` structure – a purely
 performance decision, not a functional one, and taken only after measurement.
 
-### 4.5 `shell` — the window shell
+### 4.5 `shell` – the window shell
 
 Window, tray, autostart, dark theme, remembered layout, notifications, badge.
 
@@ -187,7 +187,7 @@ Everything lives in the application data directory (`app.getPath('userData')`).
 }
 ```
 
-`id` is immutable — it serves as the partition name (`persist:acc-wa-work`). Changing `id`
+`id` is immutable – it serves as the partition name (`persist:acc-wa-work`). Changing `id`
 means losing the session, so the interface does not allow editing it. `platform` selects the
 default address and icon; `url` can be overridden by hand.
 
@@ -204,7 +204,7 @@ default address and icon; `url` can be overridden by hand.
   "macros": [
     {
       "id": "mac-client-area",
-      "name": "Guide — Client Area",
+      "name": "Guide – Client Area",
       "text": "*How to add a driver:*\n\n1. Sign in\n2. Open the Drivers tab\n\n> Get in touch if anything is unclear.",
       "attachments": ["att/4f2a-guide.pdf"],
       "tags": ["client-area", "guide"]
@@ -230,7 +230,7 @@ under a name prefixed with a UUID. This delivers the operator's requirement: fil
 live in the application, so they need not be hunted down on disk each time. Deleting a macro
 deletes the copies nothing else links to.
 
-The interface shows the total size of the store. Single-file limit: 100 MB — safely below
+The interface shows the total size of the store. Single-file limit: 100 MB – safely below
 WhatsApp's own limits and above a typical instructional video.
 
 ## 6. Flows
@@ -253,7 +253,7 @@ WhatsApp's own limits and above a typical instructional video.
 
 An "Add account" screen: name, platform from a list, optionally a custom address and channel
 colour. Saved to `accounts.json`, a view created, and sign-in by QR code or the platform's
-own form — exactly as in a browser.
+own form – exactly as in a browser.
 
 ## 7. Security boundaries
 
@@ -269,7 +269,7 @@ serves them.
 
 **7.3 Content is inserted through the clipboard.** A clipboard write and a paste are
 indistinguishable from doing it by hand. Stage 0 settled this rule positively and **without
-exceptions** — see section 9. The application does not manipulate elements of a loaded page
+exceptions** – see section 9. The application does not manipulate elements of a loaded page
 for any purpose, attachments included.
 
 Beyond these rules the application is an ordinary browser with tabs.
@@ -278,10 +278,10 @@ Beyond these rules the application is an ordinary browser with tabs.
 > 7.2 and 7.3 were written naming WhatsApp, because at the time WhatsApp was the only page
 > whose internals anyone would have been tempted to reach into. Now that an account may
 > host any service on the list, a prohibition that names one site would have left the
-> others outside it — which is the opposite of what these rules are for. The wording is
+> others outside it – which is the opposite of what these rules are for. The wording is
 > widened to every page an account loads; nothing is relaxed, and the reason is unchanged.
 > The temptation the rules exist to refuse is the same one in every case: reading a page's
-> DOM to obtain an unread count. Section 2 states the consequence plainly — a service whose
+> DOM to obtain an unread count. Section 2 states the consequence plainly – a service whose
 > title carries no count gets no count.
 
 ## 8. Error handling
@@ -297,7 +297,7 @@ Beyond these rules the application is an ordinary browser with tabs.
 
 ## 9. Stages
 
-**Stage 0 — settling the clipboard question. DONE 2026-08-23, result POSITIVE.**
+**Stage 0 – settling the clipboard question. DONE 2026-08-23, result POSITIVE.**
 
 The question: does WhatsApp Web accept a file pasted from the Windows clipboard (`CF_HDROP`)?
 
@@ -307,7 +307,7 @@ FileDropList` confirmed one file on the clipboard with the text layer empty. The
 was checked by hand by the operator, in Edge on `web.whatsapp.com`, in a chat with himself,
 outside the audited application (that one loads `wa-js` and would have given a false positive).
 
-Material: a 10.23 MB instructional video (signature `ftypmp42`) and a 0.74 MB PDF — real
+Material: a 10.23 MB instructional video (signature `ftypmp42`) and a 0.74 MB PDF – real
 files of the same class as future macro content. Sizes were chosen below WhatsApp's limits so
 that a refusal could not be blamed on file size.
 
@@ -318,17 +318,17 @@ confirms that several files can be inserted one after another.
 Consequences: substituting a file into the page's form field is **not needed and does not
 enter the design**. Rule 7.3 applies without exception. Stage 3 builds the clipboard path only.
 
-**Stage 1 — the core.** `accounts`, `views`, `shell`. Three accounts, isolation, channels,
+**Stage 1 – the core.** `accounts`, `views`, `shell`. Three accounts, isolation, channels,
 `User-Agent`, dark theme, window layout, tray, autostart, notifications.
 
-**Stage 2 — text macros.** `macros`, `insertion`, the panel with search, the editor with a
+**Stage 2 – text macros.** `macros`, `insertion`, the panel with search, the editor with a
 formatting bar and a preview, the `Ctrl+;` shortcut.
 
-**Stage 3 — attachments.** The `att/` store, insertion per the result of stage 0.
+**Stage 3 – attachments.** The `att/` store, insertion per the result of stage 0.
 
-**Stage 4 — distribution.** `electron-builder`, a single installer, autostart.
+**Stage 4 – distribution.** `electron-builder`, a single installer, autostart.
 
-**Stage 5 — staying alive. DONE 2026-08-25.**
+**Stage 5 – staying alive. DONE 2026-08-25.**
 
 The app is asked to sit in the tray all day and notice things. Everything here serves that,
 and each item below was measured before it was changed rather than assumed.
@@ -338,7 +338,7 @@ and each item below was measured before it was changed rather than assumed.
   along; `acceptHoverReport` in `shell.js` weighs the report, and returning to the foreground
   asks the renderer where the pointer is now, because holding a report back loses it.
 - **Accounts in the background run at full speed.** `backgroundThrottling` was unset, so a
-  100 ms timer ticked 10 times in ten seconds in a hidden view instead of 100 — and hiding the
+  100 ms timer ticked 10 times in ten seconds in a hidden view instead of 100 – and hiding the
   window to the tray put the ACTIVE account in that state too.
 - **A second copy over the same profile gives up** instead of fighting the first over the
   cookie stores, where the loser loses its sign-in.
@@ -349,7 +349,7 @@ and each item below was measured before it was changed rather than assumed.
   opens the macro palette from anywhere. A refused global shortcut is reported rather than
   left silent.
 - **Clicking a notification lands on the account it came from.** A view taking focus asks the
-  renderer to switch — but not until its first load has settled, because a view takes focus
+  renderer to switch – but not until its first load has settled, because a view takes focus
   while it is being created and the app would otherwise start on whichever account happened
   to finish last.
 - **A stale or dead account can be reloaded** without restarting the others: Ctrl+R, and a
@@ -362,15 +362,15 @@ and each item below was measured before it was changed rather than assumed.
   down rather than reused, and a clipboard that refuses a file is reported instead of
   escaping the handler.
 
-**Stage 5.6 — the navigation contract** is called out separately because stage 7 depends on
+**Stage 5.6 – the navigation contract** is called out separately because stage 7 depends on
 it. Every address now has a declared place to open: the account view, a controlled child
 window, the system browser, or nowhere. The decision rests on host lists a platform declares,
-never on how a window was asked for — a sign-in popup and a link to an article cannot be told
+never on how a window was asked for – a sign-in popup and a link to an article cannot be told
 apart by disposition or features. Host matching is a suffix comparison on a dot boundary, the
 external list is consulted first because link shims live on the service's own domain, and only
 `http:` and `https:` are ever handed to the system.
 
-**Stage 6 — macros 2.0. DONE 2026-08-25**, except 6.5, which needs the operator's consent
+**Stage 6 – macros 2.0. DONE 2026-08-25**, except 6.5, which needs the operator's consent
 because it would change the LETTER of rule 7.3, and 6.7, which waits for stage 7.
 
 - **Tags stop being a field only the file format knew about.** The model has carried them
@@ -378,7 +378,7 @@ because it would change the LETTER of rule 7.3, and 6.7, which waits for stage 7
   The editor now has a field, the palette shows them, and clicking one searches for it. Case
   is settled on the way in, because search settles it on the way out.
 - **Placeholders.** Any `{name}` in a macro becomes a question asked BEFORE anything is
-  written anywhere — cancelling leaves the clipboard untouched. `{date}` and `{data}` fill
+  written anywhere – cancelling leaves the clipboard untouched. `{date}` and `{data}` fill
   themselves. A macro without placeholders passes through unchanged.
 - **The status bar stopped claiming an insertion it cannot see.** Measured: with no editable
   field focused, `webContents.paste()` does nothing and reports nothing, while the message
@@ -389,25 +389,25 @@ One thing the plan expected to build turned out to be there already and is now p
 test rather than rebuilt: the palette header has named the destination account since stage 2.
 
 The other, the keyboard returning to the account after an insertion, was first written up as
-already working and that was **wrong** — measured in a state nobody is ever in, with the app's
+already working and that was **wrong** – measured in a state nobody is ever in, with the app's
 window not in front. A window that is not in front has no keyboard to hand anybody. Measured
 properly it returns in one of the two states and not the other, depending on which
 `webContents` held focus when the palette opened, so the application now asks for it instead
 of relying on what closing a `<dialog>` happens to do.
 
-**Stage 7 — whole services. DONE 2026-08-25**, except Telegram, which stays out.
+**Stage 7 – whole services. DONE 2026-08-25**, except Telegram, which stays out.
 
 LinkedIn and Facebook can be added like any other account, and stand entirely on the
 navigation contract from 5.6: a full service is a few hundred outgoing links, each of which
 would otherwise open a bare window carrying the account's signed-in session.
 
-- **LinkedIn is entered at `/feed/` on the www host**, never at the apex — measured twice
+- **LinkedIn is entered at `/feed/` on the www host**, never at the apex – measured twice
   with curl, the apex answers "Checking your browser - reCAPTCHA". Its sign-in hosts are
   declared, because they genuinely leave the service: Apple's opens a window and answers
   through `postMessage` to its opener, so it can neither go to the system browser nor be
   denied.
-- **Neither service shows a count.** `unreadFromTitle` now reads "(99+)" correctly — it used
-  to return zero, so the badge vanished exactly when an account was busiest — but LinkedIn's
+- **Neither service shows a count.** `unreadFromTitle` now reads "(99+)" correctly – it used
+  to return zero, so the badge vanished exactly when an account was busiest – but LinkedIn's
   number is the sum of eight badge sources, and Facebook's 2026 format could not be confirmed
   at all. Both are one word from being turned on and the reason sits on the entry.
 - **Notifications are controlled per account**, which was the condition for shipping
@@ -415,62 +415,62 @@ would otherwise open a bare window carrying the account's signed-in session.
   and the account overrides its platform in either direction.
 
 **A one-way door.** An `accounts.json` holding a `linkedin` or `facebook` account, opened by
-a build that predates them, is silently dropped by the validation filter in `loadAccounts` —
+a build that predates them, is silently dropped by the validation filter in `loadAccounts` –
 and the next save writes the shortened list. Going back a version deletes those accounts and
 their sign-ins. This is in both READMEs and belongs in the release notes.
 
-**Telegram is not here.** It works, its session stands on its own, and its client is GPLv3 —
+**Telegram is not here.** It works, its session stands on its own, and its client is GPLv3 –
 but its title says "3 notifications" only while the tab is idle, blinking once a second, and
 one of the two clients reports a delta rather than a total. It was optional in the plan, it
 needs an account to verify, and a closed platform list is only worth anything while every
 entry on it has been seen working.
 
-**Stage 8 — four things the operator found in a day of use. DONE 2026-08-25.**
+**Stage 8 – four things the operator found in a day of use. DONE 2026-08-25.**
 
 **0.3.0 had no release because it had no tag.** The workflow publishes on `refs/tags/` and
 nothing else, and the version in `package.json` was raised without one being pushed. Not a
-failure of the pipeline — a step nobody took. A release now also says what the version changes:
+failure of the pipeline – a step nobody took. A release now also says what the version changes:
 the body is the section for that tag cut out of `docs/release-notes.md`, followed by the
 installation caveats, and a tag with no section fails the step instead of publishing an empty
 body.
 
 **A pinned button takes its icon from the shortcut, never from the running window.** Measured
 2026-08-25: the pinned `Electron.lnk` targeted `node_modules\electron\dist\electron.exe` with
-`IconLocation ",0"` — the atom, straight out of the target — and the `msg-hub.lnk` already in
+`IconLocation ",0"` – the atom, straight out of the target – and the `msg-hub.lnk` already in
 the Start menu pointed at `build\ikona.ico`, a file gone since the repository was anglicised.
 Installing the packaged build is the usual answer and is not available on a machine with Smart
 App Control, where running from source is the supported path. So `npm run shortcut` writes the
-shortcut instead, with the icon and — through the shell property store, because `WScript.Shell`
-has no idea it exists — the same AppUserModelID the application sets at startup. Without the
+shortcut instead, with the icon and – through the shell property store, because `WScript.Shell`
+has no idea it exists – the same AppUserModelID the application sets at startup. Without the
 identity the live window will not merge into the pinned button, and the taskbar carries two.
 
 **The icon carries nine frames.** It had one, 256 square, and Windows draws it at 16, 24 or 32
 everywhere that matters. `build/ico.mjs` assembles the `.ico` from the PNG set in
 `src/renderer/icons`, which is the one place the artwork lives; `build/icon.ico` is generated
 from the same bytes for electron-builder, and a test fails if the two drift apart. The set is
-under `src/` because `package.json` packs `src/**/*` and nothing else — an icon in `build/`
+under `src/` because `package.json` packs `src/**/*` and nothing else – an icon in `build/`
 reaches the installer and never reaches the installed application.
 
 **The badge stopped following the page's blink.** A page with something waiting alternates its
-own title — "(1) Messenger", "Messenger", about once a second — and the count read that
+own title – "(1) Messenger", "Messenger", about once a second – and the count read that
 literally, so the overlay appeared for a second and vanished for the next. Nothing in the path
 from a title to the badge has a clock, which left the page as the only candidate; the same
 behaviour is recorded above as one of the reasons Telegram is out. The latch in
 `src/main/unread.js` is one-sided: a count going UP is shown at once, a zero is believed only
 after three seconds of zeros. Measured after: 40 of 40 samples over ten seconds kept the count
 while the page blinked every 0.9 s, and a page that genuinely went quiet cleared it in 2583 ms.
-The timer in `refreshBadge` is the part that is easy to omit — a page that stops blinking stops
+The timer in `refreshBadge` is the part that is easy to omit – a page that stops blinking stops
 sending titles, so a held zero has nothing coming to release it.
 
 **A download says how it ended.** The handling was one line announcing the start, and nothing
 ever asked the item how it went, so "Downloading …" stayed on the bar with the file already on
 the disk. It now ends: saved, with a button to the folder it landed in; or cancelled or
 interrupted, with which. A success takes itself away after eight seconds, a failure does not.
-The identity carried by a message is what makes that safe — a timer hides only the message it
+The identity carried by a message is what makes that safe – a timer hides only the message it
 put there, never the crash report that took the bar over in the meantime. Settings gained the
 folder and the "ask every time" switch, which starts ON because asking is what Electron already
 does when no path is set. Turning it off means the application sets the path, and from that
-moment Chromium stops numbering repeated names — hence `uniquePath`, or the same attachment
+moment Chromium stops numbering repeated names – hence `uniquePath`, or the same attachment
 downloaded twice would land on top of itself. "Show in folder" is given the id of a download
 this process recorded, never a path: `showItemInFolder` with an argument a page could choose
 would point Explorer at anything on the disk.
@@ -479,7 +479,7 @@ would point Explorer at anything on the disk.
 an Explorer window that is already up, and a new window only when none is in front. That
 decision belongs to the shell, not to this application: `shell.showItemInFolder` calls
 `SHOpenFolderAndSelectItems`, and what happens next is Explorer's business. So it was measured
-rather than assumed — Windows 11 build 26200, one call per state, counting top-level
+rather than assumed – Windows 11 build 26200, one call per state, counting top-level
 `CabinetWClass` windows and the `Shell.Application` entries beside them:
 
 | Before the call | After |
@@ -487,12 +487,12 @@ rather than assumed — Windows 11 build 26200, one call per state, counting top
 | an Explorer window open, not in front, showing another folder | a NEW window, 1 → 2 |
 | an Explorer window in front, showing another folder | a NEW window, 2 → 3 |
 | a window already showing the target folder | that window, brought forward. 3 → 3 |
-| no Explorer window at all | not measured — it would have meant closing the operator's own |
+| no Explorer window at all | not measured – it would have meant closing the operator's own |
 
 So the tab never happens: this build opens a window whether or not Explorer is in front, and no
 setting for it exists under `Explorer\Advanced` (`OpenFoldersInNewTab` and `TabsEnabled` are
 both absent, `SeparateProcess` is 0). What the operator asked to avoid, though, does not happen
-either — **windows do not pile up**, because a folder already open is reused and brought
+either – **windows do not pile up**, because a folder already open is reused and brought
 forward, which is the case that repeats when files keep landing in one download folder.
 
 **Forcing the tab anyway: measured, then refused.** The operator asked to see the cost before
@@ -501,25 +501,25 @@ them do not do what their names suggest:
 
 | Route | What it actually did |
 |---|---|
-| the `opennewtab` verb — it really is registered under `HKCR\Folder\shell` | invoked from outside Explorer it **returns success and does nothing**. The key carries `OnlyInBrowserWindow` and a `DelegateExecute` handler, and `Shell.Application` does not even list the verb among a folder's own |
+| the `opennewtab` verb – it really is registered under `HKCR\Folder\shell` | invoked from outside Explorer it **returns success and does nothing**. The key carries `OnlyInBrowserWindow` and a `DelegateExecute` handler, and `Shell.Application` does not even list the verb among a folder's own |
 | `IShellWindows` → `Navigate2` | **no tab**: it replaces the contents of the window the operator was looking at. Measured, one window went from folder A to folder B, count unchanged |
-| driving Explorer's keyboard — `Ctrl+T`, `Ctrl+L`, the path, Enter | **works**: windows 2 → 2, tabs 3 → 4, on the right folder, with a name containing brackets surviving the escaping |
+| driving Explorer's keyboard – `Ctrl+T`, `Ctrl+L`, the path, Enter | **works**: windows 2 → 2, tabs 3 → 4, on the right folder, with a name containing brackets surviving the escaping |
 
 So a tab is reachable only by typing into somebody else's window, and it costs more than the
 window it saves. The prototype came to 99 lines, 37 of them P/Invoke, plus roughly 50 more to
-wire in with a fallback and a switch — but the line count is the least of it:
+wire in with a fallback and a switch – but the line count is the least of it:
 
 - **the file stops being selected.** `showItemInFolder` selects it; the tab route has to reach
   it by type-ahead in the file list, and the measurement selected TWO items instead of one.
-- **it types on the operator's keyboard.** Guarded — the script sends nothing unless the window
-  it raised really reached the foreground — but that is the nature of the thing, not a detail.
+- **it types on the operator's keyboard.** Guarded – the script sends nothing unless the window
+  it raised really reached the foreground – but that is the nature of the thing, not a detail.
 - **it cannot be covered by the gate.** Playwright cannot see Explorer, and a CI runner has no
   Explorer window at all, so on CI only the fallback would ever run. Everything else here is
   tested.
 
 Refused on 2026-08-25 with those numbers in hand. `showItemInFolder` stays.
 
-**Stage 9 — the name. DONE 2026-08-26.**
+**Stage 9 – the name. DONE 2026-08-26.**
 
 The application is called M-HUB. What that costs is not obvious from the field being changed,
 so it was measured first, on a throwaway Electron app rather than on this one: with only
@@ -530,20 +530,20 @@ default User-Agent all follow it. One field, three consequences.
 | | before | after | why |
 |---|---|---|---|
 | window, tray, shortcut, installer | msg-hub | **M-HUB** | the point of the exercise |
-| profile directory | `%APPDATA%\msg-hub` | `%APPDATA%\M-HUB` | follows `productName`; **not migrated** — see below |
+| profile directory | `%APPDATA%\msg-hub` | `%APPDATA%\M-HUB` | follows `productName`; **not migrated** – see below |
 | User-Agent token | `msg-hub/0.4.0` | removed | it was removed before too, by a literal |
 | `appId` | `pl.kencki.msghub` | unchanged | NSIS derives the installation's GUID from it |
 | repository | `mkencki/msg-hub` | unchanged **at the time** | every published release linked through it |
 
 **Both of those decisions were reversed later.** The repository was renamed to `mkencki/m-hub`
-on 2026-09-02 — GitHub keeps permanent redirects, so the release links written under the old
-name still resolve — and 0.5.3 does carry a profile across: `src/main/profile.js` moves what an
+on 2026-09-02 – GitHub keeps permanent redirects, so the release links written under the old
+name still resolve – and 0.5.3 does carry a profile across: `src/main/profile.js` moves what an
 older version left in `%APPDATA%\msg-hub`, sessions included, guarded by the absence of
 `accounts.json` in the new profile. The paragraph below records why it was not built in 0.5.0,
 which is still the reason 0.5.0 shipped without it.
 
 **No migration, by the operator's decision.** The profile moves with the name, and the 805 MB
-left behind — three signed-in sessions, one macro, its 4.7 MB attachment — were deleted
+left behind – three signed-in sessions, one macro, its 4.7 MB attachment – were deleted
 outright before the release rather than carried across. A migration was designed and costed
 (a guarded move, a fallback to the old directory, and a guard against `--user-data-dir`, which
 would otherwise have dragged a real profile into a test's temporary directory) and then not
@@ -553,7 +553,7 @@ half-migrated state anywhere in the code to reason about later.
 **The literal in cleanUserAgent was the sharp edge.** Electron builds the User-Agent out of
 the application's name, and the function that took it back out matched `/msg-hub\//`. After a
 rename that pattern matches nothing, and the failure is silent: the new name simply starts
-going out to Meta's servers. The end-to-end test guarding it — `not.toMatch(/msg-hub/i)` —
+going out to Meta's servers. The end-to-end test guarding it – `not.toMatch(/msg-hub/i)` –
 would have stayed green, because it named the old string too. Both now ask the running
 application what it is called. Proved by mutation on 2026-08-26: with the literal restored,
 the test failed with `m-hub/0.4.0 chrome/150...` in the received User-Agent.
@@ -561,7 +561,7 @@ the test failed with `m-hub/0.4.0 chrome/150...` in the received User-Agent.
 **The installer stopped wearing NSIS's blue wizard.** electron-builder passes
 `build/installerSidebar.bmp` to `MUI_WELCOMEFINISHPAGE_BITMAP` and falls back to
 `nsis3-metro.bmp` when it is missing, which is what the finish page showed until now. The two
-bitmaps — 164x314 beside the welcome and finish pages, 150x57 on the header of the rest — are
+bitmaps – 164x314 beside the welcome and finish pages, 150x57 on the header of the rest – are
 drawn from the same four rounded rectangles as the icon, by a rasteriser in `build/mark.mjs`,
 so the mark has one source. A .bmp stores its rows bottom-up and pads each one to four bytes;
 neither mistake fails a build, both produce a garbled wizard, and `tests/bmp.test.js` reads
@@ -571,13 +571,13 @@ them back out of the bytes. The header bitmap is white because MUI paints that b
 
 Behaviour is tested, not implementation detail.
 
-- **session isolation** — proof that a cookie written in one account's partition is invisible
+- **session isolation** – proof that a cookie written in one account's partition is invisible
   in another's. The heart of the product, so covered by a test rather than by inspection.
-- `accounts` — read, write, damaged file, missing file, refusal to change `id`
-- `macros` — adding, searching, deleting along with attachment copies, the size limit
-- `insertion` — content reaches the clipboard in the expected shape; **a negative test: no
+- `accounts` – read, write, damaged file, missing file, refusal to change `id`
+- `macros` – adding, searching, deleting along with attachment copies, the size limit
+- `insertion` – content reaches the clipboard in the expected shape; **a negative test: no
   path invokes sending a message** (enforcement of rule 7.1)
-- `shell` — the window layout survives a restart
+- `shell` – the window layout survives a restart
 
 ## 11. Risks
 
@@ -589,7 +589,7 @@ Behaviour is tested, not implementation detail.
 | The attachment store growing without bound | low | per-file limit, a usage counter, copies deleted with the macro |
 
 The risk "the clipboard does not accept files" was **closed** in stage 0 (2026-08-23). With
-it went the risk of being sensitive to Meta rebuilding the page — the mechanism of
+it went the risk of being sensitive to Meta rebuilding the page – the mechanism of
 substituting a file into a form does not enter the design.
 
 ## 12. Rejected alternatives
@@ -606,13 +606,13 @@ indistinguishable from an attack.
 
 **A hub on a server, streamed with Neko (WebRTC).** Rejected after looking at the topology:
 WebRTC media travels over UDP, while the operator's ingress is a Cloudflare Tunnel on a CGNAT
-link. It would require a TURN server or open UDP ports — the first adds a dependency billed
+link. It would require a TURN server or open UDP ports – the first adds a dependency billed
 by traffic, the second is impossible.
 
 **A hub on a server, streamed with KasmVNC.** Technically feasible (WebSockets pass through
 the tunnel) and designed all the way to the deployment stage, then withdrawn on 2026-08-23
 along with the decision to drop access from the work laptop. It would have cost WSL2 and
-Docker Engine on a node — the first container in that infrastructure and a permanent widening
+Docker Engine on a node – the first container in that infrastructure and a permanent widening
 of the maintenance surface.
 
 **Cloudflare browser-based RDP.** A workable fallback should remote access ever return as a

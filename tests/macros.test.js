@@ -73,7 +73,7 @@ describe('search', () => {
 
 describe('makeMacroId', () => {
   test('builds an id out of safe characters', () => {
-    expect(makeMacroId('Manual — Client Zone!')).toMatch(/^mac-[a-z0-9-]+$/)
+    expect(makeMacroId('Manual – Client Zone!')).toMatch(/^mac-[a-z0-9-]+$/)
   })
 
   test('Polish characters are transliterated', () => {
@@ -105,7 +105,7 @@ describe('attachments', () => {
     const source = path.join(dir, 'huge.mp4')
     await writeTestFile(source, Buffer.alloc(ATTACHMENT_LIMIT_BYTES + 1))
 
-    // The limit is reported as a code with parameters, not as a sentence — only the
+    // The limit is reported as a code with parameters, not as a sentence – only the
     // renderer knows which language the message has to appear in.
     await expect(addAttachment(att, source)).rejects.toMatchObject({
       code: 'attachmentTooLarge',
@@ -176,7 +176,7 @@ describe('tags as the operator types them', () => {
   })
 
   // Search lowercases what it looks for, so a tag stored with a capital would be findable
-  // by "Zone" and invisible to "zone" — which is what anyone would actually type.
+  // by "Zone" and invisible to "zone" – which is what anyone would actually type.
   test('case is settled on the way in, because search settles it on the way out', () => {
     expect(parseTags('Offer, ZONE')).toEqual(['offer', 'zone'])
   })

@@ -42,7 +42,7 @@ test('the app writes a log where the operator can find it', async () => {
 })
 
 // The log is meant to be sent to somebody. Everything in it has to be safe to hand over,
-// which is why an account is recorded by its id and never by the name someone typed in —
+// which is why an account is recorded by its id and never by the name someone typed in –
 // that name is frequently a person.
 test('a crash is recorded by account id, not by the name of a person', async () => {
   await expect

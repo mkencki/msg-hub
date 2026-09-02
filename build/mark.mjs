@@ -1,5 +1,5 @@
-// The mark, drawn rather than imported. It is four rounded rectangles — three account modules
-// inside one tile, the active one amber — so the artwork is a handful of numbers and a
+// The mark, drawn rather than imported. It is four rounded rectangles – three account modules
+// inside one tile, the active one amber – so the artwork is a handful of numbers and a
 // rasteriser, and every derived file comes from the same source instead of from a copy of a
 // copy. The geometry is the one in design/isolated-m.svg, on the same 256 unit canvas.
 //

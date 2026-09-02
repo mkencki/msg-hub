@@ -42,7 +42,7 @@ const addAccount = async (name, platform) => {
 
 // A page with something waiting BLINKS its own title to catch the eye: "(3) WhatsApp" for
 // about a second, then "WhatsApp" for the next. Read literally that is three unread, then
-// none, then three — and the badge used to follow it exactly, on for a second and off for a
+// none, then three – and the badge used to follow it exactly, on for a second and off for a
 // second, which is what the operator reported on 2026-08-25. The same behaviour is on record
 // in docs/design.md section 9, where it is one of the reasons Telegram was left out.
 //
@@ -67,7 +67,7 @@ test('a page that blinks its own title does not blink the badge', async () => {
   await expect.poll(windowTitle, { timeout: 5000 }).toBe('M-HUB (3)')
 
   // Two seconds is eight blinks. Without the latch, at least one sample lands on the bare
-  // title — and every sample that does is a second the taskbar spent showing nothing.
+  // title – and every sample that does is a second the taskbar spent showing nothing.
   const seen = new Set()
   for (let i = 0; i < 20; i += 1) {
     seen.add(await windowTitle())
@@ -77,7 +77,7 @@ test('a page that blinks its own title does not blink the badge', async () => {
 })
 
 // The other half of the contract, and the half a careless latch breaks: a count that really
-// has reached zero must still clear — and clear without another title event to push it,
+// has reached zero must still clear – and clear without another title event to push it,
 // because a page that has gone quiet sends none.
 test('a count that really reaches zero still clears itself', async () => {
   await addAccount('WhatsApp', 'whatsapp')

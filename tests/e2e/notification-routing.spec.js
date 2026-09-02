@@ -37,7 +37,7 @@ test.beforeEach(async () => {
   // takes the system's focus while it is being created and that is not a notification click.
   // The views are therefore given a page that certainly finishes: about:blank.
   //
-  // stop() alone was not enough, and neither was stop() plus a replacement — see
+  // stop() alone was not enough, and neither was stop() plus a replacement – see
   // blankTheViews for what the second attempt got wrong and what this one waits for.
   await blankTheViews(electronApp)
   await expect
@@ -63,9 +63,9 @@ const viewHeights = () =>
     BrowserWindow.getAllWindows()[0].contentView.children.map((v) => v.getBounds().height),
   )
 
-// Clicking a Windows toast hands focus to the view the toast came from. Everything else —
+// Clicking a Windows toast hands focus to the view the toast came from. Everything else –
 // which channel the rail shows as current, which view has any height, what the status bar
-// says — was left pointing at the account the operator had walked away from, so the
+// says – was left pointing at the account the operator had walked away from, so the
 // conversation they were sent to opened inside a view zero pixels tall.
 const focusView = (index) =>
   electronApp.evaluate(({ BrowserWindow }, i) => {
@@ -75,7 +75,7 @@ const focusView = (index) =>
 test('a view taking focus makes its account the current one', async () => {
   // The precondition, stated rather than hoped for: the account the operator is looking at
   // holds the keyboard. Loading a page gives that view focus on its own, so without this the
-  // second view may already hold it — and focusing something that is already focused emits
+  // second view may already hold it – and focusing something that is already focused emits
   // no event at all, which looks exactly like routing that does not work.
   await focusView(0)
   expect(await selectedChannel()).toBe('acc-one')

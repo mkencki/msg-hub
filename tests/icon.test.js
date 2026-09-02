@@ -14,7 +14,7 @@ const framesOf = (ico) =>
 
 describe('the application icon', () => {
   // Windows does not draw this at 256 pixels anywhere it matters. The taskbar asks for 16 or
-  // 24, Alt+Tab for 32, Explorer for whatever the view is set to — and the shell scaling one
+  // 24, Alt+Tab for 32, Explorer for whatever the view is set to – and the shell scaling one
   // large bitmap down is visibly worse than a frame drawn for that size. The icon this
   // project shipped until 0.3.0 carried exactly one frame, 256 square, which is why this
   // test exists rather than a comment.
@@ -34,7 +34,7 @@ describe('the application icon', () => {
     expect(await readFile(path.join(ROOT, 'build', 'icon.ico'))).toEqual(assembled)
   })
 
-  // The frames are PNGs embedded whole — the format has allowed that since Vista, and it is
+  // The frames are PNGs embedded whole – the format has allowed that since Vista, and it is
   // what makes an assembler this small possible. A frame that came out as something else
   // would still parse as an icon and still fail to draw.
   test('every frame is a PNG, not a headless bitmap', async () => {

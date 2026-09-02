@@ -84,7 +84,7 @@ test('the banner ends when the download does', async () => {
   expect(await saved()).toEqual(['notatka.txt'])
 })
 
-// A success does not need dismissing by hand. A failure does — it is the one the operator has
+// A success does not need dismissing by hand. A failure does – it is the one the operator has
 // to notice.
 test('a finished download takes its banner away on its own', async () => {
   await download()

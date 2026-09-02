@@ -43,7 +43,7 @@ test('each language signs itself with its own name, not a translation', async ()
 })
 
 // Reloading the window would tear down the native account views along with their sign-ins,
-// so a language change has to repaint the interface IN PLACE — content drawn from JS included.
+// so a language change has to repaint the interface IN PLACE – content drawn from JS included.
 test('choosing Polish repaints the content drawn from JS as well', async () => {
   await chooseLanguage('pl')
 

@@ -1,12 +1,12 @@
 // Where an address is allowed to open.
 //
 // Until this existed, a link in a conversation opened a BARE Electron window: no address
-// bar, no back, no reload — and inside the account's signed-in session. That is a defect on
+// bar, no back, no reload – and inside the account's signed-in session. That is a defect on
 // its own, and it becomes a blocker the moment an account hosts a whole service rather than
 // a messenger, because then a single view is a few hundred outgoing links.
 //
 // The decision cannot rest on how the window was asked for. A sign-in popup and a link to a
-// news article are indistinguishable by disposition or by the features string — measured
+// news article are indistinguishable by disposition or by the features string – measured
 // while surveying LinkedIn's sign-in flows. So it rests on a declared list of hosts per
 // platform: an allowlist, not a guess.
 

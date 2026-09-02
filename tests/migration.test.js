@@ -10,7 +10,7 @@ import { loadLayout } from '../src/main/shell.js'
 // Files written that way exist on real disks, so renaming the code to English must not
 // cost anyone their accounts, their macros, or the attachments those macros point at.
 //
-// THE POLISH KEYS BELOW ARE THE POINT OF THIS FILE. Do not "tidy" them into English —
+// THE POLISH KEYS BELOW ARE THE POINT OF THIS FILE. Do not "tidy" them into English –
 // they are the old on-disk format, not a naming slip.
 
 let dir
@@ -55,7 +55,7 @@ describe('upgrading from schema version 1', () => {
   })
 
   // The session partition is named persist:<id>. Rewriting an id would sign the account
-  // out and demand a fresh QR code — the one thing an upgrade must never do.
+  // out and demand a fresh QR code – the one thing an upgrade must never do.
   test('account ids survive untouched, so nobody is signed out', async () => {
     await write('accounts.json', {
       wersja: 1,
@@ -127,7 +127,7 @@ describe('upgrading from schema version 1', () => {
     })
   })
 
-  // A half-converted file — one the app wrote mid-upgrade, or a hand edit — must not
+  // A half-converted file – one the app wrote mid-upgrade, or a hand edit – must not
   // silently drop the half it does understand.
   test('a file mixing both key sets keeps whatever it can', async () => {
     await write('accounts.json', {

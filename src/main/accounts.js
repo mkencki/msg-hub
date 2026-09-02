@@ -2,7 +2,7 @@ import { readFile, writeFile, rename } from 'node:fs/promises'
 
 export const SCHEMA_VERSION = 2
 
-// `hosts` is what an account is allowed to show in its own view — matched on a dot
+// `hosts` is what an account is allowed to show in its own view – matched on a dot
 // boundary, never as a substring. `authHosts` are foreign hosts a sign-in flow legitimately
 // goes through, and they are separate because trusting them is a different decision from
 // trusting the service. `external` is consulted BEFORE `hosts` and exists only for entries
@@ -35,7 +35,7 @@ export const PLATFORMS = {
     unreadInTitle: true,
     notifyByDefault: true,
   },
-  // The apex host sits behind an anti-bot gate — measured with curl, twice, and both
+  // The apex host sits behind an anti-bot gate – measured with curl, twice, and both
   // linkedin.com/ and linkedin.com/feed/ answer "Checking your browser - reCAPTCHA". The www
   // host and the feed path redirect to sign-in and come back to the feed afterwards, and
   // every sub-product (/learning/, /jobs/, /sales/) is on the same origin, so one entry
@@ -49,13 +49,13 @@ export const PLATFORMS = {
     // nor silently denied; Microsoft's navigates the main frame instead of opening anything.
     //
     // MEASURED 2026-08-30, after "Sign in with Microsoft" failed: the button goes to
-    // login.live.com — the CONSUMER endpoint — and the passkey step that follows goes to
+    // login.live.com – the CONSUMER endpoint – and the passkey step that follows goes to
     // login.microsoft.com. Neither was declared here, so both were sent to the system browser
     // and the flow came back with
     //     AADSTS900561: The endpoint only accepts POST requests. Received a GET request.
     // That error is the whole point of declaring them: shell.openExternal can only ever issue
     // a GET, and the authorize call asks for response_mode=form_post. An undeclared sign-in
-    // host is not merely opened in the wrong window — it arrives stripped of its method and
+    // host is not merely opened in the wrong window – it arrives stripped of its method and
     // cannot work anywhere. login.microsoftonline.com is the WORK-account endpoint and stays;
     // which of the two a sign-in uses depends on the account, so both belong here.
     authHosts: [
@@ -67,7 +67,7 @@ export const PLATFORMS = {
       'accounts.google.com',
     ],
     external: [],
-    // The number in LinkedIn's title is the SUM of eight badge sources — feed, jobs,
+    // The number in LinkedIn's title is the SUM of eight badge sources – feed, jobs,
     // notifications, messaging and more. In one rail with a WhatsApp "(3)" it would be a
     // different unit in the same clothes, so the badge stays off until the operator says
     // otherwise. The count itself is read correctly now, including "(99+)".
@@ -168,7 +168,7 @@ export function validateAccount(account) {
 }
 
 // Only what the operator sees changes: the name and the channel colour. The id stays put
-// for the reason above — fixing a typo in a name must not sign the account out.
+// for the reason above – fixing a typo in a name must not sign the account out.
 export function updateAccount(accounts, id, changes) {
   const index = accounts.findIndex((a) => a.id === id)
   if (index === -1) return { ok: false, errors: [{ code: 'validationNoSuchAccount', params: {} }] }
@@ -177,7 +177,7 @@ export function updateAccount(accounts, id, changes) {
     ...accounts[index],
     name: String(changes?.name ?? '').trim(),
     color: changes?.color ?? accounts[index].color,
-    // An update that says nothing about this must not reset a choice already made — the same
+    // An update that says nothing about this must not reset a choice already made – the same
     // rule a macro save had to learn about its tags.
     ...(changes?.notifications === undefined ? {} : { notifications: Boolean(changes.notifications) }),
   }
@@ -190,7 +190,7 @@ export function updateAccount(accounts, id, changes) {
 }
 
 // Order in the file is the order of the channels. Moving past either end is not an
-// error — the button simply does nothing.
+// error – the button simply does nothing.
 export function moveAccount(accounts, id, offset) {
   const index = accounts.findIndex((a) => a.id === id)
   if (index === -1) return [...accounts]

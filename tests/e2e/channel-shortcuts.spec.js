@@ -40,7 +40,7 @@ test.afterEach(async () => {
 })
 
 // Playwright's keyboard goes in through the debugger, which bypasses before-input-event
-// entirely — measured, the interceptor saw nothing at all. sendInputEvent is the house
+// entirely – measured, the interceptor saw nothing at all. sendInputEvent is the house
 // pattern for this (tests/e2e/shortcuts.spec.js) and it goes through the same path a real
 // key does. The key is sent INTO AN ACCOUNT VIEW, which is where the keyboard actually is
 // for most of the working time and the only reason this interceptor exists.
@@ -98,7 +98,7 @@ test('a shortcut past the end of the rail changes nothing', async () => {
 //
 // Testing only the first half is testing the machine this happens to run on. A global
 // shortcut is a system-wide exclusive, and during a full suite run the previous spec's
-// application is sometimes still shutting down and still holding it — measured, one run in
+// application is sometimes still shutting down and still holding it – measured, one run in
 // four. That is not a defect; it is precisely the case the second half exists for.
 test('the global shortcut is either held, or its refusal is said out loud', async () => {
   const registered = await electronApp.evaluate(({ globalShortcut }) =>

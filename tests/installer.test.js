@@ -7,8 +7,8 @@ import { readFileSync } from 'node:fs'
 const nsis = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).build.nsis
 
 describe('the installer', () => {
-  // Running the installer over an existing copy already replaced it — NSIS uninstalls the old
-  // version first — but the wizard asked for an install mode and a directory on the way, so an
+  // Running the installer over an existing copy already replaced it – NSIS uninstalls the old
+  // version first – but the wizard asked for an install mode and a directory on the way, so an
   // upgrade looked exactly like a first installation. With nothing to ask, there is nothing to
   // look like.
   test('installs in one click, asking nothing', () => {
@@ -25,7 +25,7 @@ describe('the installer', () => {
 
   // The reason anyone can install this without asking their IT department. A one-click
   // installer that went per-machine would raise a UAC prompt and dead-end on a locked-down
-  // account — the exact case this application was carried onto in August 2026.
+  // account – the exact case this application was carried onto in August 2026.
   test('installs for the current user, so no administrator password is needed', () => {
     expect(nsis.perMachine).toBe(false)
   })

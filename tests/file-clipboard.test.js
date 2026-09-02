@@ -12,7 +12,7 @@ import {
 // Until 2026-08-25 these literals were written with a single backslash, and JavaScript
 // silently dropped it: 'C:\files\a.pdf' parses to C:filesa.pdf, because \f and \a are not
 // escapes that survive. Every assertion still passed, because both sides of the comparison
-// were mangled the same way — so the suite claimed to exercise Windows paths while
+// were mangled the same way – so the suite claimed to exercise Windows paths while
 // exercising strings that were not paths at all.
 const FILE = 'C:\\files\\a.pdf'
 const WITH_APOSTROPHE = "C:\\files\\o'brien.pdf"
@@ -28,7 +28,7 @@ describe('quotePS', () => {
     expect(quotePS(WITH_APOSTROPHE)).toBe("'C:\\files\\o''brien.pdf'")
   })
 
-  test('a backslash survives quoting untouched — a Windows path is not an escape sequence', () => {
+  test('a backslash survives quoting untouched – a Windows path is not an escape sequence', () => {
     expect(quotePS(FILE)).toContain('\\files\\')
   })
 })
@@ -128,7 +128,7 @@ describe('createClipboardSession', () => {
   })
 })
 
-describe('createClipboardSession — the session that has to survive a bad day', () => {
+describe('createClipboardSession – the session that has to survive a bad day', () => {
   // A stand-in that answers nothing at all, the way a PowerShell busy with a slow network
   // path does.
   function silentProcess() {
@@ -156,7 +156,7 @@ describe('createClipboardSession — the session that has to survive a bad day',
 
   // stdio is ['pipe','pipe','pipe'], so the child writes its errors into a pipe with a
   // finite buffer. Nobody was reading it. A PowerShell that says enough on stderr fills that
-  // buffer and then BLOCKS — and every attachment after it waits out the timeout.
+  // buffer and then BLOCKS – and every attachment after it waits out the timeout.
   test('the child’s stderr is drained, or the child eventually blocks on it', () => {
     const fake = silentProcess()
 
@@ -167,7 +167,7 @@ describe('createClipboardSession — the session that has to survive a bad day',
 
   // The defect this exists for. A timed-out command was abandoned, but its output was left
   // in the pipe. The next insertion read the marker belonging to the PREVIOUS file and
-  // reported success for a file it never put on the clipboard — for the rest of the session.
+  // reported success for a file it never put on the clipboard – for the rest of the session.
   test('a timed-out command cannot answer for the next one', async () => {
     const fakes = []
     const session = createClipboardSession(

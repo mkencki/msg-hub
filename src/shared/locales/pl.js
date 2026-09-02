@@ -55,13 +55,13 @@ export const pl = {
   reloadAccount: 'Przeładuj',
   trayOpenLogs: 'Otwórz katalog dziennika',
   tags: 'Tagi',
-  tagsHint: 'oferta, strefa klienta — po przecinku',
+  tagsHint: 'oferta, strefa klienta – po przecinku',
   filterByTag: 'Pokaż tylko makra z tagiem {tag}',
   fillIn: 'Uzupełnij',
   fillInHint: 'Makro składa się tutaj i nigdzie nie trafia, dopóki nie powiesz.',
   insertButton: 'Wstaw',
   close: 'Zamknij',
-  noAccountsHint: 'Brak kont — kliknij „Dodaj konto".',
+  noAccountsHint: 'Brak kont – kliknij „Dodaj konto”.',
   edit: 'Edytuj',
   remove: 'Usuń',
   editAccountTitle: 'Edytuj {name}',
@@ -71,23 +71,23 @@ export const pl = {
 
   // Usuwanie konta
   removeAccountQuestion: 'Usunąć to konto?',
-  accountWillDisappear: '„{name}" zniknie z szyny kanałów.',
+  accountWillDisappear: '„{name}” zniknie z szyny kanałów.',
   removalWarning: 'Usunięcie konta kasuje też zalogowanie. Ponowne dodanie wymaga nowego kodu QR.',
   removeAccountButton: 'Usuń konto',
 
   // Makra
   insertInto: 'wstaw do',
   searchMacros: 'Szukaj po nazwie, treści lub tagu',
-  noMacros: 'Brak makr — kliknij „Nowe makro".',
-  nothingMatches: 'Nic nie pasuje do „{phrase}". Zmień frazę albo utwórz nowe makro.',
+  noMacros: 'Brak makr – kliknij „Nowe makro”.',
+  nothingMatches: 'Nic nie pasuje do „{phrase}”. Zmień frazę albo utwórz nowe makro.',
   newMacro: 'Nowe makro',
   macro: 'Makro',
   editMacro: 'Edycja makra',
   editMacroTitle: 'Edytuj {name}',
   removeMacroTitle: 'Usuń {name}',
   removeMacroQuestion: 'Usunąć to makro?',
-  macroWillDisappear: '„{name}" zniknie z listy.',
-  macroWillDisappearWithAttachments: '„{name}" zniknie razem z załącznikami ({count}).',
+  macroWillDisappear: '„{name}” zniknie z listy.',
+  macroWillDisappearWithAttachments: '„{name}” zniknie razem z załącznikami ({count}).',
   removeMacroButton: 'Usuń makro',
   macroLabel: '{name}  ({count} zał.)',
 
@@ -104,16 +104,16 @@ export const pl = {
   addAttachment: 'Dodaj załącznik',
   detach: 'Zdejmij',
   detachFile: 'Zdejmij {name}',
-  storageHint: 'Plik trafia do magazynu aplikacji — oryginał przestaje być potrzebny.',
+  storageHint: 'Plik trafia do magazynu aplikacji – oryginał przestaje być potrzebny.',
   saveMacro: 'Zapisz makro',
   none: 'brak',
 
   // Komunikaty na listwie
-  messageNoAccount: 'Nie ma dokąd wstawić — najpierw dodaj konto i otwórz w nim rozmowę.',
+  messageNoAccount: 'Nie ma dokąd wstawić – najpierw dodaj konto i otwórz w nim rozmowę.',
   messageNoMacro: 'Tego makra już nie ma na liście.',
-  messageEmptyMacro: 'To makro nie ma ani treści, ani załącznika — nie ma czego wstawić.',
+  messageEmptyMacro: 'To makro nie ma ani treści, ani załącznika – nie ma czego wstawić.',
   messageInsertFailed: 'Nie udało się wstawić makra.',
-  messageInserted: 'Wklejono „{macro}" do konta {account}. Sprawdź pole wiadomości; Enter należy do Ciebie.',
+  messageInserted: 'Wklejono „{macro}” do konta {account}. Sprawdź pole wiadomości; Enter należy do Ciebie.',
   messageTheAccount: 'konta',
   messageMissingAttachments: 'Brakuje załączników w magazynie: {list}. Tekst został wstawiony.',
   messageAttachmentFailed: 'Nie można dodać załącznika: {reason}',
@@ -135,14 +135,14 @@ export const pl = {
   trayAutoStart: 'Uruchamiaj z Windows',
   trayQuit: 'Zakończ',
   trayUnread: {
-    one: 'M-HUB — {n} nieprzeczytana',
-    few: 'M-HUB — {n} nieprzeczytane',
-    many: 'M-HUB — {n} nieprzeczytanych',
-    other: 'M-HUB — {n} nieprzeczytanych',
+    one: 'M-HUB – {n} nieprzeczytana',
+    few: 'M-HUB – {n} nieprzeczytane',
+    many: 'M-HUB – {n} nieprzeczytanych',
+    other: 'M-HUB – {n} nieprzeczytanych',
   },
   overlayUnread: 'nieprzeczytane wiadomości',
   loadAccountFailed:
-    'Nie udało się załadować konta {account} — błąd {code}: {description}. Jeśli sieć działa, ' +
-    'a strona odmawia obsługi klienta, zaktualizuj Electrona (npm install electron@latest) — ' +
+    'Nie udało się załadować konta {account} – błąd {code}: {description}. Jeśli sieć działa, ' +
+    'a strona odmawia obsługi klienta, zaktualizuj Electrona (npm install electron@latest) – ' +
     'WhatsApp Web wymaga świeżej wersji Chromium.',
 }

@@ -21,7 +21,7 @@ export function validLanguage(code) {
 
 // Both processes use this. The main process needs it for the tray menu and for load
 // errors; the renderer for everything else. It is therefore shared code, not renderer
-// code — a main process importing from src/renderer would be the wrong way round.
+// code – a main process importing from src/renderer would be the wrong way round.
 export function t(language, key, params = {}) {
   const code = validLanguage(language)
   let pattern = LOCALES[code][key] ?? LOCALES[DEFAULT_LANGUAGE][key]
@@ -31,7 +31,7 @@ export function t(language, key, params = {}) {
 
   if (typeof pattern === 'object') {
     // Plural categories come from Intl, because every language has its own rules.
-    // A hand-written condition only works for the language it was written for —
+    // A hand-written condition only works for the language it was written for –
     // Polish 1/2-4/5+ laid over English yields "1 new" next to "3 new".
     const category = new Intl.PluralRules(code).select(Number(params.n) || 0)
     pattern = pattern[category] ?? pattern.other ?? key

@@ -45,12 +45,12 @@ test('the account view begins to the right of the rail, not under a bar along th
   await addAccount('WhatsApp test')
 
   // The native view is created asynchronously in the main process, so we wait for it to
-  // appear BEFORE measuring anything — otherwise the first assertion gets null and it is
+  // appear BEFORE measuring anything – otherwise the first assertion gets null and it is
   // impossible to tell a badly placed view from a view that does not exist yet.
   await expect.poll(async () => (await viewRect()).view !== null).toBe(true)
   const { view, page: frame } = await viewRect()
 
-  // The rail collapses, so its width changes — what stays constant is that the view
+  // The rail collapses, so its width changes – what stays constant is that the view
   // begins BEHIND it on the left and NOT under a bar along the top.
   expect(view.x).toBeGreaterThanOrEqual(48)
   expect(view.y).toBeLessThan(24)
@@ -127,7 +127,7 @@ test('arrows and Enter insert the selected macro without reaching for the mouse'
   await page.keyboard.press('Enter')
 
   await expect(page.locator('#macros-dialog')).toBeHidden()
-  // The panel disappears BEFORE the insertion finishes — insertMacro() closes the dialog
+  // The panel disappears BEFORE the insertion finishes – insertMacro() closes the dialog
   // and only then waits for the main process. Its disappearance therefore cannot measure
   // the end of the operation; the signal is the status-bar report, which lands once the
   // IPC call resolves.
@@ -136,7 +136,7 @@ test('arrows and Enter insert the selected macro without reaching for the mouse'
 })
 
 // The panel closes on every choice. Without a report the operator cannot tell whether
-// the content went in, or into which account — the one real risk this product carries.
+// the content went in, or into which account – the one real risk this product carries.
 test('after inserting, the status bar names the account and leaves Enter to the operator', async () => {
   await addAccount('WhatsApp work')
   await page.evaluate(() => window.mHub.saveMacro({ name: 'Alfa', text: 'alpha content' }))

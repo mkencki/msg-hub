@@ -30,7 +30,7 @@ describe('translation', () => {
   })
 
   // Polish has three plural forms: 1 / 2-4 / 5+, with the teens (12-14) falling into the
-  // "many" form. English has two. The difference cannot live in the renderer — it belongs
+  // "many" form. English has two. The difference cannot live in the renderer – it belongs
   // to the language layer, or English inherits Polish grammar.
   test('Polish plurals inflect through three forms', () => {
     expect(t('pl', 'unreadNew', { n: 1 })).toBe('1 nowa')

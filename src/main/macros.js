@@ -96,7 +96,7 @@ export async function addAttachment(attDir, sourcePath) {
 export async function removeOrphanAttachments(attDir, macros) {
   const used = new Set(macros.flatMap((m) => m.attachments ?? []).map((p) => path.basename(p)))
   const removed = []
-  // The store is created with the first attachment — its absence simply means
+  // The store is created with the first attachment – its absence simply means
   // there is nothing to clean up.
   const entries = await readdir(attDir).catch((error) => {
     if (error.code === 'ENOENT') return []

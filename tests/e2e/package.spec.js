@@ -6,7 +6,7 @@ import path from 'node:path'
 
 const EXE = path.resolve('dist/win-unpacked/M-HUB.exe')
 
-// The package exists only after `npm run dist` — without it the test has nothing to check.
+// The package exists only after `npm run dist` – without it the test has nothing to check.
 let built = true
 try {
   await access(EXE)
@@ -17,12 +17,12 @@ try {
 const BLOCKED_BY_SAC =
   'Smart App Control blocked this package. Measured 2026-08-24: SAC lets an unsigned file ' +
   'through only on a reputation verdict from the Defender cloud, and a FRESHLY BUILT one has ' +
-  'none — the block needs no Mark of the Web. The installer is built on a CI runner, where ' +
+  'none – the block needs no Mark of the Web. The installer is built on a CI runner, where ' +
   'SAC is not active; locally, run the sources with npm start.'
 
 // The probe has to run BEFORE electron.launch: Playwright reports every failed attempt as
 // a bare "Process failed to launch!" with no reason from the system, and test.skip() called
-// from a catch block does NOT mark the test skipped — measured, it ends up red.
+// from a catch block does NOT mark the test skipped – measured, it ends up red.
 // On a Code Integrity refusal, a Node spawn returns errno UNKNOWN (not ENOENT, not EACCES).
 function blockedByCodeIntegrity(dataDir) {
   const probe = spawnSync(EXE, [`--user-data-dir=${dataDir}`], { timeout: 2500 })
@@ -30,9 +30,9 @@ function blockedByCodeIntegrity(dataDir) {
 }
 
 test('the packaged application starts with a working renderer and IPC bridge', async () => {
-  // The skip condition has to sit INSIDE the test — at file level Playwright reads
+  // The skip condition has to sit INSIDE the test – at file level Playwright reads
   // test.skip(condition, description) as a declaration of a skipped test, not as a condition.
-  test.skip(!built, 'no dist/win-unpacked — run npm run dist first')
+  test.skip(!built, 'no dist/win-unpacked – run npm run dist first')
 
   const dataDir = await mkdtemp(path.join(tmpdir(), 'mhub-package-'))
 
